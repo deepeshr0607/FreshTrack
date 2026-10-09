@@ -1,0 +1,647 @@
+# FreshTrack — Full Implementation Plan
+
+**Purpose:** Build the existing FreshTrack designs into a reliable iOS/Android app using React Native + Expo, TypeScript, Expo Router, Vercel-hosted Node.js/Express, Prisma, Neon PostgreSQL, Neon Auth, Google Cloud Vision OCR, and Spoonacular.
+
+**Project status assumed:** Screen designs already exist; app code has not been started.
+
+**Recommended execution model:** Use Antigravity for implementation in small phases. Use Git checkpoints throughout. When its usage limit is reached, open the same repository in Codex and continue from `AGENTS.md`, `README.md`, tests, and the latest commit. Never let both agents change the same working tree concurrently.
+
+---
+
+## 1. Product goals and MVP boundary
+
+FreshTrack helps a household record groceries, estimate/use actual expiry dates, receive local reminders, use near-expiry ingredients in recipes, and understand the financial cost of food waste.
+
+### MVP features
+
+1. Email sign-up/sign-in with six-digit email OTP verification.
+2. Four primary tabs: Pantry, Scanner, AI Chef, Analytics.
+3. Manual grocery creation and editing as a dependable fallback.
+4. Receipt capture, OCR, parsing, review, and user-confirmed pantry import.
+5. Barcode scanning with a product lookup or manual fallback.
+6. Expiry presets that users can override; printed package dates take precedence over estimates.
+7. Local notifications at three days before expiry, one day before expiry, and on expiry day.
+8. Consumed/Wasted logging, including actions from supported notification controls where feasible.
+9. Spoonacular recipe suggestions using only items expiring soon, with missing-ingredient lists.
+10. Monthly waste-cost analytics and a reconciliation prompt for expired items with unknown outcomes.
+11. Settings for notification timing, currency/date display, sign-out, and account deletion.
+
+### Not in the first MVP
+
+- Shared pantry collaboration across accounts/devices. Keep schema relations ready for a household and household members, but don't implement invitations/realtime synchronization until the single-user workflow is stable.
+- A custom machine-learning receipt parser. Start with OCR plus deterministic parsing rules and a review screen.
+- An LLM recipe-generation layer. Spoonacular supplies recipes; the app filters and presents them.
+- Guaranteed background work at an exact midnight timestamp. Mobile OS background execution is opportunistic; reconcile expired records when the app opens/resumes and whenever the backend is called.
+
+---
+
+## 2. Architecture
+
+```text
+React Native / Expo app
+  ├── Expo Router screens and tab navigation
+  ├── React Context (session + current pantry/cache state)
+  ├── expo-camera (receipt photos + barcode detection)
+  ├── expo-notifications (local schedule + notification action handling)
+  ├── expo-secure-store (secure session/token storage as supported by auth SDK)
+  └── HTTPS API client
+          │
+          ▼
+Vercel deployment: Node.js + Express API
+  ├── authentication/session verification
+  ├── input validation, authorization, rate limiting
+  ├── pantry lifecycle and expiry calculations
+  ├── receipt OCR + deterministic line-item parsing
+  ├── Spoonacular adapter + result caching
+  ├── analytics queries and reconciliation
+  └── Prisma Client
+          │
+          ▼
+Neon PostgreSQL
+  ├── application tables (households, pantry items, events, receipt scans, preferences)
+  └── neon_auth schema managed by Neon Auth (do not recreate its internal tables)
+
+Third-party services, called only from the backend:
+  ├── Google Cloud Vision API
+  └── Spoonacular API
+```
+
+### Important boundary
+
+The mobile app must not connect directly to PostgreSQL and must never contain the database URL, Google Vision credential, or Spoonacular API key. All application data operations go through authenticated HTTPS endpoints. Only public client configuration (such as the API base URL) may be included in the app bundle.
+
+### Repository layout
+
+Use one Git repository initially, with mobile app at the root and backend in a separate directory. This avoids extra workspace tooling while retaining one handoff point for Antigravity and Codex.
+
+```text
+FreshTrack/
+├── app/                         # Expo Router routes (or src/app if template uses src)
+│   ├── (auth)/                  # sign-up, verify OTP, sign-in/session recovery
+│   ├── (tabs)/                  # Pantry, Scanner, AI Chef, Analytics
+│   ├── settings/                # profile, notifications, privacy/account deletion
+│   └── _layout.tsx
+├── assets/                      # fonts, local illustrations, app icon
+├── design-reference/            # screenshots/Figma exports for supplied designs
+├── components/                  # reusable UI components
+├── features/                    # pantry, scanner, chef, analytics, auth modules
+├── context/                     # session and app state providers
+├── lib/                         # API client, date/currency helpers, validation
+├── types/                       # frontend types
+├── backend/
+│   ├── src/
+│   │   ├── app.ts               # Express app and middleware
+│   │   ├── routes/              # route registration
+│   │   ├── controllers/         # HTTP boundary only
+│   │   ├── services/            # business rules and integrations
+│   │   ├── middleware/          # auth, validation, errors, rate limits
+│   │   ├── integrations/        # Vision and Spoonacular clients
+│   │   └── lib/                 # Prisma, logger, configuration
+│   ├── prisma/
+│   │   └── schema.prisma
+│   ├── tests/
+│   ├── package.json
+│   └── .env.example
+├── tests/                       # mobile/shared end-to-end or integration tests if needed
+├── AGENTS.md                    # agent instructions and current project state
+├── README.md
+├── .gitignore
+└── package.json                 # Expo app scripts/dependencies
+```
+
+If the chosen Expo template creates `src/app`, preserve that convention rather than moving route files unnecessarily.
+
+---
+
+## 3. Phase-by-phase implementation roadmap
+
+## Phase 0 — Prepare the workspace and references
+
+**Goal:** Establish a repeatable build environment before changing UI or adding services.
+
+### Tasks
+
+1. Create the Expo TypeScript app with Expo Router. Keep the Expo SDK and dependency versions compatible; use `npx expo install` for Expo-managed native modules.
+2. Place supplied screenshots/exports in `design-reference/`, clearly naming every screen and important state (empty pantry, item details, review sheet, errors, etc.).
+3. Create the `backend/` Express TypeScript project with its own `package.json`.
+4. Initialize Git, verify `.gitignore` excludes all `.env*` files except `.env.example`, credentials, generated build folders, and local logs.
+5. Create `AGENTS.md` and `README.md` before feature work begins.
+6. Add scripts for mobile start, backend development, type checks, linting, and tests. Only add tools the project actually uses.
+7. Establish baseline commits before agent edits.
+
+### Acceptance criteria
+
+- Expo starter runs on at least one actual device or simulator.
+- Backend health endpoint returns a simple JSON response locally.
+- Git status is clean after the baseline commit.
+- Design references and exact screen list are documented.
+- No secret credentials are committed.
+
+**Checkpoint:** `chore: scaffold FreshTrack mobile and API projects`
+
+## Phase 1 — Implement the supplied designs and navigation
+
+**Goal:** Recreate the existing designs, not invent a different visual design.
+
+### Screens
+
+- Sign-up and six-digit OTP verification.
+- Pantry list, pantry item details/editing, empty state, and consume/waste confirmation if present in the references.
+- Scanner mode selection, camera permission state, camera preview, and review sheet.
+- AI Chef near-expiry section, recipe cards/details, loading/error/empty states, and missing-items shopping list.
+- Analytics metric cards, monthly graph, comparison view, and reconciliation banner.
+- Settings/preferences if represented in the designs.
+
+### Tasks
+
+1. Define theme tokens from the reference designs: colors, typography, spacing, borders, elevation, icons, and shared card/button styles.
+2. Implement reusable components (item card, expiry badge, primary button, form field, sheet/modal, chart container, loading/empty/error views).
+3. Create Expo Router layouts for public/auth routes and the four-tab authenticated app.
+4. Use central mock fixtures with typed data; don't create mock records in every screen independently.
+5. Add realistic interactions: tab navigation, details, form validation, mock add/edit, mock consumed/wasted, chart date selector if designed.
+6. Ensure layouts respect safe areas, keyboards, dynamic text, and small phone widths.
+7. Compare each screen side-by-side with its supplied design reference.
+
+### Acceptance criteria
+
+- All supplied designs have corresponding screens/states or documented exclusions.
+- Navigation is correct; back behavior and tab state work.
+- No dead primary buttons; mock interactions show a result.
+- TypeScript check passes; app launches on iOS and Android development environments where available.
+- Design differences and missing references are documented.
+
+**Checkpoint:** `feat: implement FreshTrack screen designs and navigation`
+
+## Phase 2 — Confirm authentication and backend contract
+
+**Goal:** Validate the selected Neon Auth approach before the rest of the app depends on it.
+
+### Authentication proof-of-concept tasks
+
+1. Create Neon development and production branches/projects as appropriate; enable the current Managed Better Auth/Neon Auth integration on the development branch.
+2. Confirm the required flow really supports the product's intended six-digit email OTP—not merely email verification after password sign-up. Confirm resend, expiry, one-time use, rate limiting, and session creation.
+3. Confirm the currently supported SDK can be used from the chosen Expo React Native SDK. Neon Auth uses Managed Better Auth and its own SDK/API; do not assume a web-only component or self-hosted Better Auth recipe is interchangeable.
+4. If supported, build a minimal real sign-up → receive OTP → verify → persistent session → sign-out proof of concept using the existing auth design.
+5. Store session material using the supported secure native storage mechanism; don't invent a token scheme. Configure development and production app origins/callbacks according to the chosen auth flow.
+6. Establish the backend's server-side session verification method. Every protected API endpoint must derive the user identity from a verified session/token, never trust a client-supplied `userId`.
+7. Write an architecture decision record in `README.md` or `docs/decisions/` describing the validated integration and versions.
+
+### Auth decision gate
+
+**Do not continue with production data endpoints until the exact Expo + Neon Auth OTP flow is verified.** If the managed Neon SDK cannot support the required native flow, decide explicitly whether to use its documented lower-level API path or another Expo-compatible auth provider; don't silently build a custom authentication system.
+
+### Acceptance criteria
+
+- A new account can complete the intended six-digit OTP flow on a real or development device.
+- Incorrect, expired, reused, and resent codes are handled safely.
+- Session survives app restart and logout clears it.
+- Public routes and protected tabs redirect correctly.
+- Backend can reject unauthenticated requests and derive the authenticated subject reliably.
+
+**Checkpoint:** `feat: validate native authentication and protected route flow`
+
+## Phase 3 — Data model, Prisma migrations, and API foundation
+
+**Goal:** Establish a stable database contract before connecting screens.
+
+### Database modeling principles
+
+- Use PostgreSQL UUID IDs (or another consistent generated ID type).
+- Store timestamps in UTC (`timestamptz` in PostgreSQL); interpret expiry calendar dates using the household/device's configured timezone.
+- Store money in integer minor units (paise for INR) or Prisma `Decimal`, never floating-point arithmetic. Choose one representation and use it consistently.
+- Keep auth-managed tables in `neon_auth` under the auth provider's ownership; application tables reference a stable auth subject string rather than trying to recreate auth tables.
+- Every user-owned query must be scoped through the authenticated identity and household membership.
+- Use Prisma migrations and a seed script; don't rely on `db push` as the permanent production migration strategy.
+
+### Proposed application tables
+
+**Household**
+- `id`, `name`, `currencyCode` (default `INR`), `timezone`, `createdAt`, `updatedAt`.
+- Represents the boundary for inventory; future shared pantry support can add members without redesigning every item.
+
+**HouseholdMember**
+- `id`, `householdId`, `authSubject`, `role` (MVP: `MANAGER`), `createdAt`.
+- Unique constraint on `(householdId, authSubject)` and indexes for household/user lookups.
+
+**PantryItem**
+- `id`, `householdId`, `name`, `normalizedName`, `category`, `quantity`, `unit`, `purchaseDate`, `expiresOn` (date), `expirySource` (`PACKAGE_DATE`, `PRESET_ESTIMATE`, `USER_ENTERED`), `freshnessPresetDays`, `unitCostMinor`, `totalCostMinor`, `currencyCode`, `status`, `source` (`MANUAL`, `BARCODE`, `RECEIPT`), `barcode`, optional notes, created/updated timestamps, and status timestamps.
+- Status enum: `ACTIVE`, `CONSUMED`, `WASTED`, `ASSUMED_CONSUMED`.
+- Index by `(householdId, status, expiresOn)` and appropriate normalized-name/barcode lookup indexes.
+
+**PantryItemEvent**
+- `id`, `householdId`, `pantryItemId`, `eventType`, `previousStatus`, `newStatus`, `quantity`, `occurredAt`, `source` (`APP`, `NOTIFICATION`, `RECONCILIATION`, `SYSTEM`), optional idempotency key and metadata.
+- Append-only record for analytics/history; this prevents edits to a current item from silently rewriting all historical metrics.
+
+**ReceiptScan**
+- `id`, `householdId`, `createdByAuthSubject`, `status` (`UPLOADED`, `PROCESSING`, `REVIEW_REQUIRED`, `IMPORTED`, `FAILED`), OCR text or safe temporary reference as appropriate, detected items JSON, error code, created/updated timestamps.
+- Do not retain receipt images indefinitely by default. Define retention/deletion behavior; prefer processing then deleting the original unless the product explicitly needs history.
+
+**UserPreference**
+- `id`, `authSubject` or `householdId` according to preference ownership, `notificationEnabled`, optional preferred notification time, timezone, currency/date settings, created/updated timestamps.
+
+**RecipeCache** (optional after first integration)
+- `id`, normalized ingredient-set key, provider recipe IDs/results, fetchedAt, expiresAt.
+- Avoid storing unnecessary complete provider payloads or personal data.
+
+### Backend foundation tasks
+
+1. Create Express app with `/api/v1/health`, JSON parsing, request ID, structured logger, CORS appropriate to the environment, centralized error handler, request validation, and rate limiting.
+2. Add Prisma Client singleton/service, Prisma schema, migrations, seed, and database readiness check.
+3. Use separate environment settings for local, preview/staging, and production.
+4. Define shared API response/error shape, pagination format, and date/money serialization.
+5. Add unit tests for expiry calculations, status transitions, and access scoping.
+6. Configure Vercel to deploy the Express app as its supported Node.js function. Keep the API project root/deployment settings explicit. Do not rely on `express.static()` to serve the mobile app.
+
+### Acceptance criteria
+
+- Fresh database can be created by applying migrations in documented order.
+- Seed data can be installed only in development.
+- Health endpoint and a read-only authenticated test endpoint work.
+- API refuses requests without a valid session and refuses cross-household access.
+- No secret or database connection string appears in mobile config, logs, or repository.
+
+**Checkpoint:** `feat: add Prisma schema migrations and protected API foundation`
+
+## Phase 4 — Pantry inventory end-to-end
+
+**Goal:** Make the core app useful before adding OCR/AI.
+
+### Endpoints (suggested contract)
+
+- `GET /api/v1/pantry?status=ACTIVE&sort=expiresOn&page=...`
+- `POST /api/v1/pantry`
+- `GET /api/v1/pantry/:itemId`
+- `PATCH /api/v1/pantry/:itemId`
+- `POST /api/v1/pantry/:itemId/consume`
+- `POST /api/v1/pantry/:itemId/waste`
+- `POST /api/v1/pantry/:itemId/undo-status` (only if product UX supports undo)
+- `POST /api/v1/pantry/bulk-import` (internal/reviewed import contract)
+
+### Tasks
+
+1. Implement validated create/edit forms and a reliable manual-add flow first.
+2. Build a single server-side expiry calculator. Expiry precedence: package-printed date > user-entered date > estimated preset. Always display estimates as estimates and allow edits.
+3. Implement deterministic default presets by normalized product name/category (e.g. milk, spinach, bread), but treat their durations as configurable product assumptions—not food-safety guarantees.
+4. On consume/waste, perform a transaction that updates status and appends a `PantryItemEvent`.
+5. Add client repository/service functions to call the API and refresh Context state. Keep network access out of presentational components.
+6. Implement optimistic UI only if rollback on failure is handled; otherwise wait for the server response.
+7. Add duplicate scan matching by normalized name/category/date/household. Do not silently consume an existing item on a weak fuzzy match. Present a clear replacement/duplicate confirmation during MVP; later, highly confident matching rules can be automated with an undo path.
+8. Add loading, empty, stale-network, retry, and offline-readable states.
+
+### Acceptance criteria
+
+- Add, view, edit, consume, and waste work against real data.
+- Fresh login sees only its household items.
+- The closest expirations sort first and countdown colors consistently match the specification.
+- Printed expiry dates override preset estimates.
+- Cost and event history survive app restarts.
+- Duplicate behavior never silently discards an item due to an ambiguous match.
+
+**Checkpoint:** `feat: connect Pantry CRUD and lifecycle events to PostgreSQL`
+
+## Phase 5 — Local expiry notifications and reconciliation
+
+**Goal:** Make expiry reminders reliable without requiring a cloud push for every reminder.
+
+### Tasks
+
+1. Request notification permission contextually, explain what it does, and allow the user to disable reminders.
+2. Schedule local notifications at T−3 days, T−1 day, and on expiry day at the configured local time. Skip any alert whose target is already in the past.
+3. Keep a mapping of `pantryItemId + milestone` to local notification identifier so edits can cancel and reschedule; consuming/wasting an item cancels its remaining alerts.
+4. Use notification categories/actions where supported to offer Consumed and Wasted. Do not rely solely on the user long-pressing the lock screen: OS UI and action availability vary by platform/version. Test on actual iOS and Android builds.
+5. When an action is tapped, update local UI and queue an idempotent status request. If network is unavailable, retain the pending action and retry on next app resume; don't lose the action silently.
+6. Ensure notification action retries cannot create duplicate events. Use a generated idempotency key for status actions.
+7. On app start/resume, reconcile active items whose `expiresOn` has passed. Mark them `ASSUMED_CONSUMED` only if that is the confirmed product rule, and record a `SYSTEM` event. Never count assumed-consumed items as definitely eaten or definitely wasted.
+8. Show a reconciliation banner: “X items expired recently. Were they consumed or wasted?” Allow the user to bulk-confirm and update the historical event.
+
+### Acceptance criteria
+
+- Create/edit/consume/waste reliably updates local schedules.
+- Notifications are based on device-local scheduling and do not require continuous cloud push delivery.
+- Notification actions are tested on real development builds; any platform restrictions are documented.
+- Offline actions eventually sync without duplicate event history.
+- Assumed-consumed records remain distinct from confirmed consumed/wasted records in analytics.
+
+**Checkpoint:** `feat: schedule local expiry alerts and reconcile overdue items`
+
+## Phase 6 — Scanner: barcode and receipt OCR
+
+**Goal:** Accelerate entry while retaining an accurate review step.
+
+### A. Barcode scanning
+
+1. Use `expo-camera` barcode scanning and handle camera permissions, denied permission, low light, and repeated scan events.
+2. Debounce scans and lock onto one result at a time.
+3. A barcode is an identifier, not the grocery name or expiration date. Select and document a product catalog provider or implement a local known-barcode lookup. If a lookup returns nothing, provide manual item entry.
+4. Populate name/category/brand/size only from a catalog result with a confidence/source field. Users must enter/confirm quantity, purchase date, cost, and expiry date or preset.
+5. Barcode scan must navigate to the same review form used by manual and receipt entry.
+
+### B. Receipt image capture and OCR
+
+1. Implement receipt camera capture, retake, cropping/rotation if practical, compression, preview, and upload progress.
+2. Send image bytes through authenticated HTTPS to the backend. Avoid unnecessarily embedding large base64 payloads in JSON; compress and enforce upload size/type limits. If receipts outgrow function payload limits, use temporary object storage with short-lived upload URLs.
+3. Call Google Cloud Vision from the backend using server-side credentials. Start with the suitable text/document detection mode and handle provider errors/timeouts.
+4. Parse OCR output using a deterministic pipeline:
+   - Normalize whitespace, punctuation, encoding, and common retailer abbreviations.
+   - Remove headers, payment lines, totals, tax lines, and likely non-item text.
+   - Identify possible item/price/quantity lines using patterns and scoring.
+   - Normalize known aliases (`MKL LOPFT 1L` → candidate `Low-Fat Milk`) using a maintained dictionary.
+   - Keep original OCR text and confidence/context for debugging, with a retention policy.
+   - Do not guess missing values silently; flag uncertainty for the review screen.
+5. Return a draft only; don't write pantry inventory before user confirmation.
+6. The review sheet should allow editing/deleting detected lines, quantity, cost, category, and expiration date/preset.
+7. Apply preset expiry estimates only when no trustworthy package date is available. A receipt usually gives purchase date/line item, not the package's use-by date.
+8. Commit all confirmed items in one validated bulk-import operation; record the receipt scan status and item events consistently.
+9. Provide manual fallback if OCR fails, the receipt is blurry, or the retailer format is unknown.
+
+### Acceptance criteria
+
+- Barcode scans do not add duplicate items on repeated camera frames.
+- Unknown barcodes remain usable through manual entry.
+- OCR parsing returns candidate lines and confidence/context rather than pretending every line is accurate.
+- User edits are respected exactly; only reviewed items are imported.
+- OCR/provider failure does not lose the captured image before the user can retry, unless retention/privacy rules require disposal.
+- API keys never leave the backend.
+
+**Checkpoint:** `feat: implement barcode lookup and reviewed receipt OCR import`
+
+## Phase 7 — AI Chef with Spoonacular
+
+**Goal:** Recommend meals that use ingredients expiring in the next 48 hours.
+
+### Tasks
+
+1. Add an endpoint such as `GET /api/v1/chef/expiring` to return active household ingredients expiring within the next 48 hours.
+2. On “Suggest Recipes,” send only normalized names/quantities of near-expiry ingredients to the backend integration, not the entire inventory.
+3. Keep a small local matrix of common pantry staples for UI/missing-item calculations. Spoonacular already supports ingredient search and has a pantry-item exclusion option; don't append a large artificial “prompt” because this integration is a recipe API, not an LLM prompt.
+4. Call Spoonacular recipe-by-ingredients search from the server and rank candidates by use of expiring ingredients, missing ingredients, dietary constraints if captured, prep time, and available-item coverage.
+5. Fetch full recipe instructions/details only for shortlisted recipes, respecting provider limits and caching results where allowed.
+6. Build recipe cards and a recipe-detail view with ingredients, servings, steps, times, source attribution, and a clear indication of which pantry items the recipe uses.
+7. Derive missing items by comparing recipe ingredients with pantry and staple dictionaries. Allow adding missing ingredients to a simple shopping list (local initially; persist if needed).
+8. Add rate limiting, API error handling, short-lived cache, empty results, and user-friendly retry. Never expose Spoonacular credentials in the app.
+
+### Acceptance criteria
+
+- Only items near expiry influence the default suggestion request.
+- Recipes show actual provider-backed ingredient/instruction data, not fabricated instructions.
+- Missing items are identified consistently and can be added to the list.
+- Provider failures and exhausted quota show a fallback state.
+- Secrets and provider responses are appropriately logged/redacted.
+
+**Checkpoint:** `feat: integrate Spoonacular recipes for near-expiry ingredients`
+
+## Phase 8 — Waste analytics and data integrity
+
+**Goal:** Show understandable household costs without pretending estimates are exact.
+
+### Metric definitions
+
+- **Confirmed waste cost:** sum of recorded item cost for items confirmed `WASTED` in the selected calendar month, with quantity-adjusted value if partial quantities are supported.
+- **Confirmed consumed:** items explicitly marked consumed; separate consumed-before-expiry from consumed-after-expiry if the event timeline supports that distinction.
+- **Estimated waste cost:** includes records with estimated rather than purchase-confirmed prices; clearly label as estimated.
+- **Assumed consumed:** never silently included as confirmed consumed or waste. Include a reconciliation count and let the user correct records.
+- If actual price is missing, either prompt the user for a price or use a configurable category estimate that is clearly identified as an estimate. Never blend unknown prices into a precise-looking total without explanation.
+
+### Tasks
+
+1. Build `/api/v1/analytics/summary?month=YYYY-MM` and monthly series endpoints.
+2. Query grouped event data from PostgreSQL instead of calculating business metrics solely from the current inventory list.
+3. Use consistent timezone boundaries for month grouping and INR formatting (or household currency).
+4. Render monthly waste-cost total, saved/consumed trend, waste trend, and comparison with previous month using `react-native-chart-kit` plus `react-native-svg` only after checking their compatibility with the Expo SDK in use.
+5. Add touch/accessible graph labels, loading/empty states, and a no-data state.
+6. Add reconciliation counts for recently expired, unresolved items and bulk confirmation actions.
+7. Add tests for month boundaries, timezone changes, partial quantities (if supported), zero/missing prices, and status corrections.
+
+### Acceptance criteria
+
+- Chart totals reconcile exactly with underlying events for test fixtures.
+- No item is double-counted after status correction or repeated API calls.
+- Assumed-consumed items are transparently reported as unconfirmed.
+- Unpriced items are clearly called estimates or excluded from confirmed totals.
+
+**Checkpoint:** `feat: build waste-cost analytics and reconciliation`
+
+## Phase 9 — Settings, privacy, reliability, and release preparation
+
+### Tasks
+
+1. Build user settings: notification on/off and time, household timezone, currency display if configurable, account details, sign-out, and account deletion.
+2. Document data retention for receipt OCR text/images and recipe cache. Delete data according to the stated policy; avoid keeping receipt images by default.
+3. Add a privacy policy that explains email/auth, grocery inventory, receipt image processing, OCR provider, recipe provider, local notifications, and data deletion.
+4. Add API request validation, payload limits, rate limiting for OCR/recipes/auth-adjacent endpoints, safe structured errors, and redacted logs.
+5. Verify server-side household authorization for every read/write and cross-user access test.
+6. Review dependencies for Expo SDK compatibility; add a lockfile; don't upgrade major versions casually mid-project.
+7. Add crash/error tracking only if desired, configured without logging receipt text, tokens, or unnecessary personal information.
+8. Configure EAS development/preview/production builds; create actual development builds for notification-action tests. Test app icons, splash, permissions copy, and app configuration.
+9. Test installation from a clean device, session persistence, migration from app updates, poor network, API failure, provider limits, and database availability.
+10. Prepare release notes and record remaining limitations honestly.
+
+### Acceptance criteria
+
+- Data deletion flow is tested end-to-end and respects auth provider constraints.
+- No known critical or high-severity security issue remains.
+- Core workflows pass on at least one iOS and one Android device/build environment.
+- Production configuration contains distinct credentials from development and staging.
+- Build/install instructions work from a clean checkout.
+
+**Checkpoint:** `release: FreshTrack MVP candidate`
+
+---
+
+## 4. Core API contract
+
+Prefix all endpoints with `/api/v1`. Use authenticated sessions for user data routes. Validate route params, query params, and bodies at the API boundary. A consistent response shape is recommended, for example `{ data: ... }` for success and `{ error: { code, message, requestId } }` for failures.
+
+### Authentication
+
+Prefer Neon Auth's supported client/API flow for sign-up, OTP verification, session refresh, and sign-out. The Express API should verify identity for its own protected endpoints; do not proxy raw auth secrets or trust a client `userId`. Exact endpoint paths depend on the validated Neon Auth SDK, so do not hardcode an invented OTP route into the plan's implementation.
+
+### Pantry
+
+- `GET /api/v1/pantry`
+- `POST /api/v1/pantry`
+- `GET /api/v1/pantry/:itemId`
+- `PATCH /api/v1/pantry/:itemId`
+- `POST /api/v1/pantry/:itemId/consume`
+- `POST /api/v1/pantry/:itemId/waste`
+- `POST /api/v1/pantry/bulk-import`
+
+### Receipt scanning
+
+- `POST /api/v1/receipts/scan` → authenticate, validate image, run OCR/parser, create review draft.
+- `GET /api/v1/receipts/:receiptId` → retrieve the current user's draft/status.
+- `POST /api/v1/receipts/:receiptId/import` → validate the user's reviewed items and commit them.
+- `DELETE /api/v1/receipts/:receiptId` → discard draft and retained data according to retention policy.
+
+### AI Chef
+
+- `GET /api/v1/chef/expiring`
+- `POST /api/v1/chef/suggestions` → near-expiry ingredient IDs/names plus supported preferences.
+- `GET /api/v1/chef/recipes/:recipeId` → retrieve/cache detail if required by provider flow.
+- `POST /api/v1/shopping-list/items` and `GET /api/v1/shopping-list` if the shopping list is persisted server-side; otherwise keep it local for MVP.
+
+### Analytics/preferences
+
+- `GET /api/v1/analytics/summary?month=YYYY-MM`
+- `GET /api/v1/analytics/monthly?months=6`
+- `GET /api/v1/analytics/reconciliation`
+- `POST /api/v1/analytics/reconciliation/confirm` (bulk resolution)
+- `GET /api/v1/preferences`
+- `PATCH /api/v1/preferences`
+- `DELETE /api/v1/account` (with re-auth/confirmation and auth-provider requirements satisfied)
+
+---
+
+## 5. Business rules that must be documented and tested
+
+1. **Expiry source precedence:** printed package date takes priority; otherwise use an explicit user override; otherwise apply a labeled estimate. Do not present preset durations as authoritative food-safety guidance.
+2. **Local date vs timestamp:** use date-only `expiresOn` for a calendar expiry date; schedule notification timestamps according to the configured local timezone and preferred notification time.
+3. **Freshness colors:** red if expiry is within 48 hours; yellow if expiry is within seven days but beyond the red threshold; green for later dates. Define expired styling separately and test the exact boundary cases.
+4. **Consumed/wasted lifecycle:** every confirmed transition adds one event. Repeated taps/retries must be idempotent.
+5. **Rescan matching:** a duplicate candidate is not enough to silently consume an old item. The MVP should confirm replacement/consumption or have a reliable undo flow.
+6. **Assumed consumed:** a cleanup heuristic, not proof of consumption. Keep it distinct in database statuses, event history, charts, and copy.
+7. **Financial calculations:** store price in a safe numeric representation and retain a price source (`USER_ENTERED`, `RECEIPT_PARSED`, `CATEGORY_ESTIMATE`). Keep estimates visibly separate from known prices.
+8. **Household isolation:** every pantry item belongs to a household; every read/write checks the authenticated user is a current household member.
+9. **External API boundaries:** Vision and Spoonacular are server-side only; implement timeouts, rate limits, retries only for retryable failures, and safe fallback messages.
+10. **Offline state:** local notifications can fire without a network connection, but server data changes need an offline queue and later synchronization. Avoid claiming everything is “offline-first” until conflicts are handled.
+
+---
+
+## 6. Environment variables and secrets
+
+Maintain a `backend/.env.example` with names and dummy values only. Exact variable names can be finalized by the implementation, but expected categories are:
+
+- `DATABASE_URL` — Neon pooled/runtime connection as recommended for the selected Prisma adapter.
+- `DIRECT_URL` — non-pooled URL for migrations if required by selected Prisma version/provider setup.
+- `NEON_AUTH_URL` — branch-specific auth base URL or the provider configuration required by its official SDK.
+- `GOOGLE_CLOUD_PROJECT_ID` and the chosen server-side Google credentials mechanism (prefer workload identity/managed credentials where available; never ship credentials in the app).
+- `SPOONACULAR_API_KEY`.
+- `API_BASE_URL` — public client value for mobile configuration, not a secret.
+- `APP_ENV` / `NODE_ENV`.
+- `LOG_LEVEL`.
+
+Never commit actual environment files. Use the Vercel environment settings for deployed secrets. Keep local `.env` files out of Git; rotate any credential accidentally committed.
+
+---
+
+## 7. Agent workflow for Antigravity and Codex
+
+### Before each phase
+
+1. Read `AGENTS.md`, `README.md`, the current phase in this plan, `git status`, and recent commits.
+2. Inspect the current implementation and tests before editing files.
+3. Work on only one phase/vertical slice at a time.
+4. Use the official current docs for external SDK integration. If the docs contradict old code patterns, stop and explain the required decision.
+5. Do not install packages, refactor unrelated folders, or redesign reference screens without a reason.
+
+### After each phase
+
+1. Run the app and relevant type/lint/test/build checks.
+2. Fix errors introduced by the changes.
+3. Report changed files, exact commands/checks run, results, unverified behavior, and remaining work.
+4. Update a **Project Status** section in `README.md` and the current phase/decisions in `AGENTS.md`.
+5. Review `git diff`; remove debug logs and secrets.
+6. Commit the checkpoint before beginning the next phase.
+
+### Handoff prompt for Codex
+
+> Continue the existing FreshTrack repository; do not recreate it. Read `AGENTS.md`, `README.md`, and `FreshTrack_Implementation_Plan.md`, inspect `git status` and recent commits, and determine the first incomplete acceptance criterion in the current phase. Implement only that phase's next small vertical slice. Preserve the existing Expo SDK, designs, API contracts, and Prisma schema unless a documented issue requires a change. Use current official docs for SDK-sensitive integration. Run the applicable tests and checks; report actual results and remaining gaps. Do not start another phase until asked.
+
+### Suggested start prompt for Antigravity
+
+> Read `FreshTrack_Implementation_Plan.md` completely and inspect all files under `design-reference/`. Build Phase 0 only: scaffold the Expo/TypeScript/Expo Router app and a separate TypeScript Express backend, initialize Git-safe configuration, create `AGENTS.md` and `README.md`, and verify that the mobile starter and API health endpoint run. Do not implement any feature phase yet. At the end, report commands and test results, then stop.
+
+After Phase 0 is committed, use a new prompt for Phase 1. Avoid asking the agent to implement the entire plan in one operation.
+
+---
+
+## 8. Testing strategy
+
+### Unit tests
+
+- Expiry threshold calculation at exactly 48 hours, exactly seven days, already expired, leap year, and timezone/day-boundary cases.
+- Pantry normalization/fuzzy match suggestions.
+- Receipt line parser against saved OCR fixtures with different receipt layouts.
+- Cost calculations including fractional quantities and missing/estimated cost.
+- Analytics aggregation by calendar month and status history.
+- Idempotent consume/waste/reconciliation transitions.
+
+### API/integration tests
+
+- Authenticated vs unauthenticated routes.
+- Cross-user and cross-household access denied.
+- Pantry create/edit/consume/waste and transactional event creation.
+- Bulk receipt import accepts only reviewed records and behaves atomically.
+- External provider timeout/429/error responses become safe API errors.
+- Analytics totals equal seeded event sums.
+- Account deletion and data retention behavior.
+
+### Device/manual tests
+
+- iOS and Android navigation, safe area, keyboard, camera permission, barcode scan, receipt capture, and image upload.
+- Notification scheduling, editing, cancellation, action handling, app-killed state, offline action queue, and app restart.
+- Poor/no network, expired session, backend cold start, duplicate taps, and API retry.
+- Fresh install from a clean checkout and preview/production configuration.
+
+### Release gate
+
+Do not call a feature complete because it compiles. A feature is complete when its acceptance criteria pass, failure states are handled, and the README records any platform-specific limitations.
+
+---
+
+## 9. Known risks and decisions to resolve early
+
+| Risk / open decision | Why it matters | Required response |
+|---|---|---|
+| Neon Auth OTP + Expo native SDK compatibility | Managed Neon Auth, its supported email OTP flow, and mobile cookie/session storage must work together. | Prove sign-up → six-digit OTP → session persistence in Phase 2 before API authorization depends on it. |
+| Barcode catalog is not yet selected | `expo-camera` reads a barcode; it does not itself provide every product name/brand/expiry. | Select a catalog provider or ship manual fallback with a clearly scoped local catalog. |
+| Receipt OCR isn't receipt understanding by itself | OCR can extract text, but line item names, prices, and quantities require parsing, and formats vary. | Return editable candidates and never auto-import unreviewed lines. |
+| Auto-consuming a previous item on rescan | False fuzzy matches could corrupt inventory and waste analytics. | Confirmation or reliable undo for MVP; add confidence scoring later. |
+| Exact lock-screen interaction differs by OS | User actions and long-press UI vary across Android/iOS and releases. | Use supported notification categories/actions and test real builds; provide in-app fallback. |
+| Background cleanup is not guaranteed at a precise time | iOS and Android govern background execution. | Reconcile on app startup/resume and API activity; treat background tasks as optional enhancement. |
+| Preset expiry durations are estimates | Food shelf life depends on storage and packaging. | Show estimate label, allow edits, prioritize printed use-by dates, and avoid food-safety guarantees. |
+| Household sharing scope may expand | Shared ownership complicates authorization/conflict handling. | Model household membership now; defer live collaborative sync to a later version. |
+| Third-party API cost/quota | OCR/recipes may be billed or rate-limited. | Check current provider pricing, quotas, and terms before launch; add server-side throttles and caching. |
+
+---
+
+## 10. MVP completion checklist
+
+### Product
+- [ ] All supplied screens are implemented faithfully.
+- [ ] Four-tab navigation and auth gating work.
+- [ ] Manual pantry flow is reliable.
+- [ ] OCR and barcode paths end in editable review before import.
+- [ ] Expiry alerts can be scheduled, edited, cancelled, and acted on.
+- [ ] Consumed, wasted, and assumed-consumed states are distinguishable.
+- [ ] AI Chef uses provider-backed recipes and has graceful failure handling.
+- [ ] Analytics are traceable to events and label estimates honestly.
+
+### Engineering
+- [ ] TypeScript, lint, unit tests, API tests, and available build checks pass.
+- [ ] Prisma migrations apply from a clean database.
+- [ ] Every user-owned query enforces auth/household ownership.
+- [ ] Secrets are server-side and not present in Git/mobile bundle/logs.
+- [ ] Request validation, rate limiting, timeouts, safe errors, and retry logic exist.
+- [ ] Privacy, retention, and account deletion behavior is documented and tested.
+- [ ] Actual device tests cover camera and notification behavior.
+- [ ] README and AGENTS.md accurately identify the current implementation state.
+
+---
+
+## 11. Official documentation to consult during implementation
+
+External SDKs change; the coding agent should consult these current references when implementing each phase rather than rely on remembered API signatures.
+
+- Expo Router: https://docs.expo.dev/router/introduction/
+- Expo Authentication guidance: https://docs.expo.dev/develop/authentication/
+- Expo Camera: https://docs.expo.dev/versions/latest/sdk/camera/
+- Expo Notifications: https://docs.expo.dev/versions/latest/sdk/notifications/
+- Neon Managed Better Auth overview: https://neon.com/docs/auth/overview
+- Neon Auth migration/current implementation guide: https://neon.tech/docs/guides/neon-auth
+- Prisma with Neon: https://docs.prisma.io/docs/orm/v6/overview/databases/neon
+- Express on Vercel: https://vercel.com/docs/frameworks/backend/express
+- Google Cloud Vision OCR: https://docs.cloud.google.com/vision/docs/ocr
+- Spoonacular recipe search by ingredients: https://www.postman.com/spoonacular-api/spoonacular-api/documentation/rqqne3j/spoonacular-api
+
+**Note on the chosen stack:** Vercel supports Express as a function, and Prisma supports Neon Postgres. Treat the exact runtime adapter/pooling configuration as a setup decision for the actual Prisma version you install; use a pooled runtime connection for application requests and the appropriate direct connection for migrations where required. Neon Managed Better Auth is built on Better Auth, but its currently supported SDK/API surface is not automatically identical to a self-hosted Better Auth backend. Verify native Expo OTP as an early proof of concept.

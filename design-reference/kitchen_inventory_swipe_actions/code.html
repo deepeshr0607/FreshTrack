@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;font-family:'Plus Jakarta Sans',sans-serif;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "inverse-on-surface": "#eef0ff", "on-primary": "#ffffff", "outline": "#6d7a72", "background": "#faf8ff", "surface-container-highest": "#dae2fd", "on-tertiary-container": "#fffbff", "tertiary": "#b90538", "tertiary-fixed-dim": "#ffb2b7", "on-primary-container": "#f5fff7", "on-surface-variant": "#3d4a42", "tertiary-container": "#dc2c4f", "tertiary-fixed": "#ffdadb", "surface-container": "#eaedff", "secondary-fixed": "#ffddb8", "surface-container-high": "#e2e7ff", "primary-fixed-dim": "#68dba9", "outline-variant": "#bccac0", "on-secondary-fixed-variant": "#653e00", "primary-container": "#00855d", "surface-container-low": "#f2f3ff", "surface-container-lowest": "#ffffff", "on-error-container": "#93000a", "on-primary-fixed-variant": "#005137", "on-background": "#131b2e", "on-error": "#ffffff", "inverse-primary": "#68dba9", "surface-dim": "#d2d9f4", "surface-bright": "#faf8ff", "secondary-container": "#fea619", "error": "#ba1a1a", "on-secondary-container": "#684000", "surface-variant": "#dae2fd", "primary": "#006948", "on-secondary-fixed": "#2a1700", "error-container": "#ffdad6", "on-surface": "#131b2e", "on-secondary": "#ffffff", "surface": "#faf8ff", "primary-fixed": "#85f8c4", "on-tertiary-fixed-variant": "#92002a", "inverse-surface": "#283044", "on-tertiary-fixed": "#40000d", "secondary": "#855300", "on-primary-fixed": "#002114", "surface-tint": "#006c4a", "secondary-fixed-dim": "#ffb95f", "on-tertiary": "#ffffff" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-2xs": "0.125rem", "space-2xl": "2rem", "space-lg": "1.25rem", "space-base": "1rem", "space-md": "0.75rem", "nav-floating-clearance": "5.5rem", "screen-gutter-mobile": "1rem", "space-xs": "0.25rem", "space-3xl": "2.5rem", "space-xl": "1.5rem", "space-sm": "0.5rem", "screen-gutter-tablet": "1.5rem" }, fontFamily: { "body-md": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "stat-counter": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"] }, fontSize: { "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }], "headline-lg": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "700" }], "display-lg-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "headline-sm": ["17px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "stat-counter": ["24px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col antialiased"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-screen-gutter-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="FreshTrack Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XVmN5ZB9cwN3muj2tqNyViB09jG6o6342xZPkSXaSvoOSV6kEM5UllEiLaT53kOEIkkygq-EWLBkD-tUOAuMIvSmxciQiHiSMynSVhhGWh69CxzdQm6qjXFId-wBWBDBjOy8FKEm04uEOohShAvbILhj4JniVdyM40B98wafE5oSYWMGvU9ufCU-EWPqlL0U62CgIeiZW3hehQnaP2nCsxZlAdK5kISSfB_xf6xsHbXjRRBviGYp-yMGc"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface leading-none tracking-tight">FreshTrack</span><span class="font-label-sm text-label-sm text-on-surface-variant leading-tight">Inventory</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Notifications" class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors relative"><span class="material-symbols-outlined">notifications</span><span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-tertiary"></span></button><div class="relative flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_MR3doMqM7WtNvNXGUU6xVydZXusszf8M6oLcDAz_Sc2aInQ-jWda0yqzquQWAnzmwki2cgEszlfBTl-3KVC0YjJpuqzqnm6U8mse97zEhwDwwuItx5wxVOc9fTzjCLu6YZNgqhxkVyufpSp6ZHzzdKUI6ZZbUbvw6dBXkmiN4UMReRkjqS1pIfJaa7UJsPjiaQQJ3IhK5MAn-NQJeQt_borXRkYyTWPGvQgrR3ep6msvCZyVsN4n"/></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-nav-floating-clearance bg-surface"><div class="flex flex-col w-full px-screen-gutter-mobile gap-space-base">
+<!-- Search & Barcode Quick Trigger Bar -->
+<div class="relative w-full pt-space-xs">
+<div class="flex items-center w-full bg-surface-container-lowest rounded-full shadow-sm px-space-base py-space-sm gap-space-sm">
+<span class="material-symbols-outlined text-outline text-[22px]">search</span>
+<input class="bg-transparent flex-1 text-on-surface placeholder:text-outline text-body-md font-body-md focus:outline-none min-w-0" placeholder="Search 24 pantry &amp; fridge items..." type="text"/>
+<button aria-label="Voice Search" class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+<button aria-label="Barcode Search" class="w-8 h-8 flex items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]">barcode_scanner</span>
+</button>
+</div>
+</div>
+<!-- Filter Carousel Chips -->
+<div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-0.5 -mx-screen-gutter-mobile px-screen-gutter-mobile">
+<button class="px-space-base py-space-xs rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm whitespace-nowrap active:scale-95 transition-all flex items-center gap-1.5">
+<span>All</span>
+<span class="bg-primary-container/80 text-on-primary px-1.5 py-0.5 rounded-full text-[10px] font-bold">24</span>
+</button>
+<button class="px-space-base py-space-xs rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all flex items-center gap-1.5 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span>Expiring Soon</span>
+<span class="font-bold">4</span>
+</button>
+<button class="px-space-base py-space-xs rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all">
+      Produce (8)
+    </button>
+<button class="px-space-base py-space-xs rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all">
+      Dairy &amp; Eggs (6)
+    </button>
+<button class="px-space-base py-space-xs rounded-full bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap active:scale-95 transition-all">
+      Pantry (10)
+    </button>
+</div>
+<!-- Dual-Tier Explainer Callout Banner -->
+<div class="w-full bg-surface-container-low rounded-xl p-space-base shadow-sm relative overflow-hidden">
+<div class="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-primary-fixed/20 pointer-events-none blur-xl"></div>
+<div class="flex items-start gap-space-sm relative z-10">
+<div class="w-8 h-8 rounded-full bg-surface-container-lowest flex items-center justify-center shadow-sm shrink-0 mt-0.5 text-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="flex-1 flex flex-col gap-0.5">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-on-surface">Dual-Tier Freshness Engine</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">Active</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug mt-0.5">
+<span class="inline-flex items-center text-primary font-semibold mr-1">
+<span class="w-2 h-2 rounded-full bg-primary inline-block mr-1"></span>Confirmed:
+          </span>Printed package date verified.
+          <br/>
+<span class="inline-flex items-center text-secondary font-semibold mr-1">
+<span class="w-2 h-2 rounded-full bg-secondary-container inline-block mr-1"></span>Estimated:
+          </span>AI shelf-life modeled for loose produce.
+        </p>
+</div>
+</div>
+</div>
+<!-- Action & Sort Controls -->
+<div class="flex items-center justify-between pt-space-xs">
+<button class="flex items-center gap-1.5 px-space-md py-space-xs bg-surface-container rounded-full text-on-surface-variant font-label-sm text-label-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[16px]">checklist</span>
+<span>Batch Select (0)</span>
+</button>
+<button class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">sort</span>
+<span>Sort: <strong class="text-on-surface font-semibold">Urgent Expiry First</strong></span>
+</button>
+</div>
+<!-- Inventory Card List with Interactive Gestures -->
+<div class="flex flex-col gap-space-md pb-space-lg">
+<!-- Card 1: Active Swipe-Right State (USED / SAVED) -->
+<div class="relative w-full overflow-hidden rounded-xl bg-primary-container shadow-md">
+<!-- Background Action Drawer (Revealed on Right Swipe) -->
+<div class="absolute inset-0 flex items-center justify-start px-space-lg text-on-primary gap-space-sm z-0">
+<div class="w-10 h-10 rounded-full bg-on-primary/20 flex items-center justify-center animate-bounce">
+<span class="material-symbols-outlined text-2xl text-on-primary">check_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm uppercase tracking-wide">Used</span>
+<span class="font-label-sm text-label-sm text-primary-fixed flex items-center gap-1">
+            +$3.99 Saved! 🎉
+          </span>
+</div>
+</div>
+<!-- Foreground Card Content (Shifted +140px right) -->
+<div class="relative z-10 bg-surface-container-lowest p-space-base rounded-xl transform translate-x-36 transition-transform shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-base">
+<div class="relative w-14 h-14 rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Vibrant crisp organic baby spinach leaves in eco-friendly biodegradable clear packaging, soft studio kitchen sunlight, pristine emerald green fresh produce photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsrrgqtSbaasnEbHrfkcn1i9D72qhFgFStSEAStW91qJ21ZwhiCSxIcxMJHI85DeRnwTskAHwuMSD_G7VtwU6mpTgTrLD5vtwwUK9TX1U9z4nI2Y5wf5sfCLWd29WG8iNEm-AkiZAI-A-NNVsoZoimX_fTiy73fSOUUw_aQkHECvCfyprsk7Km8PgxfPW6j9D_PwvvNxd-cMxX-SGVkWd0x0Ou4HAsu4X3-ETieSj63moFN0sHtEnC"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Organic Baby Spinach</span>
+<span class="font-label-sm text-label-sm text-tertiary font-bold shrink-0 bg-tertiary-fixed px-2 py-0.5 rounded-full">1 day left</span>
+</div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-secondary font-label-sm text-label-sm bg-secondary-fixed/50">
+<span class="material-symbols-outlined text-[13px]">auto_awesome</span>
+                Estimated
+              </span>
+<span class="font-body-sm text-body-sm text-outline">|</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">$3.99 value</span>
+</div>
+</div>
+</div>
+<!-- Expiry Progress Bar -->
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full w-[90%]"></div>
+</div>
+</div>
+</div>
+<!-- Card 2: Active Swipe-Left State (WASTED / LOSS) -->
+<div class="relative w-full overflow-hidden rounded-xl bg-tertiary shadow-md">
+<!-- Background Action Drawer (Revealed on Left Swipe) -->
+<div class="absolute inset-0 flex items-center justify-end px-space-lg text-on-tertiary gap-space-sm z-0">
+<div class="flex flex-col items-end">
+<span class="font-headline-sm text-headline-sm uppercase tracking-wide">Wasted</span>
+<span class="font-label-sm text-label-sm text-tertiary-fixed">-$4.29 Loss 🥀</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-on-tertiary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl text-on-tertiary">delete_outline</span>
+</div>
+</div>
+<!-- Foreground Card Content (Shifted -48px left) -->
+<div class="relative z-10 bg-surface-container-lowest p-space-base rounded-xl transform -translate-x-12 transition-transform shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-base">
+<div class="relative w-14 h-14 rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Fresh vibrant red sweet strawberries with dewdrops in a paper pulp eco container on a clean marble kitchen countertop, warm morning natural illumination" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6mmerzK_ejM9B_k1l1FCtYWVe2qs3Y9UGyM1hTkRHTSd17-3oXTdv-YyzZKqEgSUIj0NYz6EA5hfFD0dnczs0VAt5y3_9zgRV7661oH8q4MaruryDVw4xS4ZaJFMEy5SoKLmBVA2auF7yo3YpTl04323iFyF1MkkXqqrFbv0jFQwnDMT0lRkXV1WQpQA4nQ5BBTkXfKomMAfg4kpgo61FMLDcqYmuWn8OOWt9M4rt0VPVkCbaflAm"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Organic Strawberries</span>
+<span class="font-label-sm text-label-sm text-tertiary font-bold shrink-0 bg-tertiary-fixed px-2 py-0.5 rounded-full">Today</span>
+</div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-secondary font-label-sm text-label-sm bg-secondary-fixed/50">
+<span class="material-symbols-outlined text-[13px]">auto_awesome</span>
+                Estimated
+              </span>
+<span class="font-body-sm text-body-sm text-outline">|</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">$4.29 value</span>
+</div>
+</div>
+</div>
+<!-- Expiry Progress Bar (Critical) -->
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full w-[98%]"></div>
+</div>
+</div>
+</div>
+<!-- Card 3: Horizon Organic Milk (Confirmed Scanned) -->
+<div class="group relative w-full bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-base">
+<div class="relative w-14 h-14 rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="A carton of organic whole milk sitting chilled on a kitchen wooden prep table with condensation, soft morning daylight, professional product food photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADahw15zkozB-eiMN-b5pl9ZNCLbsV4WpPCdwrSQ-hpUrs7T2PNXtMaW2aoEdoO8seRjobl40c66znvDxw9fwYG4PBHKGbAoZTnIYQlfb0pNQ8b1ovZJ56tbuUA_jkoRzPhGxRd1HTLW_NSCXKAMFrzjf7RKT9iy8XggXyCrqWboyqmw79LoU1MnP4bfWSEQAdBFROBC-lILjkAT6i-yejeV5C1ZZ0rl3nkyY5Eg4OpyYlN2a2dTsR"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Horizon Organic Whole Milk</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold shrink-0 bg-secondary-fixed/60 px-2 py-0.5 rounded-full">3 days left</span>
+</div>
+<div class="flex items-center gap-space-xs mt-1 flex-wrap">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-primary font-label-sm text-label-sm bg-primary-fixed/50">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+              Confirmed (Jun 14)
+            </span>
+<span class="font-body-sm text-body-sm text-outline">|</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">$4.49</span>
+<span class="font-body-sm text-body-sm text-outline">|</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Dairy</span>
+</div>
+</div>
+</div>
+<!-- Health Progress Meter -->
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full w-[65%]"></div>
+</div>
+<!-- Quick Action Buttons Drawer Trigger Hint -->
+<div class="flex items-center justify-between pt-1 text-outline-variant">
+<span class="font-label-sm text-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">swipe</span>
+          Swipe right if consumed
+        </span>
+<div class="flex items-center gap-1">
+<button aria-label="Mark Cooked" class="w-7 h-7 rounded-full bg-surface-container hover:bg-primary-fixed hover:text-primary flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</button>
+<button aria-label="Recipe Match" class="w-7 h-7 rounded-full bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[16px]">skillet</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 4: Greek Yogurt (Fresh / Confirmed) -->
+<div class="relative w-full bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-base">
+<div class="relative w-14 h-14 rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="A tub of creamy Greek vanilla yogurt with a wooden spoon nearby, clean bright Scandinavian kitchen lighting, organic natural breakfast aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEJIvnpHNVbt69a9-YIzMzOhs6MfGobLnSnu9wZGodJoJQEd6R0B7oAorzvjTjUoQPCXfvRPXj4jsRcHAxkptVbK3tPwgfoiojeIECUNYmOQbLIZo-Lj7Bwa8xmD_AcpvNJLRjlp_V7FBfsWljo1IlqiCEv5H5MLDkAolytD2YuciRujjDE9w-e2aFP1SmhHM0FnjVLfkDenkad47kmML9uQowKD06DDVGiPZ2O4SzwFyduNoiuxOh"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Greek Yogurt Vanilla 32oz</span>
+<span class="font-label-sm text-label-sm text-primary font-bold shrink-0 bg-primary-fixed/60 px-2 py-0.5 rounded-full">6 days left</span>
+</div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-primary font-label-sm text-label-sm bg-primary-fixed/50">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+              Confirmed (Jun 18)
+            </span>
+<span class="font-body-sm text-body-sm text-outline">|</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">$5.29</span>
+</div>
+</div>
+</div>
+<!-- Fresh Health Meter -->
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full w-[30%]"></div>
+</div>
+</div>
+<!-- Card 5: Hass Avocados (Estimated + AI Pairing Delight) -->
+<div class="relative w-full bg-surface-container-lowest p-space-base rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col gap-space-sm">
+<div class="flex items-start gap-space-base">
+<div class="relative w-14 h-14 rounded-lg overflow-hidden bg-surface-container shrink-0">
+<img class="w-full h-full object-cover" data-alt="Ripe dark green Hass avocados in a mesh bag on a clean bright counter, cut avocado half showing creamy green center and stone, natural sunbeams" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAV1YlbaVKujP_1F9CqXb6kr3X8CaqoEKOlotrlG-yhC5ExCmaDjgVwpPRcqliKCwy_ibjEgFF0caxqsL6rJOE7tsspOaJnAsz3S74tPK6hUKBSdHGS4KiVnbkpWRaKNsLPf7gG5x26vOGUSs6B_ejrWalvsMvEwFhkHyYcLcJoM44i9uzffEHD2ZRUBswEpW5BCOBBZx4owuBOuHEvbdlKWZa2-RjMB6GxJEb64zEZavcvnw9Pa4wR"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Ripe Hass Avocados (Pack of 4)</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold shrink-0 bg-secondary-fixed/60 px-2 py-0.5 rounded-full">2 days left</span>
+</div>
+<div class="flex items-center gap-space-xs mt-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-secondary font-label-sm text-label-sm bg-secondary-fixed/50">
+<span class="material-symbols-outlined text-[13px]">auto_awesome</span>
+              Estimated
+            </span>
+<span class="font-body-sm text-body-sm text-outline">|</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">$4.99</span>
+</div>
+</div>
+</div>
+<!-- Health Meter -->
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full w-[78%]"></div>
+</div>
+<!-- Micro Delight Prompt: Recipe Companion Suggestion -->
+<div class="flex items-center justify-between bg-surface-container-low px-space-base py-space-xs rounded-lg mt-1">
+<div class="flex items-center gap-space-xs text-on-surface-variant min-w-0">
+<span class="material-symbols-outlined text-secondary text-[18px] shrink-0">lightbulb</span>
+<span class="font-body-sm text-body-sm truncate"><strong class="font-semibold text-on-surface">Chef Tip:</strong> Pair with eggs for avocado toast</span>
+</div>
+<button class="shrink-0 text-primary font-label-sm text-label-sm hover:underline pl-2 font-bold">
+          Cook Now
+        </button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for demonstration: allow toggling swipe previews back and forth
+  document.querySelectorAll('[class*="translate-x"]').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('translate-x-36')) {
+        card.classList.remove('translate-x-36');
+      } else if (card.classList.contains('-translate-x-12')) {
+        card.classList.remove('-translate-x-12');
+      } else {
+        card.classList.add('translate-x-36');
+      }
+    });
+  });
+</script></main><div class="fixed bottom-0 w-full z-50 pb-safe pointer-events-none px-screen-gutter-mobile mb-space-sm"><nav class="pointer-events-auto max-w-[410px] mx-auto bg-surface-container-lowest/85 backdrop-blur-xl rounded-full shadow-[0_12px_32px_rgba(15,23,42,0.12)] px-space-sm py-space-xs flex items-center justify-between" data-active-classes="text-primary font-bold"><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span class="font-label-sm text-label-sm mt-0.5">Home</span></a><a aria-current="page" class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 h-12 transition-colors text-primary font-bold" data-path="inventory" href="#"><span class="material-symbols-outlined text-[22px]">kitchen</span><span class="font-label-sm text-label-sm mt-0.5">Pantry</span></a><div class="relative -top-4 flex items-center justify-center px-1"><a aria-label="Scan Item or Receipt" class="w-14 h-14 min-w-[56px] min-h-[56px] rounded-full bg-gradient-to-tr from-primary to-primary-container text-on-primary shadow-[0_8px_20px_rgba(0,105,72,0.38)] flex items-center justify-center active:scale-95 transition-transform hover:opacity-95" data-path="scan-modal" href="#"><span class="material-symbols-outlined text-[28px]">barcode_scanner</span></a></div><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="recipes" href="#"><span class="material-symbols-outlined text-[22px]">skillet</span><span class="font-label-sm text-label-sm mt-0.5">Recipes</span></a><a class="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 h-12 text-on-surface-variant hover:text-on-surface transition-colors" data-path="analytics" href="#"><span class="material-symbols-outlined text-[22px]">bar_chart_4_bars</span><span class="font-label-sm text-label-sm mt-0.5">Insights</span></a></nav></div></body></html>
