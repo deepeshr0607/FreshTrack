@@ -58,13 +58,13 @@ export default function SignUpScreen() {
     // Phase 1: simulate navigation to OTP verification
     setTimeout(() => {
       setLoading(false);
-      router.push('/(auth)/verify-otp');
+      router.push('/(auth)/verify-otp' as any);
     }, 800);
   };
 
   const handleTabSwitch = (tab: Tab) => {
     if (tab === 'sign-in') {
-      router.replace('/(auth)/sign-in');
+      router.replace('/(auth)/sign-in' as any);
     }
   };
 
@@ -229,7 +229,7 @@ export default function SignUpScreen() {
             Already have an account?{' '}
             <Text
               style={styles.footerLink}
-              onPress={() => router.replace('/(auth)/sign-in')}
+              onPress={() => router.replace('/(auth)/sign-in' as any)}
             >
               Log In
             </Text>

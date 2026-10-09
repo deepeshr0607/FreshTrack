@@ -69,7 +69,7 @@ export default function WelcomeScreen() {
         {/* CTA buttons */}
         <Pressable
           style={({ pressed }) => [styles.getStartedBtn, pressed && styles.pressed]}
-          onPress={() => router.push('/(auth)/sign-up')}
+          onPress={() => router.push('/(auth)/sign-up' as any)}
           accessibilityRole="button"
           accessibilityLabel="Get Started"
         >
@@ -78,7 +78,7 @@ export default function WelcomeScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.loginBtn, pressed && styles.pressed]}
-          onPress={() => router.push('/(auth)/sign-in')}
+          onPress={() => router.push('/(auth)/sign-in' as any)}
           accessibilityRole="button"
           accessibilityLabel="Log In"
         >
