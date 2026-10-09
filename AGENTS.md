@@ -1,41 +1,211 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# AGENTS.md — FreshTrack Agent Instructions
 
-## Expo has changed — do not trust your training data
+> **Read this file before editing any code.**
+> Read `README.md` and `docs/FreshTrack_Implementation_Plan.md` for additional context.
+> Run `git log --oneline -10` and `git status` to find the current state.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+---
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+## 1. Project Overview
 
-## Commands
+FreshTrack is a cross-platform mobile application that reduces household food waste. It lets users track groceries, monitor freshness and expiry dates, receive local notifications, discover recipes from near-expiry ingredients, and review the financial cost of wasted food.
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+**Stack:**
+- Mobile: React Native + Expo (managed workflow) + TypeScript + Expo Router
+- Backend: Node.js + Express + TypeScript, deployed to Vercel
+- Database: Neon PostgreSQL via Prisma ORM
+- Auth: Neon Auth (Managed Better Auth) — must be verified for Expo/React Native OTP flow before using
+- Third-party APIs (server-side only): Google Cloud Vision (OCR), Spoonacular (recipes)
 
-```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+---
+
+## 2. Repository Layout
+
+```
+FreshTrack/
+├── app/                         # Expo Router routes
+│   ├── (auth)/                  # sign-up, OTP verify, sign-in (Phase 2)
+│   ├── (tabs)/                  # Pantry, Scanner, AI Chef, Analytics (Phases 1–8)
+│   ├── settings/                # profile, notifications, privacy (Phase 9)
+│   └── _layout.tsx              # root navigator
+├── assets/                      # fonts, icons, splash
+├── components/                  # reusable UI components (Phase 1+)
+├── context/                     # React Context providers (Phase 2+)
+├── features/                    # feature modules: pantry, scanner, chef, analytics, auth
+├── lib/                         # API client, date/currency helpers, validation
+├── types/                       # shared TypeScript types
+├── design-reference/            # supplied screen designs (READ BEFORE IMPLEMENTING UI)
+├── docs/                        # product spec and implementation plan
+├── backend/
+│   ├── src/
+│   │   ├── app.ts               # Express application factory
+│   │   ├── server.ts            # HTTP server entry-point
+│   │   ├── routes/              # route registration
+│   │   ├── controllers/         # HTTP boundary only (Phase 3+)
+│   │   ├── services/            # business rules and integrations (Phase 3+)
+│   │   ├── middleware/          # auth, validation, errors, rate limits (Phase 3+)
+│   │   ├── integrations/        # Vision and Spoonacular clients (Phases 6–7)
+│   │   └── lib/                 # Prisma singleton, logger, config (Phase 3+)
+│   ├── prisma/
+│   │   └── schema.prisma        # placeholder; full schema in Phase 3
+│   ├── tests/
+│   │   └── health.test.ts       # health endpoint test (passing)
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example             # required env vars with dummy values — NO real secrets
+├── tests/                       # mobile/shared integration tests (Phase 1+)
+├── AGENTS.md                    # THIS FILE
+├── README.md
+├── .gitignore
+└── package.json                 # Expo app scripts and dependencies
 ```
 
-Run lint and typecheck before declaring any task done.
+---
 
-## Navigation & Routing
+## 3. Architectural Boundaries
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+These boundaries are **non-negotiable**:
 
-## Building with EAS
+1. **No secrets in mobile code.** Database URL, Google Cloud credentials, and Spoonacular API key must only appear in Vercel environment config and `backend/.env`. Never in `EXPO_PUBLIC_*` variables, mobile source, or the repository.
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+2. **No direct database access from mobile.** All data flows through authenticated HTTPS endpoints in `backend/`.
 
-## Rules
+3. **Third-party APIs are server-side only.** Google Cloud Vision and Spoonacular must only be called from the backend.
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+4. **Authentication must be verified before production data endpoints.** Do not build full auth/session infrastructure until the Expo + Neon Auth OTP flow is confirmed to work (Phase 2 gate).
+
+5. **Expo Router is the navigation layer.** All routes live in `app/`. Do not use `react-navigation` directly.
+
+6. **Use `npx expo install` for Expo-managed native modules** — not `npm install` — to get SDK-compatible versions.
+
+---
+
+## 4. Security Rules
+
+- Never log OTPs, tokens, secrets, raw session material, or receipt image content.
+- Validate every request body, route param, and query param on the server.
+- Every user-owned API endpoint must derive identity from a verified server-side session — never trust a client-supplied `userId`.
+- Every pantry query must be scoped to the authenticated user's household.
+- Make status-changing endpoints idempotent (use idempotency keys for notification actions).
+- Use database transactions for status changes that must also append a `PantryItemEvent`.
+- Keep test data strictly separate from production data.
+
+---
+
+## 5. Coding Conventions
+
+### General
+- TypeScript strict mode is enabled in both mobile and backend.
+- Run `npx tsc --noEmit` before declaring any change done.
+- Do not leave `console.log` debug statements in committed code.
+- Preserve all existing comments and docstrings unless you have a documented reason to remove them.
+
+### Mobile (Expo / React Native)
+- File-based routing with Expo Router. Route files live in `app/`. Non-route code lives in `components/`, `features/`, `lib/`, `context/`, `types/`.
+- Import `Link`, `router`, `useLocalSearchParams` from `expo-router`.
+- Import UI primitives from `react-native`, not from `@react-native-community/...` packages unless Expo recommends them.
+- Check `docs/FreshTrack_Implementation_Plan.md § 11` for official documentation URLs before implementing any Expo SDK integration.
+- Never add `ios/` or `android/` directories manually — Expo manages them.
+
+### Backend (Express / TypeScript)
+- The Express app is in `backend/src/app.ts` (factory function, no `listen` call).
+- The server entry-point is `backend/src/server.ts` (imports factory, calls `listen`).
+- Keep controllers thin (HTTP boundary only). Business logic goes in `services/`.
+- Use `prisma` singleton from `backend/src/lib/` (to be created in Phase 3).
+- Use structured logging; do not use `console.log` in production paths.
+- Return a consistent response shape: `{ data: ... }` for success, `{ error: { code, message, requestId } }` for failures.
+
+### Design
+- Reproduce the supplied designs in `design-reference/` — do not invent a different visual direction.
+- Use the design tokens from `design-reference/freshtrack_design_system/DESIGN.md`.
+- Primary font: **Plus Jakarta Sans**.
+- Primary palette: Emerald green (`#006948` / `#059669`), Amber (`#F59E0B`), Rose (`#F43F5E`), Azure (`#0EA5E9`), Neutral surface (`#FAF8FF`).
+
+---
+
+## 6. Phase-by-Phase Workflow
+
+### Before each phase
+1. Read this file, `README.md`, the current phase in `docs/FreshTrack_Implementation_Plan.md`, `git status`, and recent commits.
+2. Inspect the current implementation and tests before editing files.
+3. Work on only one phase at a time — never implement two phases in one pass.
+4. Use the official versioned docs (links in `docs/FreshTrack_Implementation_Plan.md § 11`) for any Expo/SDK API.
+
+### After each phase
+1. Run `npx tsc --noEmit` (mobile), `cd backend && npx tsc --noEmit` (backend), and all applicable tests.
+2. Fix all errors introduced by the changes.
+3. Report changed files, commands run, results, and remaining work honestly.
+4. Update the **Project Status** section in `README.md` and this file.
+5. Review `git diff` — remove debug logs and check for secrets.
+6. Commit the checkpoint before starting the next phase.
+
+### Handoff prompt for Codex
+> Continue the existing FreshTrack repository; do not recreate it. Read `AGENTS.md`, `README.md`, and `docs/FreshTrack_Implementation_Plan.md`, inspect `git status` and recent commits, and determine the first incomplete acceptance criterion in the current phase. Implement only that phase's next small vertical slice. Preserve the existing Expo SDK, designs, API contracts, and Prisma schema unless a documented issue requires a change. Use current official docs for SDK-sensitive integration. Run the applicable tests and checks; report actual results and remaining gaps. Do not start another phase until asked.
+
+---
+
+## 7. Design Reference Index
+
+All screen designs are in `design-reference/`. Inspect every image before implementing any UI.
+
+| Directory | Screen / State |
+|---|---|
+| `freshtrack_welcome_get_started_centered_hero/` | Welcome / landing screen with "Get Started" CTA |
+| `freshtrack_account_sign_up_login/` | Sign-up form (name, email, password, digest opt-in) |
+| `freshtrack_account_log_in/` | Log-in form (email, password, remember device, social auth) |
+| `freshtrack_dynamic_hub/` | Home/Dashboard tab — kitchen digest, rescue value, expiring items carousel, actionable recipes, recent additions with swipe actions |
+| `kitchen_inventory_swipe_actions/` | Pantry/Inventory tab — search, filter chips, dual-tier freshness engine banner, item cards with swipe-right (used) / swipe-left (wasted) |
+| `packaged_item_expiry_verification/` | Scanner — packaged item expiry verification modal with camera, date OCR, barcode, item queue |
+| `receipt_ocr_scanner/` | Scanner — receipt OCR modal showing detected haul, parsed groceries, and "Add Haul to Kitchen Inventory" action |
+| `recipe/` | AI Chef / Recipes tab — rescue-first ingredients, filter chips, featured recipe card, "Cook With What You Have" list, AI Fridge Chef input |
+| `financial_eco_analytics/` | Analytics / Insights tab — waste prevention score, money saved, food wasted, CO₂ prevented, monthly waste trend chart, category breakdown, hero rescues |
+| `freshtrack_design_system/` | Design system tokens (DESIGN.md): colors, typography, spacing, elevation, components |
+
+---
+
+## 8. Current Phase and Status
+
+### Phase 0 — COMPLETE ✓
+
+**Completed tasks:**
+- [x] Audited existing Expo SDK 57 + Expo Router + TypeScript project
+- [x] Preserved existing Expo Router and TypeScript configuration
+- [x] Created project structure: `components/`, `features/`, `context/`, `lib/`, `types/`
+- [x] Created `backend/` Express TypeScript project with health endpoint
+- [x] Backend TypeScript check passes (`npx tsc --noEmit` → 0 errors)
+- [x] Mobile TypeScript check passes (`npx tsc --noEmit` → 0 errors)
+- [x] Health endpoint test passes (`GET /api/v1/health` → 200 `{ data: { status: "ok" } }`)
+- [x] Backend: `backend/.env.example` created with all required variable names
+- [x] `.gitignore` updated to exclude all `.env` variants and `backend/dist/`
+- [x] `AGENTS.md` created (this file)
+- [x] `README.md` created with setup instructions and current status
+
+**Pre-existing issue fixed:**
+- `components/ExternalLink.tsx` had a type error in the Expo SDK 57 template (`href` prop). Fixed by casting to the correct Expo Router `Href` type.
+
+**Not yet done (later phases):**
+- [ ] Expo starter tested on a real device or simulator (requires running `expo start` in a terminal with a device connected — cannot be automated)
+- [ ] Authentication (Phase 2)
+- [ ] Database schema and Prisma migrations (Phase 3)
+- [ ] Pantry CRUD API and screens (Phases 1 + 4)
+- [ ] Notifications (Phase 5)
+- [ ] Scanner / OCR / barcode (Phase 6)
+- [ ] AI Chef / Spoonacular (Phase 7)
+- [ ] Analytics (Phase 8)
+- [ ] Settings, privacy, release (Phase 9)
+
+### Next phase: Phase 1 — Implement the supplied designs and navigation
+
+---
+
+## 9. Known Risks and Open Decisions
+
+| Risk | Status |
+|---|---|
+| Neon Auth OTP + Expo native SDK compatibility | **Unverified** — must be confirmed in Phase 2 before building production auth |
+| Barcode catalog provider | **Not selected** — decide in Phase 6 |
+| Receipt OCR accuracy | **Known limitation** — return editable candidates only; never auto-import |
+| Auto-consuming item on rescan | **Deferred** — require user confirmation in MVP |
+| Notification lock-screen actions differ by OS | **Known** — use supported categories/actions and test on real builds |
+| Background cleanup not guaranteed at exact time | **Known** — reconcile on app open/resume instead |
+| Spoonacular quota and cost | **Not budgeted** — check before launch |

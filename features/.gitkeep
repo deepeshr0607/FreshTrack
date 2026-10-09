@@ -1,0 +1,11 @@
+// features/ — Feature modules for FreshTrack.
+//
+// Planned sub-directories (Phase 1 and beyond):
+//   features/pantry/    — pantry list, item card, create/edit forms
+//   features/scanner/   — barcode scan, receipt capture, review sheet
+//   features/chef/      — AI Chef, recipe cards, missing-item list
+//   features/analytics/ — waste metrics, monthly chart, reconciliation
+//   features/auth/      — sign-up, OTP verify, sign-in, settings
+//
+// Phase 0: This file is a placeholder. Do not add logic here yet.
+// See docs/FreshTrack_Implementation_Plan.md for feature-phase details.
