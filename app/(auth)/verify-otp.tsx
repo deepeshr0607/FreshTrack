@@ -55,7 +55,7 @@ export default function VerifyOtpScreen() {
     // Phase 1: simulate OTP success → navigate to app
     setTimeout(() => {
       setLoading(false);
-      router.replace('/(tabs)/');
+      router.replace('/(tabs)/' as any);
     }, 800);
   };
 

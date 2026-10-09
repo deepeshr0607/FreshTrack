@@ -35,7 +35,7 @@ export default function SignInScreen() {
     // Phase 1: simulate successful login → navigate to app
     setTimeout(() => {
       setLoading(false);
-      router.replace('/(tabs)/');
+      router.replace('/(tabs)/' as any);
     }, 800);
   };
 
@@ -74,7 +74,7 @@ export default function SignInScreen() {
           <View style={styles.tabSwitcher}>
             <Pressable
               style={styles.tabBtn}
-              onPress={() => router.replace('/(auth)/sign-up')}
+              onPress={() => router.replace('/(auth)/sign-up' as any)}
               accessibilityRole="tab"
               accessibilityState={{ selected: false }}
             >
@@ -166,7 +166,7 @@ export default function SignInScreen() {
             Don't have an account?{' '}
             <Text
               style={styles.footerLink}
-              onPress={() => router.replace('/(auth)/sign-up')}
+              onPress={() => router.replace('/(auth)/sign-up' as any)}
             >
               Sign Up
             </Text>

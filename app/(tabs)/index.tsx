@@ -32,7 +32,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScreenHeader subtitle="Dashboard" />
+      <ScreenHeader title="FreshTrack" subtitle="Dashboard" />
 
       <ScrollView
         style={styles.scroll}
@@ -78,7 +78,7 @@ export default function HomeScreen() {
               3 items need attention today (
               <Text style={styles.digestValue}>$8.40 value</Text> to rescue)
             </Text>
-            <Pressable onPress={() => router.push('/(tabs)/recipes')} accessibilityRole="link">
+            <Pressable onPress={() => router.push('/(tabs)/recipes' as any)} accessibilityRole="link">
               <Text style={styles.digestCta}>Tap to view recovery meal plan →</Text>
             </Pressable>
           </View>
@@ -119,7 +119,7 @@ export default function HomeScreen() {
             <View style={styles.redDot} />
             <Text style={styles.sectionTitle}>Expiring This Week</Text>
           </View>
-          <Pressable onPress={() => router.push('/(tabs)/pantry')} accessibilityRole="link">
+          <Pressable onPress={() => router.push('/(tabs)/pantry' as any)} accessibilityRole="link">
             <Text style={styles.seeAll}>See All ({expiringItems.length})</Text>
           </Pressable>
         </View>
@@ -129,7 +129,7 @@ export default function HomeScreen() {
             <Pressable
               key={item.id}
               style={styles.expiryCard}
-              onPress={() => router.push(`/pantry/${item.id}`)}
+              onPress={() => router.push(`/pantry/${item.id}` as any)}
               accessibilityRole="button"
               accessibilityLabel={item.name}
             >
@@ -146,7 +146,7 @@ export default function HomeScreen() {
               </Text>
               <Pressable
                 style={styles.pairBtn}
-                onPress={() => router.push('/(tabs)/recipes')}
+                onPress={() => router.push('/(tabs)/recipes' as any)}
                 accessibilityRole="button"
                 accessibilityLabel="Pair recipe"
               >
@@ -168,7 +168,7 @@ export default function HomeScreen() {
             <Pressable
               key={recipe.id}
               style={styles.recipeHeroCard}
-              onPress={() => router.push(`/recipe/${recipe.id}`)}
+              onPress={() => router.push(`/recipe/${recipe.id}` as any)}
               accessibilityRole="button"
               accessibilityLabel={recipe.title}
             >
@@ -203,7 +203,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Additions</Text>
           <Pressable accessibilityRole="link">
-            <Text style={styles.swipeHint}>↔ Swipe actions</Text>
+            <Text style={styles.seeAll}>↔ Swipe</Text>
           </Pressable>
         </View>
 
@@ -211,7 +211,7 @@ export default function HomeScreen() {
           <Pressable
             key={item.id}
             style={styles.recentCard}
-            onPress={() => router.push(`/pantry/${item.id}`)}
+            onPress={() => router.push(`/pantry/${item.id}` as any)}
             accessibilityRole="button"
             accessibilityLabel={item.name}
           >

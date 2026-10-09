@@ -7,10 +7,10 @@
  */
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Tabs, router } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Elevation, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
 
 const TAB_ICONS: Record<string, { icon: string; label: string }> = {
   index: { icon: '🏠', label: 'Home' },
@@ -26,7 +26,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View style={[styles.tabBarWrapper, { paddingBottom: insets.bottom + 8 }]}>
       <View style={styles.tabBar}>
-        {state.routes.map((route, index) => {
+        {(state.routes as Array<{ key: string; name: string }>).map((route, index: number) => {
           const { options } = descriptors[route.key]!;
           const isFocused = state.index === index;
           const isScanner = route.name === 'scanner';
