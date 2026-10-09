@@ -1,15 +1,15 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# ── Dependencies ──────────────────────────────────────────────────────────────
 node_modules/
 
-# Expo
+# ── Expo ──────────────────────────────────────────────────────────────────────
 .expo/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# ── Native generated (Expo Continuous Native Generation) ──────────────────────
+/ios
+/android
 .kotlin/
 *.orig.*
 *.jks
@@ -18,24 +18,43 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
-# Metro
+# ── Metro bundler ─────────────────────────────────────────────────────────────
 .metro-health-check*
 
-# debug
+# ── Debug logs ────────────────────────────────────────────────────────────────
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
 
-# macOS
+# ── macOS ─────────────────────────────────────────────────────────────────────
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
-
-# typescript
+# ── TypeScript ────────────────────────────────────────────────────────────────
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# ── Environment / secrets — NEVER commit these ────────────────────────────────
+# .env.example IS committed (placeholder values only, no real secrets)
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+backend/.env.development
+backend/.env.production
+backend/.env.staging
+backend/.env.test
+
+# ── Backend build output ──────────────────────────────────────────────────────
+backend/dist/
+backend/coverage/
+
+# ── Prisma ────────────────────────────────────────────────────────────────────
+# Generated client is rebuilt from `prisma generate` — don't commit it
+backend/node_modules/.prisma/
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo

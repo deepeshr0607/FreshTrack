@@ -8,7 +8,9 @@ export function ExternalLink(props: Omit<ComponentProps<typeof Link>, 'href'> & 
     <Link
       target="_blank"
       {...props}
-      href={props.href}
+      // External URLs are valid href values; cast here to satisfy Expo Router's
+      // typed href while keeping the public API accepting a plain string.
+      href={props.href as ComponentProps<typeof Link>['href']}
       onPress={(e) => {
         if (Platform.OS !== 'web') {
           // Prevent the default behavior of linking to the default browser on native.

@@ -1,0 +1,11 @@
+// types/ — Shared TypeScript types for the FreshTrack mobile app.
+//
+// Planned type files (Phase 1 and beyond):
+//   types/pantry.ts     — PantryItem, PantryItemStatus, ExpirySource
+//   types/auth.ts       — Session, User
+//   types/api.ts        — ApiResponse<T>, ApiError, pagination shapes
+//   types/analytics.ts  — MonthlySummary, WasteTrend, ReconciliationItem
+//   types/recipe.ts     — Recipe, Ingredient, MissingIngredient
+//   types/scanner.ts    — ReceiptScan, ReceiptLineItem, BarcodeResult
+//
+// Phase 0: This file is a placeholder. Do not add types here yet.

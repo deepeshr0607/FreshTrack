@@ -1,0 +1,35 @@
+// This file is intentionally a placeholder for Phase 3.
+// The Prisma schema will define the FreshTrack application tables:
+// Household, HouseholdMember, PantryItem, PantryItemEvent,
+// ReceiptScan, UserPreference, and RecipeCache.
+//
+// Rules:
+// - Keep neon_auth managed tables separate; do not recreate them here.
+// - Store monetary values in integer minor units (e.g. paise for INR).
+// - Store timestamps in UTC (timestamptz).
+// - Use prisma migrate dev (never db push) for permanent migration strategy.
+// - Add a DIRECT_URL to schema.prisma for the non-pooled migration connection.
+//
+// See docs/FreshTrack_Implementation_Plan.md § Phase 3 for the full schema spec.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ── Placeholder model (will be replaced in Phase 3) ─────────────────────────
+// Uncomment and run `prisma migrate dev` after setting DATABASE_URL.
+//
+// model Household {
+//   id           String   @id @default(uuid()) @db.Uuid
+//   name         String
+//   currencyCode String   @default("INR")
+//   timezone     String   @default("Asia/Kolkata")
+//   createdAt    DateTime @default(now())
+//   updatedAt    DateTime @updatedAt
+// }

@@ -1,0 +1,12 @@
+// lib/ — Shared utility modules for the FreshTrack mobile app.
+//
+// Planned utilities (Phase 1 and beyond):
+//   lib/api.ts          — Authenticated HTTPS client (fetch wrapper)
+//   lib/dates.ts        — Expiry date helpers, freshness threshold checks
+//   lib/currency.ts     — INR / currency formatting
+//   lib/validation.ts   — Shared Zod schemas for forms
+//   lib/freshness.ts    — Preset duration dictionary (milk=7d, spinach=5d, …)
+//
+// Phase 0: This file is a placeholder. Do not add logic here yet.
+// IMPORTANT: Never import database URLs, Google credentials, or Spoonacular
+// keys from this layer. All secret-dependent calls go through the backend API.

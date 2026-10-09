@@ -1,0 +1,9 @@
+// context/ — React Context providers for FreshTrack.
+//
+// Planned providers (Phase 2 and beyond):
+//   - SessionContext  : wraps Neon Auth session, user identity, and sign-out.
+//   - PantryContext   : current active pantry items fetched from the API,
+//                       with cache, loading, and error state.
+//
+// Phase 0: This file is a placeholder. Do not add logic here yet.
+// See docs/FreshTrack_Implementation_Plan.md § Phase 2 and 4 for details.
