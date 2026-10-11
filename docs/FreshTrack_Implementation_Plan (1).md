@@ -549,19 +549,22 @@ CLI health200 and tokenless household401 pass. User approved disabling Vercel Au
 dedicated development API; project ssoProtection is null. Public health200, tokenless identity/household401
 and invalid-token401 pass. Ignored mobile API URL points to HTTPS Preview; both TypeScript checks pass
 again. User confirmed hosted Settings → Check Backend Identity passes on iPhone. Hosted Prisma/Neon
-database access remains unverified. Git integration failed; CLI deployment passed.
+database read also passes on iPhone by user report with the expected no-household result.
+Git integration failed; CLI deployment passed.
 Initial production-labelled attempt failed safely, Preview retry needed NODE_ENV; no production DB writes.
 
 Both TypeScript/build/local preview build pass; backend29/29, deployment rerun4/4, root70/70,
 health1/1 and guards4/4 pass. Runtime audit0; full cloud audit36 dev-tool findings; lint gaps remain.
-See [deployment evidence and next steps](Phase_3_Deployment.md). Next: authenticated hosted household
-read to verify the database connection, then final Phase 3 review. Phase 4 has not started.
+See [deployment evidence and next steps](Phase_3_Deployment.md). Next: final Phase 3 acceptance review
+and checkpoint. Phase 4 has not started.
 
 Read-only native database probe is now implemented under development Settings. It verifies matching
 identity then calls household GET with the same transient JWT, accepts the specific no-household
 response, and rejects service/auth/invalid-response failures. No records are created and Pantry stays
 mock. Both TypeScript checks, root73/73 and backend health1/1 pass; existing lint gaps remain.
-Hosted database success is not yet claimed: user iPhone check is pending.
+User confirmed “Backend database verified” with “No household is set up for this account yet” on
+iPhone. The authenticated scoped database query passes; no records created. Hosted household
+creation/populated reads are not verified by this check.
 Web/iOS/Android exports pass; no backend redeployment, dependency or schema change.
 
 ### Earlier checkpoint — items 1–4 complete (11 October 2026)

@@ -105,18 +105,21 @@ Vercel CLI/cloud accepted the actual config. One initial npm build invocation ra
 (root) directory; corrected backend builds passed. Native/device exports were not repeated because
 no UI/native/runtime mobile code changed. User subsequently confirmed Settings → Check Backend
 Identity succeeds on iPhone against this HTTPS Preview. This verifies provider-issued JWT identity
-through the hosted function. It does not query Prisma; hosted database access remains unverified.
+through the hosted function. The subsequent read-only database probe also passed on iPhone by user
+report: “Backend database verified” and “No household is set up for this account yet”. This confirms
+the authenticated, membership-scoped Prisma query completed through the hosted function; no records
+were created. It does not verify hosted household creation or populated-household reads.
 Local/live development isolation evidence remains in item 3.
 
 ## Remaining work and exact next step
 
-The iPhone hosted identity check passed by user report on 11 October 2026. The next check is an
-authenticated household read through the hosted function to verify its Prisma/Neon connection.
+Both iPhone hosted identity and authenticated database read checks passed by user report on
+11 October 2026. The account has no application household yet, which is expected for this read-only probe.
 Development-only Settings → Check Backend Database now verifies matching backend identity, then
 uses the same transient JWT for `GET /api/v1/households/current`. A valid household response or the
 specific `HOUSEHOLD_NOT_FOUND` envelope confirms the scoped query completed; generic 404s, 401s,
 service errors and malformed responses fail the check. It does not bootstrap, mutate, persist tokens,
-or connect the mock Pantry to real data. Native hosted result is pending the user's iPhone test.
+or connect the mock Pantry to real data. Native hosted no-household result is confirmed by the user.
 Keep data on Neon development.
 Then Phase 3 item 6: final acceptance/review and checkpoint. Production release, Git integration
 permissions and development-tool dependency findings remain separate follow-up work. Pantry

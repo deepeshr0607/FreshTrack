@@ -194,7 +194,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 3 — PREVIEW AND NATIVE IDENTITY VERIFIED; DB/FINAL CHECKS PENDING
+### Current phase: Phase 3 — ITEMS 1–5 VERIFIED; FINAL REVIEW PENDING
 
 - User authorized Phase 3 items 1–5 and selected INR (integer paise), Asia/Kolkata.
 - Initial transactional application migration applied only to Console-verified development branch
@@ -230,7 +230,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   pass. User approved removal of Vercel Authentication on this dedicated development API project;
   confirmed ssoProtection null, public health200, tokenless identity/household401 and invalid-token401.
   Ignored mobile API URL points to HTTPS Preview. User confirmed hosted Backend Identity passes on
-  iPhone; provider-issued JWT identity is verified. Hosted database access remains unverified.
+  iPhone; provider-issued JWT identity is verified. User also confirmed hosted database probe passes
+  with the expected no-household result. No application records created; hosted creation unverified.
   First production-labelled attempt failed safely; no working production or production DB/auth changes.
   Git auto-link failed; CLI deploy succeeded. See docs/Phase_3_Deployment.md.
 - Both TypeScript/build/local preview build, backend29/29, final deployment4/4, root70/70, health1/1,
@@ -241,9 +242,10 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   for read-only scoped household GET; specific HOUSEHOLD_NOT_FOUND accepted as successful DB query,
   unrelated errors rejected. No bootstrap/writes/token persistence/real Pantry connection.
   Both TypeScript checks, root73/73 and health1/1 pass; initial health sandbox EPERM resolved with
-  allowed localhost listener. Existing lint gaps remain. iPhone hosted DB result pending user check.
+  allowed localhost listener. Existing lint gaps remain. iPhone hosted DB no-household result passes
+  by user report; this confirms the scoped Prisma query through Vercel, not populated-household CRUD.
   Web/iOS/Android exports pass; no backend deploy/schema/dependency change in this probe slice.
-- Next: iPhone Settings database check to verify Prisma/Neon, then Phase 3 item6 final
+- Next: Phase 3 item6 final
   review. Phase 4 and production writes are not authorized.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE

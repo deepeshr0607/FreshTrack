@@ -187,7 +187,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
-| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–4 complete; Preview deployed, access/final checks pending |
+| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–5 verified; final review pending |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
@@ -207,7 +207,8 @@ The mobile kitchen still uses mock data and does not call household setup. Share
 bounded pagination and exact money/quantity/date/expiry/status helpers are ready. Item 5’s
 Preview is deployed to Vercel and publicly reachable after the user-approved hosting change.
 Neon authentication still protects account/household routes. Hosted signed identity passes the
-user's iPhone check. Hosted database verification and final Phase 3 review remain.
+user's iPhone check. The authenticated hosted database read also passes with the expected
+no-household result. Final Phase 3 review remains.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
@@ -228,7 +229,8 @@ is READY. Through authenticated Vercel CLI, health returns 200 and household acc
 token returns 401. After user-approved removal of Vercel Authentication, public health returns 200;
 tokenless identity/household and invalid-token identity requests return 401. Ignored mobile `.env.local`
 points to the HTTPS Preview; both TypeScript checks pass again. User confirmed Settings → Check
-Backend Identity passes on iPhone against the hosted API. Hosted database checks remain pending.
+Backend Identity passes on iPhone against the hosted API. The read-only database probe also passes
+by user report with “No household is set up for this account yet”; no application records were created.
 GitHub auto-link failed;
 CLI deployment works. The first production-labelled attempt failed safely; no working production
 API or production DB/auth change. A Preview retry needed explicit NODE_ENV before the final success.
@@ -238,11 +240,12 @@ root 70/70, health 1/1 and guards 4/4 pass. Existing ESLint gap remains. Runtime
 cloud full audit reports 36 development-tool findings. See [configuration, commands and limits](docs/Phase_3_Deployment.md).
 Development-only Settings → Check Backend Database is now ready: it verifies backend identity and
 reads the authenticated household endpoint without creating records. A specific no-household result
-also confirms a successful database query. iPhone hosted database verification remains pending.
+also confirms a successful database query. The user confirmed this no-household result on iPhone.
+Hosted household creation/populated reads are not verified by this probe.
 Both TypeScript checks and root tests 73/73 pass; backend health 1/1 passes after the sandbox listener
 restriction was lifted. Backend lint remains unavailable (ESLint absent); mobile has no lint script.
 Expo all-platform export passes for web, iOS and Android; this is not native database verification.
-Next: reload Expo Go → Settings → Check Backend Database, then complete Phase 3 final review.
+Next: Phase 3 item 6, final acceptance review and checkpoint. Phase 4 has not started.
 
 ### Phase 3 item 4 — API contracts and helpers (11 October 2026)
 
