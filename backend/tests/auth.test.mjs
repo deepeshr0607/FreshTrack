@@ -73,3 +73,43 @@ test('health stays public and unsupported auth methods remain unavailable', asyn
   assert.equal((await request(app).get('/api/v1/health')).status, 200);
   assert.equal((await request(app).post('/api/v1/auth/me').send({ userId: 'provider-user' })).status, 404);
 });
+
+test('parser and CORS failures have generated request IDs and never echo or log sensitive inputs', async () => {
+  const previousOrigins = process.env.ALLOWED_ORIGINS;
+  const previousLogger = console.error;
+  const logs = [];
+  try {
+    process.env.ALLOWED_ORIGINS = 'https://allowed.fixture.test';
+    const guarded = createApp({ verifyIdentity: verify });
+    console.error = (...values) => logs.push(values.join(' '));
+    const malformed = await request(guarded).post('/api/v1/auth/me').set('Content-Type', 'application/json')
+      .set('x-request-id', 'fixture-sensitive-id').send('{"password":"fixture-sensitive-body"');
+    const denied = await request(guarded).get('/api/v1/auth/me').set('Origin', 'https://fixture-sensitive-origin.invalid');
+    for (const [res, status] of [[malformed, 400], [denied, 403]]) {
+      assert.equal(res.status, status);
+      assert.equal(res.body.error.requestId, res.headers['x-request-id']);
+      assert.match(res.body.error.requestId, /^[0-9a-f-]{36}$/);
+      assert.equal(JSON.stringify(res.body).includes('fixture-sensitive'), false);
+    }
+    assert.equal(logs.length, 2);
+    for (const log of logs) {
+      assert.equal(log.includes('fixture-sensitive'), false);
+      assert.equal(JSON.parse(log).event, 'request_failed');
+    }
+  } finally {
+    console.error = previousLogger;
+    if (previousOrigins === undefined) delete process.env.ALLOWED_ORIGINS;
+    else process.env.ALLOWED_ORIGINS = previousOrigins;
+  }
+});
+test('not-found and rate-limit errors use the same request-ID envelope', async () => {
+  const isolated = createApp({ verifyIdentity: verify });
+  const missing = await request(isolated).get('/api/v1/missing');
+  assert.equal(missing.status, 404);
+  assert.equal(missing.body.error.requestId, missing.headers['x-request-id']);
+  let limited;
+  for (let index = 0; index < 120; index++) limited = await request(isolated).get('/api/v1/health');
+  assert.equal(limited.status, 429);
+  assert.equal(limited.body.error.code, 'RATE_LIMITED');
+  assert.equal(limited.body.error.requestId, limited.headers['x-request-id']);
+});

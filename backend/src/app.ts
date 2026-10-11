@@ -17,18 +17,21 @@ import { createIdentityVerifier, type VerifyIdentity } from './services/auth';
 
 // ── Environment ──────────────────────────────────────────────────────────────
 
-const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '')
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
-
 // ── App factory ──────────────────────────────────────────────────────────────
 
 export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): express.Application {
   const app = express();
+  const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '').split(',').map((o) => o.trim()).filter(Boolean);
 
   // Trust proxy headers from Vercel / reverse proxies
   app.set('trust proxy', 1);
+
+  // Generate correlation before parsing/CORS so every failure has a server-owned request ID.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    req.headers['x-request-id'] = randomUUID();
+    res.setHeader('X-Request-ID', req.headers['x-request-id']);
+    next();
+  });
 
   // ── CORS ──────────────────────────────────────────────────────────────────
   app.use(
@@ -39,7 +42,7 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): ex
         if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
-        callback(new Error(`CORS: origin '${origin}' is not allowed`));
+        callback(Object.assign(new Error('Origin is not allowed.'), { status: 403, code: 'CORS_REJECTED' }));
       },
       credentials: true,
     }),
@@ -50,10 +53,7 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): ex
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // ── Request ID ────────────────────────────────────────────────────────────
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    req.headers['x-request-id'] = randomUUID();
-    next();
-  });
+  // Assigned above, before any middleware can reject the request.
 
   // ── Global rate limit ─────────────────────────────────────────────────────
   app.use(
@@ -62,7 +62,9 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): ex
       max: 120,
       standardHeaders: true,
       legacyHeaders: false,
-      message: { error: { code: 'RATE_LIMITED', message: 'Too many requests — please slow down.' } },
+      handler: (req, res) => res.status(429).json({ error: {
+        code: 'RATE_LIMITED', message: 'Too many requests — please slow down.', requestId: req.headers['x-request-id'],
+      } }),
     }),
   );
 
@@ -71,9 +73,9 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): ex
   app.use('/api/v1', createAuthRouter(options.verifyIdentity ?? createIdentityVerifier(process.env['NEON_AUTH_URL'])));
 
   // ── 404 handler ──────────────────────────────────────────────────────────
-  app.use((_req: Request, res: Response) => {
+  app.use((req: Request, res: Response) => {
     res.status(404).json({
-      error: { code: 'NOT_FOUND', message: 'The requested endpoint does not exist.' },
+      error: { code: 'NOT_FOUND', message: 'The requested endpoint does not exist.', requestId: req.headers['x-request-id'] },
     });
   });
 
@@ -81,19 +83,19 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): ex
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     const requestId = req.headers['x-request-id'];
-    const status = (err as { status?: number }).status ?? 500;
+    const suppliedStatus = (err as { status?: number }).status;
+    const status = typeof suppliedStatus === 'number' && suppliedStatus >= 400 && suppliedStatus <= 599 ? suppliedStatus : 500;
+    const code = (err as { code?: string }).code === 'CORS_REJECTED' ? 'CORS_REJECTED'
+      : status === 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR';
 
     // Do NOT log the full error in production to avoid leaking stack traces.
-    if (process.env['NODE_ENV'] !== 'production') {
-      console.error(`[error] ${requestId}`, err);
-    } else {
-      console.error(`[error] ${requestId} ${err.message}`);
-    }
+    // The same redaction applies in development: parser errors can contain raw request bodies.
+    console.error(JSON.stringify({ level: 'error', event: 'request_failed', requestId, status, code }));
 
     res.status(status).json({
       error: {
-        code: status === 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR',
-        message: status === 500 ? 'An unexpected error occurred.' : err.message,
+        code,
+        message: status === 500 ? 'An unexpected error occurred.' : 'The request could not be processed.',
         requestId,
       },
     });

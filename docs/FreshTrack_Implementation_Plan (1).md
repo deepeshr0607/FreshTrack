@@ -400,7 +400,15 @@ permission/error UI, remaining Pantry controls, auth states and final native/des
 
 ## Phase 2 — Confirm authentication and backend contract
 
-**11 October 2026 status:** User authorized Phase 2 and explicitly selected the lower-level Neon
+**Current final-review status — 11 October 2026:** Phase 2 development acceptance is complete,
+with Android/live signing/production checks deferred by the user. ADR 001 and Phase_2_Final_Review.md
+record the user-accepted 15-minute JWT policy for the MVP. Immediate server revocation is not an MVP
+requirement. Checkpoint: `feat: validate native authentication and protected route flow` (see Git log).
+70 root tests, nine backend auth/boundary tests, health 1/1, both TypeScript checks and Doctor 21/21
+pass. Review fixed pre-existing raw error logging and missing request IDs without database/data-API
+work. Phase 3 has not started and requires explicit authorization.
+
+**Earlier proof-of-concept checkpoint — 11 October 2026:** User authorized Phase 2 and explicitly selected the lower-level Neon
 API proof of concept because the published SDK has no Expo adapter. An isolated native OTP/session/
 sign-out screen is implemented; the existing UI prototype is preserved. TypeScript, 39 unit tests,
 backend health and three-platform exports pass. Real-device proof-of-concept checks pass by user report. See `Phase_2_Auth_Proof_of_Concept.md` for the API contract, SDK findings, checks and next slice.

@@ -183,7 +183,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 |---|---|---|
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
-| 2 | Validate Neon Auth + Expo OTP flow | In progress: forms and protected navigation pass iPhone checks; backend/failure-policy/Android gates pending |
+| 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ⬜ Not started |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
@@ -196,9 +196,10 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Current phase: Phase 2 — iPhone failure checks and local release configuration preparation complete; final review remains open.**
-Remaining Phase 1 QA is deferred by the user. The Phase 2 acceptance gate is still open.
-Latest inspected checkpoint: `8e9a195` (`wip: save FreshTrack progress`). Phase 2 changes are currently uncommitted; prior work is preserved.
+**Phase 2 development gate is complete. Phase 3 has not started.**
+Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
+Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
+`feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
@@ -933,3 +934,30 @@ builds. Existing lint gaps remain. Detailed setup, commands and verification lim
 Next: final Phase 2 acceptance/architecture and JWT revocation review; explicitly record Android and
 live signing/production verification as deferred. Checkpoint commit is required before Phase 3, which
 has not started. Apple membership can wait until a standalone iPhone build/distribution is needed.
+
+
+## Phase 2 final review — 11 October 2026
+
+The implementation-plan device/auth/navigation/backend criteria pass for iPhone development,
+with Android and live production/signing checks explicitly deferred. The final review adds
+[ADR 001](docs/decisions/001-native-neon-auth.md) and an
+[acceptance report](docs/Phase_2_Final_Review.md), including installed versions and evidence limits.
+The user accepted the existing bounded API JWT validity for the MVP; immediate server revocation
+is not an MVP requirement.
+Current provider/native sign-out is immediate; an already-issued API JWT can remain valid for about
+15 minutes, with five seconds of clock tolerance. This trade-off is recorded in ADR 001; no provider token lifetime setting was changed.
+
+Review fixed pre-existing raw parser/error logging and incomplete error request IDs in the backend.
+Structured redacted logging now applies in development and production; IDs are assigned before
+parsing/CORS and included in parser/CORS/404/429 errors. CORS rejection returns safe 403 without
+reflecting the supplied origin. Two meaningful regression tests prove body/origin/ID redaction and
+consistent failure envelopes. Legacy server console.log statements were replaced with structured
+records. No mobile/UI/config/dependency or database/data-API changes in this review.
+
+Actual final checks: mobile/backend TypeScript exit 0; 70/70 root tests; backend auth 9/9 after build;
+health 1/1; Doctor 21/21. Backend lint still fails exit 127 because ESLint is absent; mobile has no lint
+script. The preceding all-platform export passed and was not repeated for these backend-only fixes.
+No production deployment, EAS build or store upload ran. The Phase 2 development gate is complete
+and the review is saved in its checkpoint. Next, when explicitly authorized: Phase 3 schema/API
+foundation, preserving the verified subject boundary and household scoping. Android/live release
+checks remain required before publication; they are not claimed complete.

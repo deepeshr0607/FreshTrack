@@ -94,8 +94,9 @@ No production allowlist, Neon branch, SMTP settings or other account setting was
   EAS project linking, environment creation, production login, API deployment or store upload ran.
 
 Local preparation is complete. Live release configuration/signing verification remains deferred until
-actual account/project IDs, public services and signing credentials are available. Phase 2 still needs
-final acceptance/architecture review, JWT revocation policy and checkpoint commit; Phase 3 has not started.
+actual account/project IDs, public services and signing credentials are available. The final Phase 2
+development acceptance review is now complete with the user-accepted bounded JWT policy; see
+Phase_2_Final_Review.md and ADR 001. Phase 3 has not started.
 
 Sources: [Expo config](https://docs.expo.dev/workflow/configuration/),
 [EAS profiles](https://docs.expo.dev/build/eas-json/),

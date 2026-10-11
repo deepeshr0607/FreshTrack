@@ -22,7 +22,8 @@ not automated native observations. Never include passwords, OTPs, cookies or JWT
 User reports the email states a **10-minute** code lifetime and confirms the final test passed:
 unused-code rejection after the requested 11-minute wait, private access blocked, then successful
 resend/new-code recovery. Item 4 is complete for the iPhone development flow. No expiry policy
-was changed. Final Phase 2 acceptance/production/revocation review remains open.
+was changed. Final Phase 2 development acceptance is complete; the user accepted bounded JWT
+validity for the MVP. Production/signing verification remains deferred.
 
 Android remains unavailable. Existing Phase 1 visual/native QA remains deferred.
 
@@ -37,7 +38,7 @@ Android remains unavailable. Existing Phase 1 visual/native QA remains deferred.
 - App-resume verification hides/blocks private content while checking. Connectivity failure removes
   private access, retains secure material, and offers Welcome → Retry Session Check.
 - Sign-out failure retains the session for a visible retry; success clears it. JWTs already issued
-  can remain valid for their 15-minute lifetime; production revocation policy remains open.
+  can remain valid for their 15-minute lifetime; the user accepted this bounded validity for the MVP (ADR 001).
 
 ## Real-device instructions
 

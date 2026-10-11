@@ -12,21 +12,21 @@ const PORT = Number(process.env['PORT'] ?? 3001);
 const app = createApp();
 
 const server = app.listen(PORT, () => {
-  console.log(`[server] FreshTrack API listening on http://localhost:${PORT}`);
-  console.log(`[server] Health endpoint: http://localhost:${PORT}/api/v1/health`);
+  console.info(JSON.stringify({ level: 'info', event: 'server_started', port: PORT }));
+  console.info(JSON.stringify({ level: 'info', event: 'health_endpoint', path: '/api/v1/health' }));
 });
 
 // Graceful shutdown
 const shutdown = (signal: string) => {
-  console.log(`[server] ${signal} received — shutting down gracefully`);
+  console.info(JSON.stringify({ level: 'info', event: 'shutdown_requested', signal }));
   server.close(() => {
-    console.log('[server] HTTP server closed');
+    console.info(JSON.stringify({ level: 'info', event: 'server_closed' }));
     process.exit(0);
   });
 
   // Force exit after 10 s if still pending
   setTimeout(() => {
-    console.error('[server] Forced shutdown after timeout');
+    console.error(JSON.stringify({ level: 'error', event: 'shutdown_timeout' }));
     process.exit(1);
   }, 10_000).unref();
 };
