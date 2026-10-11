@@ -553,9 +553,33 @@ remain pending. The edits are uncommitted while Phase 1 remains incomplete.
 - Reference audit totals disagree; preserved snapshots and session-only value deltas are documented
   in the inventory. Food mass/carbon values remain illustrative rather than production calculations.
 
-**Exact next step:** Match Pantry card expiry-source pills and row spacing to the supplied inventory
-reference, preserving swipe/batch actions. Native gesture, keyboard, accessibility and dynamic-text checks remain required.
+**Exact next step:** Run the item-4 end-to-end sequence on Android when a device/emulator is
+available. Visual matching, general native QA and auth/OTP QA (items 1–3) remain deferred at the user’s request.
 Phase 1 remains in progress and must be reviewed before Phase 2; real integrations require approval.
+
+### End-to-end verification slice — 11 October 2026
+
+- User selected remaining-work item 4 and deferred items 1–3 (visual matching, general native QA,
+  auth/OTP QA). No UI redesign or integration changes. Added
+  [repeatable checks and evidence](docs/Phase_1_End_to_End_Checks.md) and
+  `tests/prototype-flow.test.mjs`, covering Scanner purchases/duplicates → shopping → cooking →
+  reconciliation → analytics/report, including immutable fixtures and replay prevention.
+- Browser directly verified recipe save/details/missing ingredients, shopping deduplication/clearing,
+  cooking cancel/confirm/repeat prevention and $92.98 Insights/report preview; invalid preferences and
+  18:30 persistence through normal navigation; receipt duplicate rejection/skip/edit/confirmed insertion;
+  barcode separate purchase retaining both chips ($7.98); reconciliation cancellation/confirmation,
+  clearing the queue and $16.69 wasted value. Browser download-event confirmation timed out; no new
+  successful download is claimed for this slice.
+- The user confirmed iPhone Expo Go launch, then reported shopping/cooking/Insights, preferences and
+  native report share-sheet/cancel working, followed by receipt/barcode-duplicate/reconciliation checks passing.
+  These are user-reported native results, separate from directly observed browser evidence.
+  Android device/emulator and iOS simulator are unavailable on this Mac. Full native QA is not complete.
+- `node --experimental-strip-types --test tests/prototype-flow.test.mjs`: 1/1 passed;
+  `node --experimental-strip-types --test tests/*.test.mjs`: 31/31 passed (existing module-type warnings).
+  Root/backend `npx tsc --noEmit` and `git diff --check` pass. Local iOS manifest returns HTTP 200.
+  Lint, backend health, Doctor/dependency checks and bundle exports were not rerun for this test/docs-only
+  slice; previous results above remain unchanged. No dependencies or application code changed.
+- Item 4 is user-verified on iPhone; Android remains pending until a device/emulator is available. Deferred items 1–3 remain open; Phase 2 is not authorized.
 
 ### Pantry top-section visual checkpoint — 11 October 2026
 

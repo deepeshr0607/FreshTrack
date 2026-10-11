@@ -203,7 +203,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   supporting mock digest/reminder preferences are now implemented with centralized typed fixtures.
 - All 11 supplied screen PNGs inspected and mapped in `docs/Phase_1_Screen_Inventory.md`.
   Docks explicitly show Home, Pantry, Scanner, Recipes and Insights, preserved under the user exception.
-- Mobile/backend TypeScript, 30 unit tests, backend health test, Expo Doctor 21/21 and web/iOS/Android
+- Mobile/backend TypeScript, 31 unit tests, backend health test, Expo Doctor 21/21 and web/iOS/Android
   exports pass. Backend lint remains unavailable (`eslint` absent); mobile has no lint script.
   Native interaction/dynamic-text and final complete visual review remain pending.
 - Pantry manual add (11 October) is implemented with shared validated insertion and Scanner fallback.
@@ -231,7 +231,11 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - Account-deletion UI scope and final native/design QA remain
   incomplete. See README for verification limits. No real auth/session infrastructure was added.
 - Actual implementation-plan filename: `docs/FreshTrack_Implementation_Plan (1).md`.
-- Next slice: Pantry card expiry-source pills/row spacing; preserve swipe and batch actions.
+- Item-4 end-to-end slice: connected Scanner/shopping/cooking/reconciliation regression added;
+  browser flows pass. User reports iPhone launch/recipe/shopping/preferences/native sharing pass;
+  Scanner/duplicate/reconciliation checks also reported passing. Android unavailable; see `docs/Phase_1_End_to_End_Checks.md`.
+- Item 4 user-verified on iPhone; Android end-to-end checks pending device/emulator availability.
+  Visual/general native/auth QA items 1–3 deferred at the user’s request.
 - Phase 1 requires review; Phase 2 requires explicit user approval.
 
 ---
