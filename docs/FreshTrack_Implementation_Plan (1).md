@@ -539,6 +539,20 @@ release/Android deferrals, then checkpoint before Phase 3. Phase 2 remains open;
 
 **Goal:** Establish a stable database contract before connecting screens.
 
+### Current slice — item 1 complete locally (11 October 2026)
+
+User authorized Phase 3 model definition, selected INR (integer paise) and Asia/Kolkata.
+`backend/prisma/schema.prisma` now defines six application models, enums, household-scoped compound
+references, event cost/quantity/category/expiry/timezone snapshots and nullable price provenance.
+See [model decisions](Phase_3_Data_Model.md) for whole-entry outcomes, archive/correction handling,
+MVP one-household membership, preference ownership and planned receipt retention.
+
+Prisma 5.22 format/validate and offline SQL generation pass; nine generated-SQL inspections pass.
+Both TypeScript checks, root tests 70/70, backend auth 9/9 and health 1/1 pass. Lint setup gaps remain.
+No mobile/UI/config change, database connection test, migration application, seed or generated client.
+Phase 3 acceptance criteria are not yet complete. Next: item 2, initial development migration with
+SQL checks, target verification/live connectivity, Prisma singleton and guarded seed.
+
 ### Database modeling principles
 
 - Use PostgreSQL UUID IDs (or another consistent generated ID type).
@@ -572,7 +586,9 @@ release/Android deferrals, then checkpoint before Phase 3. Phase 2 remains open;
 - Do not retain receipt images indefinitely by default. Define retention/deletion behavior; prefer processing then deleting the original unless the product explicitly needs history.
 
 **UserPreference**
-- `id`, `authSubject` or `householdId` according to preference ownership, `notificationEnabled`, optional preferred notification time, timezone, currency/date settings, created/updated timestamps.
+- `id`, unique member `authSubject`, `notificationEnabled`, local HH:mm preferred notification time,
+  date format and created/updated timestamps. Timezone/currency are owned by Household, avoiding
+  conflicting duplicate preferences. See model decisions for defaults and validation.
 
 **RecipeCache** (optional after first integration)
 - `id`, normalized ingredient-set key, provider recipe IDs/results, fetchedAt, expiresAt.
