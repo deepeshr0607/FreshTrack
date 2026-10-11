@@ -11,8 +11,11 @@ Production database/schema/auth settings were not changed. Phase 4 has not start
 - [Inspect build](https://vercel.com/dragon-2818/freshtrack-api/FuadUxp8mfkBc2N3EbK1qdmNHj2V).
 - Protected hosting check via `vercel curl`: health 200 with `environment: preview`; household
   current without a Neon Bearer token 401 `UNAUTHORIZED` with request ID.
-- Public health redirects 302 to Vercel login. Hosting protection remains enabled pending the user's
-  decision; Expo Go cannot use this URL yet. Mobile's current local API URL was not changed.
+- User approved disabling Vercel Authentication for this dedicated development API project.
+  The project API confirms `ssoProtection: null`. Public health now returns 200; identity and
+  household requests without a Neon token return 401, as does an invalid token.
+- Ignored mobile `.env.local` now points `EXPO_PUBLIC_API_URL` at this HTTPS Preview. No hosting
+  bypass token is embedded. The existing Neon development Auth origin is preserved.
 - Automatic GitHub connection failed (repository access). CLI deployment succeeded independently;
   Git-based automatic deployments are not configured.
 
@@ -85,7 +88,9 @@ A real production build requires a separately reviewed configuration/branch/migr
 | Final `vercel deploy --yes --target preview --logs` | Cloud build and Preview deployment READY |
 | `vercel curl <preview>/api/v1/health` | 200, preview environment |
 | `vercel curl <preview>/api/v1/households/current` without Neon token | 401, safe UNAUTHORIZED envelope |
-| Plain public health request | 302 Vercel login; mobile access decision pending |
+| Plain public health request after approved hosting change | 200, preview environment |
+| Public identity/household requests without token; identity with invalid token | All 401 UNAUTHORIZED |
+| Both `npx tsc --noEmit` checks after local environment update | Passed |
 | Read-only `npm audit --omit=dev --json` | Exit 0, zero runtime vulnerabilities |
 | Cloud full install audit | Existing 36 findings (5 moderate, 31 high); dev-tool dependency review remains |
 | `git diff --check` and credential/debug review | Passed |
@@ -103,9 +108,9 @@ hosted function is verified yet; local/live development isolation evidence remai
 
 ## Remaining work and exact next step
 
-Resolve the user's Vercel hosting-protection decision, then (if public development API access is
-approved) verify public health/401 responses and native Settings → Check Backend Identity using the
-Preview URL. Do not embed hosting bypass tokens in mobile. Keep data on Neon development.
+Verify native Settings → Check Backend Identity using the Preview URL. Expo is started on port 8085;
+the current Mac LAN address is 192.168.1.248, so open `exp://192.168.1.248:8085` on the iPhone.
+Hosted provider-issued identity and database query checks remain unverified. Keep data on Neon development.
 Then Phase 3 item 6: final acceptance/review and checkpoint. Production release, Git integration
 permissions and development-tool dependency findings remain separate follow-up work. Pantry
 persistence/endpoints and mutation/event transactions still belong to Phase 4.
