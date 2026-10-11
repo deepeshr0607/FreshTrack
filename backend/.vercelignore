@@ -1,0 +1,12 @@
+# Upload only backend source; never upload local credentials or generated bundles.
+.env
+.env.*
+.vercel
+node_modules
+dist
+coverage
+*.log
+*.pem
+*.key
+*.json.key
+tests

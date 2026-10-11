@@ -1,4 +1,4 @@
-import type { PantryStatus } from '../../../types/api';
+import type { PantryStatus } from '../contracts/api';
 import { InvalidApiInput } from './api';
 
 const DAY = 86_400_000;

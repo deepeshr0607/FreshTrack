@@ -62,3 +62,8 @@ backend/node_modules/.prisma/
 .idea/
 *.swp
 *.swo
+
+# Vercel project links, pulled environment and local function bundles
+.vercel/
+# Placeholder-only backend preview template
+!backend/.env.preview.example

@@ -25,7 +25,9 @@
     "test:households": "npm run build && node --test tests/households.test.mjs",
     "test:households:integration": "npm run build && node --env-file=.env --test tests/households.integration.test.cjs",
     "db:studio": "prisma studio",
-    "test:auth": "npm run build && node --test tests/auth.test.mjs"
+    "test:auth": "npm run build && node --test tests/auth.test.mjs",
+    "build:vercel": "node scripts/deployment.cjs && prisma generate && tsc",
+    "test:deployment": "npm run build && node --test tests/deployment.test.cjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -50,7 +52,7 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20.12"
+    "node": "24.x"
   },
   "allowScripts": {
     "@prisma/client@5.22.0": true,

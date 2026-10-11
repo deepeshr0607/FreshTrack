@@ -1,0 +1,6 @@
+.vercel
+.env*
+
+# Keep placeholder templates available for setup documentation.
+!.env.example
+!.env.preview.example

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { ApiSuccess, ApiFailure, Pagination, PageInfo } from '../../../types/api';
+import type { ApiSuccess, ApiFailure, Pagination, PageInfo } from '../contracts/api';
 
 export function success<T>(data: T): ApiSuccess<T> { return { data }; }
 
