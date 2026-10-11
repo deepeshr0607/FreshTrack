@@ -3,7 +3,8 @@
  * Design reference: design-reference/recipe/screen.png
  */
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { recipeImages } from '@/lib/designAssets';
 import {
   Colors,
   Elevation,
@@ -19,20 +20,19 @@ interface Props {
   featured?: boolean;
   onPress?: () => void;
   onCook?: () => void;
+  saved?: boolean;
+  onSave?: () => void;
 }
 
-export default function RecipeCard({ recipe, featured = false, onPress, onCook }: Props) {
+export default function RecipeCard({ recipe, featured = false, onPress, onCook, saved, onSave }: Props) {
   if (featured) {
     return (
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [styles.featuredCard, pressed && styles.pressed]}
-        accessibilityRole="button"
-        accessibilityLabel={recipe.title}
-      >
+      <View style={styles.featuredCard}>
         {/* Hero image area */}
         <View style={styles.heroImage}>
-          <Text style={styles.heroEmoji}>{recipe.imageEmoji}</Text>
+          <Pressable onPress={onPress} style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={recipe.title}>
+            <Image source={recipeImages[recipe.imageKey]} style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]} resizeMode="cover" />
+          </Pressable>
           {/* Overlay badges */}
           <View style={styles.heroBadges}>
             <View style={styles.matchBadge}>
@@ -42,6 +42,8 @@ export default function RecipeCard({ recipe, featured = false, onPress, onCook }
               <Text style={styles.rescueText}>⚡ Rescues {recipe.rescuesItems.length} items</Text>
             </View>
           </View>
+          <Pressable onPress={onSave} accessibilityRole="button" accessibilityLabel={saved ? 'Unsave recipe' : 'Save recipe'}
+            style={styles.saveButton}><Text style={{ fontSize: 24, color: Colors.primary }}>{saved ? '♥' : '♡'}</Text></Pressable>
           <View style={styles.heroMeta}>
             <Text style={styles.heroMetaText}>⏱ {recipe.prepMinutes}m</Text>
             <Text style={styles.heroMetaText}>● {recipe.difficulty}</Text>
@@ -56,9 +58,11 @@ export default function RecipeCard({ recipe, featured = false, onPress, onCook }
 
         {/* Content */}
         <View style={styles.featuredContent}>
+          <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${recipe.title} details`}>
           <Text style={styles.featuredTitle}>{recipe.title}</Text>
+          </Pressable>
           <Text style={styles.featuredDesc} numberOfLines={2}>
-            {recipe.instructions}
+            {recipe.description}
           </Text>
 
           {/* Pantry items */}
@@ -85,20 +89,21 @@ export default function RecipeCard({ recipe, featured = false, onPress, onCook }
             <Text style={styles.cookBtnText}>🍽 Cook This Tonight</Text>
           </Pressable>
         </View>
-      </Pressable>
+      </View>
     );
   }
 
   // Compact list card
   return (
+    <View style={styles.compactCard}>
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.compactCard, pressed && styles.pressed]}
+      style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md, flex: 1 }, pressed && styles.pressed]}
       accessibilityRole="button"
       accessibilityLabel={recipe.title}
     >
       <View style={styles.compactThumb}>
-        <Text style={styles.compactEmoji}>{recipe.imageEmoji}</Text>
+        <Image source={recipeImages[recipe.imageKey]} style={{ width: '100%', height: '100%', borderRadius: Radius.md }} />
         <View style={styles.compactMatchBadge}>
           <Text style={styles.compactMatchText}>{recipe.matchPercent}%</Text>
         </View>
@@ -117,15 +122,16 @@ export default function RecipeCard({ recipe, featured = false, onPress, onCook }
           <Text style={styles.needSmall}>Need: {recipe.missingIngredients.join(', ')}</Text>
         )}
       </View>
+    </Pressable>
       <Pressable
         onPress={onCook}
         style={styles.smallCookBtn}
         accessibilityRole="button"
-        accessibilityLabel="Cook"
+        accessibilityLabel={`Cook ${recipe.title}`}
       >
         <Text style={styles.smallCookText}>Cook</Text>
       </Pressable>
-    </Pressable>
+    </View>
   );
 }
 
@@ -147,6 +153,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   heroEmoji: { fontSize: 80 },
+  saveButton: { position: 'absolute', top: 12, right: 12, width: 44, height: 44,
+    borderRadius: 22, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center' },
   heroBadges: {
     position: 'absolute',
     top: Spacing.sm,
@@ -155,15 +163,15 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   matchBadge: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: Colors.white,
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
   },
-  matchText: { color: '#fff', fontSize: FontSize.labelSm, fontWeight: FontWeight.bold },
+  matchText: { color: Colors.onSurface, fontSize: FontSize.labelSm, fontWeight: FontWeight.bold },
   rescueBadge: {
     backgroundColor: Colors.primaryContainer,
-    borderRadius: Radius.full,
+    borderRadius: Radius.lg,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
   },
@@ -222,7 +230,7 @@ const styles = StyleSheet.create({
   },
   cookBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: Radius.full,
+    borderRadius: Radius.lg,
     paddingVertical: Spacing.md,
     alignItems: 'center',
     marginTop: Spacing.xs,

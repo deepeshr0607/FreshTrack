@@ -194,7 +194,27 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Next phase: Phase 1 — Implement the supplied designs and navigation
+### Current phase: Phase 1 — IN PROGRESS
+
+- Existing welcome/auth/OTP/Home/Pantry/scanner prototype preserved; shared Pantry detail/edit,
+  missing-item state and Used/Wasted sheets remain implemented.
+- Recipes, details/missing ingredients, shared shopping list/save/cook; sustainability Insights,
+  period/chart/category/habit controls; nested financial Analytics/reconciliation/report preview;
+  supporting mock digest/reminder preferences are now implemented with centralized typed fixtures.
+- All 11 supplied screen PNGs inspected and mapped in `docs/Phase_1_Screen_Inventory.md`.
+  Docks explicitly show Home, Pantry, Scanner, Recipes and Insights, preserved under the user exception.
+- Mobile/backend TypeScript, 16 unit tests, backend health test, Expo Doctor 21/21 and web/iOS/Android
+  exports pass. Backend lint remains unavailable (`eslint` absent); mobile has no lint script.
+  Native interaction/dynamic-text and final complete visual review remain pending.
+- Pantry manual add (11 October) is implemented with shared validated insertion and Scanner fallback.
+- Pantry right-Used/left-Wasted gestures implemented with cancellable sheets and accessible buttons;
+  browser drag/tap checks pass, native gesture QA remains pending.
+- Scanner insertion/review/error/duplicate queue, Home swipes and Pantry batch/category, auth error/autofill
+  states and further Settings/privacy coverage remain incomplete. See README for verification limits.
+- Actual implementation-plan filename: `docs/FreshTrack_Implementation_Plan (1).md`.
+- Next slice: centralize Scanner receipt fixtures, editable review and confirmed mock haul insertion
+  with explicit duplicate handling.
+- Phase 1 requires review; Phase 2 requires explicit user approval.
 
 ---
 

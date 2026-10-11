@@ -149,14 +149,16 @@ If the chosen Expo template creates `src/app`, preserve that convention rather t
 - Pantry list, pantry item details/editing, empty state, and consume/waste confirmation if present in the references.
 - Scanner mode selection, camera permission state, camera preview, and review sheet.
 - AI Chef near-expiry section, recipe cards/details, loading/error/empty states, and missing-items shopping list.
-- Analytics metric cards, monthly graph, comparison view, and reconciliation banner.
+- Sustainability Insights (additional supplied Stitch reference): rescued value, efficiency chart, Kitchen Hero progress, saved categories and habit recommendations.
+- Financial Analytics metric cards, monthly graph, comparison view, and reconciliation banner as `/analytics/financial` from Insights.
+- Recipe details, missing ingredients and shared shopping-list interactions are required supporting routes.
 - Settings/preferences if represented in the designs.
 
 ### Tasks
 
 1. Define theme tokens from the reference designs: colors, typography, spacing, borders, elevation, icons, and shared card/button styles.
 2. Implement reusable components (item card, expiry badge, primary button, form field, sheet/modal, chart container, loading/empty/error views).
-3. Create Expo Router layouts for public/auth routes and the four-tab authenticated app.
+3. Create Expo Router layouts for public/auth routes and the authenticated app. The supplied docks explicitly show Home, Pantry, Scanner, Recipes and Insights; preserve that design exception. AI Chef lives in Recipes, Analytics in Insights, with financial Analytics nested outside the dock.
 4. Use central mock fixtures with typed data; don't create mock records in every screen independently.
 5. Add realistic interactions: tab navigation, details, form validation, mock add/edit, mock consumed/wasted, chart date selector if designed.
 6. Ensure layouts respect safe areas, keyboards, dynamic text, and small phone widths.
@@ -169,6 +171,74 @@ If the chosen Expo template creates `src/app`, preserve that convention rather t
 - No dead primary buttons; mock interactions show a result.
 - TypeScript check passes; app launches on iOS and Android development environments where available.
 - Design differences and missing references are documented.
+
+### Current Phase 1 checkpoint — 10 October 2026
+
+Phase 1 remains **in progress**. See [complete design/state inventory](Phase_1_Screen_Inventory.md)
+for all 11 image-to-route mappings, implementation status and visual gaps. No supplied screen is omitted.
+
+Implemented: existing welcome/auth/OTP/Home/Pantry/scanner prototype; preserved Pantry detail/edit
+and status confirmations; new Recipes/search/filter/save/details/missing ingredient/shopping/cook
+flows; sustainability Insights/period/chart/category/habit flows; nested financial comparison,
+report preview and reconciliation; supporting mock preferences. Data is typed and in memory.
+
+Browser checks cover Recipe details, shopping deduplication/purchased clearing, save, cook cancellation
+and confirmation/shared inventory, Insights monetary session delta/Weekly chart, category sheet,
+report preview, May financial comparison, preferences validation/save and Recipe error/retry/no-results
+and mock AI Chef matching. Expired-item reconciliation confirmation cleared its queue and updated
+wasted value from $12.40 to $16.69. Recipe/Insights top sections inspected at 375 × 812. Native interaction,
+complete design comparison and native sharing remain unverified. Web report download contents matched
+the selected Weekly summary ($32.98, 5.8 kg).
+
+Validation: mobile/backend TypeScript pass; 12/12 pantry/recipe/analytics tests and 1/1 health test
+pass; Expo Doctor 21/21 pass; Expo install check exit 0 (offline dependency-map warning); web/iOS/Android
+exports pass; diff whitespace check passes. Existing backend lint fails because ESLint is absent;
+mobile has no lint configuration. See README for exact commands and verification limits.
+
+Remaining after the 11 October slice: Home swipes; Pantry batch/category/currency; scanner permission/receipt edit/queue/
+failure states/duplicate detection/receipt and barcode insertion; auth OTP failure/paste/autofill/timer cleanup;
+profile/privacy/settings state coverage; final native and design QA. Some supplied decorative counts,
+audit snapshots and source weekly totals disagree; their treatment is documented in the inventory.
+
+### Pantry swipe slice — 11 October 2026
+
+Implemented right-Used/left-Wasted panels on Pantry cards using existing ReanimatedSwipeable,
+with GestureHandlerRootView at the root. Existing confirmation sheets and in-memory reducer
+remain the mutation boundary; accessible buttons remain. Drag suppression resets on each new
+press, preserving taps after a cancelled short swipe. No new dependencies or integrations.
+Browser QA at 375 × 812: both directions/cancel, confirmed removal (8 → 7 → 6), short swipe,
+subsequent detail tap, button fallback and vertical mouse drag without navigation/status action.
+Native touch/scroll/diagonal/accessibility QA remains pending; Home card swipes remain separate.
+Mobile/backend TypeScript and 16 tests passed; final web/iOS/Android export and diff check passed.
+Existing lint limitations remain. See README for exact commands and remaining Phase 1 work.
+API references consulted: [Gesture Handler 2.x Swipeable](https://docs.swmansion.com/react-native-gesture-handler/docs/2.x/components/reanimated_swipeable/)
+and [root installation](https://docs.swmansion.com/react-native-gesture-handler/docs/2.x/fundamentals/installation/).
+
+### Pantry manual-entry slice — 11 October 2026
+
+`/pantry/add` is implemented: shared typed insertion, name/category/quantity/unit/calendar-date/
+optional purchase-value validation, past-date reconciliation eligibility, user-entered expiry and
+manual origin. Unknown price is documented as $0 with a detail note for this prototype. It uses
+existing safe-area/keyboard-aware components, theme tokens and seven centralized category options.
+No separate add-screen reference exists. No new dependency, persistence or API was added.
+
+Pantry list and empty/search-empty states expose manual add; Scanner exposes the same fallback.
+Successful save offers Pantry/details navigation, resets restrictive Pantry filters and blocks repeated
+submission. Cancellation preserves inventory and source navigation. Home reflects the shared item
+and labels manual origin/date; Pantry card currency symbol matches the dollar reference.
+
+Verification: mobile/backend TypeScript pass; all 16 unit tests pass (four new tests cover insertion,
+invalid fields, decimal/unknown-value handling and expired-item status transitions); all three platform
+exports pass. Browser verified invalid-name/quantity/date/price rejection, fractional insertion,
+category/unknown-value detail, cancel/source return, real empty Pantry entry, Scanner fallback and
+Home propagation; 375 × 812 form layout checked. Device/keyboard/dynamic-text QA remains pending.
+Existing lint limitations are unchanged; lint/Expo Doctor not rerun because dependencies are unchanged.
+See README for actual commands.
+
+**Exact next slice:** centralize Scanner receipt fixtures, editable candidate review and confirmed
+shared mock inventory insertion, including explicit duplicate handling. Scanner lookup failures,
+permission/error UI, remaining Pantry controls, auth states and final native/design QA still remain.
+**Phase 2 is not authorized** and requires explicit approval after Phase 1 review.
 
 **Checkpoint:** `feat: implement FreshTrack screen designs and navigation`
 

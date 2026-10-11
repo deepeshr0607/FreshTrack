@@ -101,6 +101,7 @@ export default function ScannerScreen() {
             🛠 Phase 1 Prototype · Camera not connected · Tap scan buttons to simulate
           </Text>
         </View>
+        <PrimaryButton label="Enter Item Manually" variant="ghost" onPress={() => router.push('/pantry/add')} />
 
         {/* Mode selector */}
         {mode === 'none' && (

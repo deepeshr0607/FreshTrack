@@ -26,6 +26,7 @@ export interface PantryItem {
   status: PantryItemStatus;
   imageEmoji: string;
   note?: string;
+  source?: 'MANUAL' | 'RECEIPT' | 'BARCODE';
 }
 
 export interface Recipe {
@@ -41,6 +42,9 @@ export interface Recipe {
   missingIngredients: string[];
   tags: string[];
   instructions: string;
+  pantryIds: string[];
+  imageKey: 'rigatoni' | 'toast' | 'crumble';
+  description: string;
 }
 
 export interface WasteEvent {
@@ -182,6 +186,9 @@ export const MOCK_EXPIRING_SOON: PantryItem[] = MOCK_PANTRY_ITEMS.filter(
 export const MOCK_RECIPES: Recipe[] = [
   {
     id: 'r1',
+    pantryIds: ['p1', 'p3'],
+    imageKey: 'rigatoni',
+    description: 'Silky parmesan-infused ricotta folded over warm rigatoni, using up your urgent spinach and fresh whole milk before spoilage.',
     title: 'Garlic Ricotta & Crispy Spinach Rigatoni',
     imageEmoji: '🍝',
     prepMinutes: 15,
@@ -197,6 +204,9 @@ export const MOCK_RECIPES: Recipe[] = [
   },
   {
     id: 'r2',
+    pantryIds: ['p1', 'p5'],
+    imageKey: 'rigatoni',
+    description: 'Use baby spinach and avocado before they lose crispness.',
     title: 'Quick Spinach Stir-Fry',
     imageEmoji: '🥘',
     prepMinutes: 12,
@@ -212,6 +222,9 @@ export const MOCK_RECIPES: Recipe[] = [
   },
   {
     id: 'r3',
+    pantryIds: ['p6', 'p7'],
+    imageKey: 'toast',
+    description: 'A quick sourdough breakfast with gently poached eggs.',
     title: 'Poached Egg Sourdough Toast',
     imageEmoji: '🍳',
     prepMinutes: 10,
@@ -227,6 +240,9 @@ export const MOCK_RECIPES: Recipe[] = [
   },
   {
     id: 'r4',
+    pantryIds: ['p2'],
+    imageKey: 'crumble',
+    description: 'Turn ripe strawberries into a warm, golden oat crumble.',
     title: 'Warm Mixed Berry & Oat Crumble',
     imageEmoji: '🫐',
     prepMinutes: 25,
@@ -304,3 +320,29 @@ export const MOCK_ANALYTICS_SUMMARY = {
   categoryBreakdown: MOCK_CATEGORY_BREAKDOWN,
   heroRescues: MOCK_HERO_RESCUES,
 };
+
+export type InsightPeriod = 'This Month' | 'Weekly' | 'All Time';
+export interface InsightSummary {
+  saved: number; meals: number; rescuedKg: number; co2Kg: number; wasteKg: number;
+  wasteFree: number; rescues: number; goal: number; growth: string;
+}
+/** June design snapshots. Weekly and All Time are explicit prototype comparison samples. */
+export const MOCK_INSIGHT_PERIODS: Record<InsightPeriod, InsightSummary> = {
+  'This Month': { saved: 84.50, meals: 14, rescuedKg: 19.2, co2Kg: 42.8, wasteKg: 1.6, wasteFree: 92, rescues: 17, goal: 20, growth: '+18% vs May' },
+  Weekly: { saved: 24.50, meals: 4, rescuedKg: 5.8, co2Kg: 12.9, wasteKg: 0.1, wasteFree: 98, rescues: 5, goal: 7, growth: '+8% vs last week' },
+  'All Time': { saved: 323.80, meals: 54, rescuedKg: 75.6, co2Kg: 168.5, wasteKg: 8.4, wasteFree: 90, rescues: 110, goal: 120, growth: 'Six-month overview' },
+};
+export const MOCK_EFFICIENCY: { label: string; rescued: number; wasted: number }[] = [
+  { label: 'W1', rescued: 3.8, wasted: 0.7 }, { label: 'W2', rescued: 4.5, wasted: 0.5 },
+  { label: 'W3', rescued: 5.1, wasted: 0.3 }, { label: 'W4', rescued: 5.8, wasted: 0.1 },
+];
+export const MOCK_SAVED_CATEGORIES: { name: string; kg: number; value: number; rate: number; icon: string }[] = [
+  { name: 'Produce & Greens', kg: 8.4, value: 38.20, rate: 96, icon: 'leaf' },
+  { name: 'Dairy & Plant Milk', kg: 5.1, value: 24.80, rate: 91, icon: 'cup-outline' },
+  { name: 'Bakery & Bread', kg: 3.2, value: 12.50, rate: 88, icon: 'bread-slice-outline' },
+  { name: 'Proteins & Deli', kg: 2.5, value: 9.00, rate: 100, icon: 'food-steak' },
+];
+export const MOCK_HABIT_RECOMMENDATION = 'Dairy items typically expire 2 days before your Sunday grocery restock. Consider buying pints instead of half-gallons or preparing berry yogurt parfaits on Thursday mornings!';
+export const MOCK_KITCHEN_BADGES = ['14-Day Streak', 'Greens Guardian', 'Receipt Rescuer'];
+
+export const MOCK_PREFERENCES: { digest: boolean; hour: string } = { digest: true, hour: '17:00' };
