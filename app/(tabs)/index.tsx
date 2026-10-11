@@ -17,17 +17,20 @@ import ExpiryBadge from '@/components/ExpiryBadge';
 import FreshnessBar from '@/components/FreshnessBar';
 import { Colors, Elevation, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 import {
-  MOCK_PANTRY_ITEMS,
   MOCK_RECIPES,
   MOCK_ANALYTICS_SUMMARY,
 } from '@/lib/mock';
 
+import { useMockPantry } from '@/context/MockPantryContext';
+
 type Mode = 'at-home' | 'shopping';
 
 export default function HomeScreen() {
+  const { items } = useMockPantry();
+  const activeItems = items.filter((item) => item.status === 'ACTIVE');
   const [mode, setMode] = useState<Mode>('at-home');
-  const expiringItems = MOCK_PANTRY_ITEMS.filter((i) => i.daysLeft <= 7 && i.status === 'ACTIVE').slice(0, 5);
-  const recentItems = [...MOCK_PANTRY_ITEMS].slice(0, 3);
+  const expiringItems = activeItems.filter((i) => i.daysLeft <= 7 && i.status === 'ACTIVE').slice(0, 5);
+  const recentItems = [...activeItems].slice(0, 3);
   const featuredRecipe = MOCK_RECIPES[0]!;
 
   return (
@@ -101,14 +104,14 @@ export default function HomeScreen() {
           <View style={[styles.metricCard, { flex: 1 }]}>
             <Text style={styles.metricLabel}>INVENTORY</Text>
             <View style={styles.metricIconRow}>
-              <Text style={styles.metricValueLarge}>{MOCK_PANTRY_ITEMS.length} Items</Text>
+              <Text style={styles.metricValueLarge}>{activeItems.length} Items</Text>
               <View style={[styles.metricIconCircle, { backgroundColor: Colors.surfaceContainerHigh }]}>
                 <Text style={{ fontSize: 16 }}>📦</Text>
               </View>
             </View>
             <Text style={styles.metricSub}>
-              {MOCK_PANTRY_ITEMS.filter(i => i.category === 'Produce').length} Pantry ·{' '}
-              {MOCK_PANTRY_ITEMS.filter(i => i.category === 'Dairy').length} Fridge
+              {activeItems.filter(i => i.category === 'Produce').length} Pantry ·{' '}
+              {activeItems.filter(i => i.category === 'Dairy').length} Fridge
             </Text>
           </View>
         </View>
@@ -126,24 +129,24 @@ export default function HomeScreen() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
           {expiringItems.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.expiryCard}
-              onPress={() => router.push(`/pantry/${item.id}` as any)}
-              accessibilityRole="button"
-              accessibilityLabel={item.name}
-            >
-              <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} compact />
-              <Text style={styles.expiryPrice}>
-                ${item.price.toFixed(2)} at risk
-              </Text>
-              <View style={styles.expiryThumb}>
-                <Text style={{ fontSize: 32 }}>{item.imageEmoji}</Text>
-              </View>
-              <Text style={styles.expiryName} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.expirySource}>
-                {item.expirySource === 'PACKAGE_DATE' ? '✓ Confirmed' : '✦ Estimated (Rule)'}
-              </Text>
+            <View key={item.id} style={styles.expiryCard}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
+                accessibilityRole="button"
+                accessibilityLabel={item.name}
+              >
+                <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} compact />
+                <Text style={styles.expiryPrice}>
+                  ${item.price.toFixed(2)} at risk
+                </Text>
+                <View style={styles.expiryThumb}>
+                  <Text style={{ fontSize: 32 }}>{item.imageEmoji}</Text>
+                </View>
+                <Text style={styles.expiryName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.expirySource}>
+                  {item.expirySource === 'PACKAGE_DATE' ? '✓ Confirmed' : item.expirySource === 'USER_ENTERED' ? 'User-entered date' : '✦ Estimated (Rule)'}
+                </Text>
+              </Pressable>
               <Pressable
                 style={styles.pairBtn}
                 onPress={() => router.push('/(tabs)/recipes' as any)}
@@ -153,7 +156,7 @@ export default function HomeScreen() {
                 <Text style={styles.pairBtnText}>🍽 {MOCK_RECIPES[0]?.rescuesItems[0]?.split(' ')[0] ?? 'Pair'}</Text>
                 <Text style={styles.pairAction}>Pair</Text>
               </Pressable>
-            </Pressable>
+            </View>
           ))}
         </ScrollView>
 
@@ -165,37 +168,40 @@ export default function HomeScreen() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
           {MOCK_RECIPES.slice(0, 2).map((recipe) => (
-            <Pressable
-              key={recipe.id}
-              style={styles.recipeHeroCard}
-              onPress={() => router.push(`/recipe/${recipe.id}` as any)}
-              accessibilityRole="button"
-              accessibilityLabel={recipe.title}
-            >
-              <View style={styles.recipeHeroImage}>
-                <Text style={{ fontSize: 52 }}>{recipe.imageEmoji}</Text>
-                <View style={styles.recipeHeroBadge}>
-                  <Text style={styles.recipeHeroBadgeText}>
-                    ⚡ Rescues {recipe.rescuesItems.length} Items
-                  </Text>
+            <View key={recipe.id} style={styles.recipeHeroCard}>
+              <Pressable
+                onPress={() => router.push(`/recipe/${recipe.id}` as any)}
+                accessibilityRole="button"
+                accessibilityLabel={recipe.title}
+              >
+                <View style={styles.recipeHeroImage}>
+                  <Text style={{ fontSize: 52 }}>{recipe.imageEmoji}</Text>
+                  <View style={styles.recipeHeroBadge}>
+                    <Text style={styles.recipeHeroBadgeText}>
+                      ⚡ Rescues {recipe.rescuesItems.length} Items
+                    </Text>
+                  </View>
+                  <View style={styles.recipeHeroTime}>
+                    <Text style={styles.recipeHeroTimeText}>{recipe.prepMinutes} min</Text>
+                  </View>
                 </View>
-                <View style={styles.recipeHeroTime}>
-                  <Text style={styles.recipeHeroTimeText}>{recipe.prepMinutes} min</Text>
-                </View>
-              </View>
+              </Pressable>
               <View style={styles.recipeHeroContent}>
-                <Text style={styles.recipeHeroTitle} numberOfLines={1}>{recipe.title}</Text>
-                <Text style={styles.recipeHeroDesc} numberOfLines={2}>{recipe.instructions}</Text>
+                <Pressable onPress={() => router.push(`/recipe/${recipe.id}` as any)}
+                  accessibilityRole="button" accessibilityLabel={`${recipe.title} details`}>
+                  <Text style={styles.recipeHeroTitle} numberOfLines={1}>{recipe.title}</Text>
+                  <Text style={styles.recipeHeroDesc} numberOfLines={2}>{recipe.instructions}</Text>
+                </Pressable>
                 <Pressable
                   style={styles.cookedBtn}
-                  onPress={() => {}}
+                  onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
                   accessibilityRole="button"
                   accessibilityLabel="I Cooked This"
                 >
                   <Text style={styles.cookedBtnText}>✓ I Cooked This</Text>
                 </Pressable>
               </View>
-            </Pressable>
+            </View>
           ))}
         </ScrollView>
 
@@ -211,7 +217,7 @@ export default function HomeScreen() {
           <Pressable
             key={item.id}
             style={styles.recentCard}
-            onPress={() => router.push(`/pantry/${item.id}` as any)}
+            onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
             accessibilityRole="button"
             accessibilityLabel={item.name}
           >
@@ -221,7 +227,7 @@ export default function HomeScreen() {
             <View style={styles.recentInfo}>
               <Text style={styles.recentName}>{item.name}</Text>
               <Text style={styles.recentMeta}>
-                {item.category} · Scanned {item.daysLeft < 1 ? 'today' : `${item.daysLeft}h ago`}
+                {item.category} · {item.source === 'MANUAL' ? 'Added manually' : `Scanned ${item.daysLeft < 1 ? 'today' : `${item.daysLeft}h ago`}`}
               </Text>
             </View>
             <View style={styles.recentRight}>

@@ -3,7 +3,10 @@
  * Used across tabs. Matches design-reference headers.
  */
 import React from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { Image, StyleSheet, Text, View, Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { avatarImage, brandImage } from '@/lib/designAssets';
 import { Colors, FontSize, FontWeight, Spacing } from '../constants/Theme';
 
 interface Props {
@@ -27,9 +30,9 @@ export default function ScreenHeader({
     <View style={styles.container}>
       {/* Brand */}
       <View style={styles.brand}>
-        <Text style={styles.logo}>🌿</Text>
+        <Image source={brandImage} style={{ width: 36, height: 36, borderRadius: 8 }} />
         <View>
-          <Text style={styles.appName}>FreshTrack</Text>
+          <Text style={styles.appName}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
       </View>
@@ -38,23 +41,23 @@ export default function ScreenHeader({
       <View style={styles.actions}>
         {showNotification && (
           <Pressable
-            onPress={onNotificationPress}
+            onPress={onNotificationPress ?? (() => router.push('/settings'))}
             style={styles.iconBtn}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <Text style={styles.icon}>🔔</Text>
+            <MaterialCommunityIcons name="bell-outline" size={24} color={Colors.onSurface} />
             <View style={styles.notifDot} />
           </Pressable>
         )}
         {showAvatar && (
           <Pressable
-            onPress={onAvatarPress}
+            onPress={onAvatarPress ?? (() => router.push('/settings'))}
             style={styles.avatar}
             accessibilityRole="button"
             accessibilityLabel="Profile"
           >
-            <Text style={styles.avatarText}>M</Text>
+            <Image source={avatarImage} style={{ width: 36, height: 36, borderRadius: 18 }} />
           </Pressable>
         )}
       </View>

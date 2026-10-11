@@ -8,16 +8,17 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Elevation, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
 
-const TAB_ICONS: Record<string, { icon: string; label: string }> = {
-  index: { icon: '🏠', label: 'Home' },
-  pantry: { icon: '📦', label: 'Pantry' },
-  scanner: { icon: '▣', label: 'Scan' },
-  recipes: { icon: '🍽', label: 'Recipes' },
-  insights: { icon: '📊', label: 'Insights' },
+const TAB_ICONS: Record<string, { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; label: string }> = {
+  index: { icon: 'home-outline', label: 'Home' },
+  pantry: { icon: 'fridge-outline', label: 'Pantry' },
+  scanner: { icon: 'barcode-scan', label: 'Scan' },
+  recipes: { icon: 'silverware-fork-knife', label: 'Recipes' },
+  insights: { icon: 'chart-bar', label: 'Insights' },
 };
 
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -26,11 +27,11 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View style={[styles.tabBarWrapper, { paddingBottom: insets.bottom + 8 }]}>
       <View style={styles.tabBar}>
-        {(state.routes as Array<{ key: string; name: string }>).map((route, index: number) => {
+        {(state.routes as Array<{ key: string; name: string }>).filter((route) => route.name !== 'two').map((route) => {
           const { options } = descriptors[route.key]!;
-          const isFocused = state.index === index;
+          const isFocused = state.routes[state.index]?.key === route.key;
           const isScanner = route.name === 'scanner';
-          const tabInfo = TAB_ICONS[route.name] ?? { icon: '•', label: route.name };
+          const tabInfo = TAB_ICONS[route.name] ?? { icon: 'circle-outline' as const, label: route.name };
 
           const onPress = () => {
             const event = navigation.emit({
@@ -54,7 +55,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 accessibilityState={{ selected: isFocused }}
               >
                 <View style={[styles.fab, isFocused && styles.fabActive]}>
-                  <Text style={styles.fabIcon}>▣</Text>
+                  <MaterialCommunityIcons name="barcode-scan" color={Colors.white} size={28} />
                 </View>
               </Pressable>
             );
@@ -69,9 +70,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               accessibilityLabel={options.title ?? tabInfo.label}
               accessibilityState={{ selected: isFocused }}
             >
-              <Text style={[styles.tabIcon, isFocused && styles.tabIconActive]}>
-                {tabInfo.icon}
-              </Text>
+              <MaterialCommunityIcons name={tabInfo.icon} size={24} color={isFocused ? Colors.primary : Colors.onSurfaceVariant} />
               <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
                 {tabInfo.label}
               </Text>
@@ -94,6 +93,7 @@ export default function TabLayout() {
       <Tabs.Screen name="scanner" options={{ title: 'Scanner' }} />
       <Tabs.Screen name="recipes" options={{ title: 'Recipes' }} />
       <Tabs.Screen name="insights" options={{ title: 'Insights' }} />
+      <Tabs.Screen name="two" options={{ href: null }} />
     </Tabs>
   );
 }
@@ -107,6 +107,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
   },
   tabBar: {
+    width: '100%',
+    maxWidth: 410,
+    alignSelf: 'center',
     flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderRadius: Radius.full,

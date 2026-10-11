@@ -2,22 +2,24 @@
  * Pantry / Kitchen Inventory screen
  * Design reference: design-reference/kitchen_inventory_swipe_actions/screen.png
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMockPantry } from '@/context/MockPantryContext';
+import PantryConfirmation from '@/components/PantryConfirmation';
 import ScreenHeader from '@/components/ScreenHeader';
 import PantryItemCard from '@/components/PantryItemCard';
+import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
-import { MOCK_PANTRY_ITEMS, type PantryItem } from '@/lib/mock';
+import type { PantryItem } from '@/lib/mock';
 
 type FilterChip = 'All' | 'Critical' | 'Caution' | 'Fresh';
 type SortMode = 'expiry' | 'name' | 'category';
@@ -30,10 +32,15 @@ const FILTER_CHIPS: { key: FilterChip; label: string; color: string }[] = [
 ];
 
 export default function PantryScreen() {
-  const [items, setItems] = useState<PantryItem[]>(MOCK_PANTRY_ITEMS);
+  const { items, dispatch } = useMockPantry();
+  const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED' } | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterChip>('All');
   const [sort, setSort] = useState<SortMode>('expiry');
+  const { added } = useLocalSearchParams<{ added?: string }>();
+  useEffect(() => {
+    if (added) { setSearch(''); setFilter('All'); }
+  }, [added]);
 
   const filtered = items
     .filter((i) => i.status === 'ACTIVE')
@@ -54,35 +61,21 @@ export default function PantryScreen() {
 
   const totalValue = filtered.reduce((sum, i) => sum + i.price, 0);
   const criticalCount = items.filter((i) => i.daysLeft <= 1 && i.status === 'ACTIVE').length;
+  const hasActiveItems = items.some((item) => item.status === 'ACTIVE');
 
-  const handleConsume = (id: string) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, status: 'CONSUMED' as const } : i)),
-    );
-    Alert.alert('✓ Marked as Used', 'Great — no food wasted! 🌿');
-  };
-
-  const handleWaste = (id: string) => {
-    Alert.alert(
-      'Mark as Wasted',
-      'This will log the item as food waste and track the cost.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm Waste',
-          style: 'destructive',
-          onPress: () => {
-            setItems((prev) =>
-              prev.map((i) => (i.id === id ? { ...i, status: 'WASTED' as const } : i)),
-            );
-          },
-        },
-      ],
-    );
+  const requestStatus = (id: string, action: 'CONSUMED' | 'WASTED') => {
+    const item = items.find((entry) => entry.id === id);
+    if (item?.status === 'ACTIVE') setConfirmation({ item, action });
   };
 
   return (
     <SafeAreaView style={styles.safe}>
+      <PantryConfirmation item={confirmation?.item ?? null} action={confirmation?.action ?? 'CONSUMED'}
+        onCancel={() => setConfirmation(null)} onConfirm={() => {
+          if (!confirmation) return;
+          dispatch({ type: 'status', id: confirmation.item.id, status: confirmation.action });
+          setConfirmation(null);
+        }} />
       <ScreenHeader title="FreshTrack" subtitle="Pantry" />
 
       <ScrollView
@@ -96,6 +89,7 @@ export default function PantryScreen() {
           <Text style={styles.screenTitle}>Kitchen Inventory</Text>
           <Text style={styles.itemCount}>{filtered.length} items</Text>
         </View>
+        <PrimaryButton label="Add Item Manually" variant="ghost" onPress={() => router.push('/pantry/add')} />
 
         {/* Dual-Tier Freshness Engine banner */}
         <View style={styles.freshnessEngineBanner}>
@@ -188,26 +182,28 @@ export default function PantryScreen() {
         </View>
 
         {/* Items list */}
+        {!!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
         {filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🥦</Text>
             <Text style={styles.emptyTitle}>
-              {search ? `No items matching "${search}"` : 'No items in this category'}
+              {!hasActiveItems ? 'Your pantry is empty' : search ? `No items matching "${search}"` : 'No items in this category'}
             </Text>
             <Text style={styles.emptySub}>
               {search
                 ? 'Try a different search term'
                 : 'Scan a receipt or add an item manually'}
             </Text>
+            <PrimaryButton label={hasActiveItems ? 'Add Item Manually' : 'Add Your First Item'} onPress={() => router.push('/pantry/add')} />
           </View>
         ) : (
           filtered.map((item) => (
             <PantryItemCard
               key={item.id}
               item={item}
-              onPress={() => router.push(`/pantry/${item.id}` as any)}
-              onConsume={handleConsume}
-              onWaste={handleWaste}
+              onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
+              onConsume={(id) => requestStatus(id, 'CONSUMED')}
+              onWaste={(id) => requestStatus(id, 'WASTED')}
             />
           ))
         )}
@@ -215,7 +211,7 @@ export default function PantryScreen() {
         {/* Add item FAB hint */}
         <Pressable
           style={styles.addHint}
-          onPress={() => router.push('/(tabs)/scanner' as any)}
+          onPress={() => router.push('/(tabs)/scanner')}
           accessibilityRole="button"
           accessibilityLabel="Scan receipt or barcode to add items"
         >
@@ -232,11 +228,14 @@ export default function PantryScreen() {
 }
 
 const styles = StyleSheet.create({
+  swipeHint: { fontFamily: 'PlusJakartaSans_400Regular', color: Colors.onSurfaceVariant,
+    fontSize: FontSize.bodySm, marginBottom: Spacing.sm },
   safe: { flex: 1, backgroundColor: Colors.surface },
   scroll: { flex: 1 },
   content: { paddingHorizontal: Spacing.screenGutter },
 
   titleRow: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -328,8 +327,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.labelMd,
     color: Colors.onSurface,
     fontFamily: 'PlusJakartaSans_400Regular',
-    whiteSpace: 'nowrap',
-  } as any,
+  },
   chipTextActive: {
     color: Colors.onPrimary,
     fontWeight: FontWeight.semibold,
