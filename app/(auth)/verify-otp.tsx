@@ -5,70 +5,78 @@
  * is described in the product spec as a six-digit email verification step.
  * This screen follows the spec and design language.
  */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { DEMO_AUTH, applyOtpInput, otpResult } from '@/lib/auth';
+import { useMockPreferences } from '@/context/MockPreferencesContext';
+import useDemoRequest from '@/features/auth/useDemoRequest';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 
-const OTP_LENGTH = 6;
+const OTP_LENGTH = DEMO_AUTH.length;
 
 export default function VerifyOtpScreen() {
+  const { preview } = useLocalSearchParams<{ preview?: string }>();
+  const { profile } = useMockPreferences();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [loading, setLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const { loading, run } = useDemoRequest();
+  const [resendReadyAt, setResendReadyAt] = useState(0);
+  const [issuedAt, setIssuedAt] = useState(() => Date.now() - (preview === 'expired' ? DEMO_AUTH.lifetimeMs : 0));
+  const [now, setNow] = useState(Date.now);
+  const [notice, setNotice] = useState('');
+  const [networkFailure, setNetworkFailure] = useState(preview === 'error');
+  const [resendFailure, setResendFailure] = useState(preview === 'resend-error');
   const inputs = useRef<(TextInput | null)[]>([]);
-
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const resendCooldown = Math.max(0, Math.ceil((resendReadyAt - now) / 1000));
+  const remaining = Math.max(0, Math.ceil((issuedAt + DEMO_AUTH.lifetimeMs - now) / 1000));
   const handleChange = (value: string, index: number) => {
-    const digit = value.replace(/\D/g, '').slice(-1);
-    const next = [...otp];
-    next[index] = digit;
-    setOtp(next);
-    if (digit && index < OTP_LENGTH - 1) {
-      inputs.current[index + 1]?.focus();
-    }
+    setOtp((previous) => applyOtpInput(previous, value, index));
+    setNotice('');
+    const count = value.replace(/\D/g, '').length;
+    if (count) inputs.current[Math.min(OTP_LENGTH - 1, count === OTP_LENGTH ? OTP_LENGTH - 1 : index + count)]?.focus();
   };
-
   const handleKeyPress = (key: string, index: number) => {
-    if (key === 'Backspace' && !otp[index] && index > 0) {
-      inputs.current[index - 1]?.focus();
-    }
+    if (key === 'Backspace' && !otp[index] && index > 0) inputs.current[index - 1]?.focus();
   };
-
   const handleVerify = () => {
     const code = otp.join('');
-    if (code.length < OTP_LENGTH) {
-      Alert.alert('Incomplete code', 'Please enter all 6 digits.');
-      return;
-    }
-    setLoading(true);
-    // Phase 1: simulate OTP success → navigate to app
-    setTimeout(() => {
-      setLoading(false);
-      router.replace('/(tabs)/' as any);
-    }, 800);
+    if (otpResult(code, issuedAt, Date.now()) === 'incomplete') { setNotice('Enter all six digits.'); return; }
+    setNotice('');
+    // Phase 1: simulate OTP validation → navigate to app; never contact an auth provider.
+    run(() => {
+      if (networkFailure) { setNetworkFailure(false); setNotice('Demo verification failed. Try again.'); return; }
+      const result = otpResult(code, issuedAt, Date.now());
+      if (result === 'expired') { setNotice('This demo code has expired. Resend a code to continue.'); return; }
+      if (result !== 'success') { setNotice('That code is incorrect. Check the six-digit demo code.'); return; }
+      router.replace('/(tabs)');
+    });
   };
-
   const handleResend = () => {
-    if (resendCooldown > 0) return;
-    Alert.alert('Code resent', 'A new verification code has been sent to your email.');
-    setResendCooldown(30);
-    const interval = setInterval(() => {
-      setResendCooldown((v) => {
-        if (v <= 1) { clearInterval(interval); return 0; }
-        return v - 1;
-      });
-    }, 1000);
+    if (resendCooldown > 0 || loading) return;
+    run(() => {
+      if (resendFailure) { setResendFailure(false); setNotice('Unable to resend the demo code. Try again.'); return; }
+      const timestamp = Date.now();
+      setIssuedAt(timestamp); setNow(timestamp);
+      setOtp(Array(OTP_LENGTH).fill('')); setResendReadyAt(timestamp + DEMO_AUTH.cooldownSeconds * 1000);
+      setNotice('New demo code ready. No email was sent.'); inputs.current[0]?.focus();
+    });
   };
 
   return (
@@ -77,9 +85,9 @@ export default function VerifyOtpScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           {/* Back */}
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)/sign-up')} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back to sign-up">
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
 
@@ -90,8 +98,7 @@ export default function VerifyOtpScreen() {
 
           <Text style={styles.headline}>Verify Your Email</Text>
           <Text style={styles.subtext}>
-            We've sent a 6-digit verification code to your email address. Enter it below to
-            continue.
+            Enter the six-digit demo code for {profile.email}.
           </Text>
 
           {/* OTP inputs */}
@@ -105,7 +112,10 @@ export default function VerifyOtpScreen() {
                 onChangeText={(v) => handleChange(v, i)}
                 onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
                 keyboardType="number-pad"
-                maxLength={1}
+                maxLength={OTP_LENGTH}
+                editable={!loading}
+                autoComplete={i === 0 ? "one-time-code" : "off"}
+                textContentType={i === 0 ? "oneTimeCode" : "none"}
                 selectTextOnFocus
                 accessibilityLabel={`OTP digit ${i + 1}`}
                 textAlign="center"
@@ -113,6 +123,8 @@ export default function VerifyOtpScreen() {
             ))}
           </View>
 
+          <Text style={styles.subtext} accessibilityLiveRegion="polite">{remaining ? `Code expires in ${remaining}s` : 'Demo code expired. Resend to continue.'}</Text>
+          {!!notice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{notice}</Text>}
           <PrimaryButton
             label="Verify & Continue →"
             onPress={handleVerify}
@@ -124,20 +136,19 @@ export default function VerifyOtpScreen() {
             <Text style={styles.resendText}>Didn't receive it? </Text>
             <Pressable
               onPress={handleResend}
-              disabled={resendCooldown > 0}
+              disabled={resendCooldown > 0 || loading}
               accessibilityRole="button"
             >
               <Text style={[styles.resendLink, resendCooldown > 0 && styles.resendDisabled]}>
-                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                {loading ? 'Please wait…' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
               </Text>
             </Pressable>
           </View>
 
           <Text style={styles.note}>
-            ⚠️ Phase 1 only: No real authentication. Tapping Verify navigates directly to
-            the app.
+            Demo code: {DEMO_AUTH.code}. No email is sent or account verified. Reloading resets the demo.
           </Text>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -146,7 +157,7 @@ export default function VerifyOtpScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.surface },
   container: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: Spacing.screenGutter,
     paddingVertical: Spacing.xl,
     gap: Spacing.base,
@@ -187,9 +198,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     marginVertical: Spacing.base,
+    width: '100%', maxWidth: 360,
   },
   otpInput: {
-    width: 48,
+    flex: 1,
+    minWidth: 0,
     height: 56,
     borderRadius: Radius.md,
     backgroundColor: Colors.surfaceContainerLow,

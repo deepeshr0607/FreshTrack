@@ -9,82 +9,38 @@
  */
 import React, { useState } from 'react';
 import {
-  Alert,
   Pressable,
-  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CameraPermissionGate from '@/features/scanner/CameraPermissionGate';
+import { initialMockCameraPermission, type MockCameraPermission } from '@/lib/scannerPermission';
+import ReceiptReview from '@/features/scanner/ReceiptReview';
 import ScreenHeader from '@/components/ScreenHeader';
-import ExpiryBadge from '@/components/ExpiryBadge';
+import BarcodeReview from '@/features/scanner/BarcodeReview';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, Elevation, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
-import { MOCK_PANTRY_ITEMS } from '@/lib/mock';
 
 type ScanMode = 'none' | 'barcode' | 'receipt';
 
-// Mock OCR receipt result
-const MOCK_RECEIPT_ITEMS = [
-  { id: 'ri1', name: 'Baby Spinach 5oz', price: 3.99, qty: 1, emoji: '🥬', daysLeft: 5 },
-  { id: 'ri2', name: 'Whole Milk 1 Gal', price: 4.49, qty: 1, emoji: '🥛', daysLeft: 7 },
-  { id: 'ri3', name: 'Greek Yogurt', price: 5.29, qty: 2, emoji: '🍶', daysLeft: 12 },
-  { id: 'ri4', name: 'Sourdough Bread', price: 5.20, qty: 1, emoji: '🍞', daysLeft: 4 },
-  { id: 'ri5', name: 'Pasture Eggs 12ct', price: 6.49, qty: 1, emoji: '🥚', daysLeft: 14 },
-];
-
-// Mock barcode scan result
-const MOCK_BARCODE_RESULT = MOCK_PANTRY_ITEMS[0]!;
-
 export default function ScannerScreen() {
   const [mode, setMode] = useState<ScanMode>('none');
-  const [scanning, setScanning] = useState(false);
-  const [receiptItems, setReceiptItems] = useState(
-    MOCK_RECEIPT_ITEMS.map((i) => ({ ...i, selected: true })),
-  );
-  const [barcodeResult, setBarcodeResult] = useState<typeof MOCK_BARCODE_RESULT | null>(null);
-  const [expiryOverride, setExpiryOverride] = useState('');
-
-  const handleBarcodeScan = () => {
-    setScanning(true);
-    setTimeout(() => {
-      setScanning(false);
-      setBarcodeResult(MOCK_BARCODE_RESULT);
-    }, 1200);
-  };
-
-  const handleReceiptScan = () => {
-    setScanning(true);
-    setTimeout(() => {
-      setScanning(false);
-    }, 1200);
-  };
-
-  const handleAddHaul = () => {
-    const selected = receiptItems.filter((i) => i.selected);
-    Alert.alert(
-      '✓ Added to Pantry',
-      `${selected.length} items added to your kitchen inventory! FreshTrack will monitor their expiry dates.`,
-      [{ text: 'View Pantry', onPress: () => router.push('/(tabs)/pantry' as any) }],
-    );
-  };
-
-  const handleAddBarcode = () => {
-    Alert.alert(
-      '✓ Item Added',
-      `${barcodeResult?.name} added to your pantry with expiry set.`,
-      [{ text: 'OK', onPress: () => { setBarcodeResult(null); setMode('none'); } }],
-    );
-  };
+  const { permission: permissionPreview } = useLocalSearchParams<{ permission?: string }>();
+  const [permission, setPermission] = useState<MockCameraPermission>(() => initialMockCameraPermission(permissionPreview));
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScreenHeader title="FreshTrack" subtitle="Scanner" />
 
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -152,95 +108,15 @@ export default function ScannerScreen() {
         {mode === 'receipt' && (
           <View style={styles.scannerSection}>
             <View style={styles.scannerTopRow}>
-              <Pressable onPress={() => { setMode('none'); setScanning(false); }}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Change Scanner Mode" onPress={() => setMode('none')}>
                 <Text style={styles.backLink}>← Change Mode</Text>
               </Pressable>
               <Text style={styles.modeTitleLabel}>Receipt OCR</Text>
             </View>
 
-            {/* Camera viewfinder placeholder */}
-            <View style={styles.viewfinder}>
-              <View style={styles.viewfinderCorner1} />
-              <View style={styles.viewfinderCorner2} />
-              <View style={styles.viewfinderCorner3} />
-              <View style={styles.viewfinderCorner4} />
-              <Text style={styles.viewfinderEmoji}>🧾</Text>
-              {scanning ? (
-                <View style={styles.scanLine} />
-              ) : null}
-              <Text style={styles.viewfinderHint}>
-                {scanning ? '⚡ Scanning receipt...' : 'Position receipt in frame'}
-              </Text>
-            </View>
-
-            {!scanning && receiptItems.length === 0 ? (
-              <PrimaryButton
-                label="📷 Simulate Receipt Scan"
-                onPress={handleReceiptScan}
-                loading={scanning}
-              />
-            ) : null}
-
-            {scanning && (
-              <View style={styles.scanningIndicator}>
-                <Text style={styles.scanningText}>⚡ Extracting items with OCR AI...</Text>
-              </View>
-            )}
-
-            {/* Parsed items list (shown immediately in Phase 1 prototype) */}
-            {!scanning && (
-              <View>
-                <Text style={styles.parsedTitle}>
-                  Detected Haul · {receiptItems.filter(i => i.selected).length} items selected
-                </Text>
-
-                {receiptItems.map((item) => (
-                  <Pressable
-                    key={item.id}
-                    style={[styles.receiptItem, !item.selected && styles.receiptItemUnselected]}
-                    onPress={() =>
-                      setReceiptItems((prev) =>
-                        prev.map((ri) => (ri.id === item.id ? { ...ri, selected: !ri.selected } : ri)),
-                      )
-                    }
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: item.selected }}
-                  >
-                    <View style={[styles.receiptCheck, item.selected && styles.receiptCheckSelected]}>
-                      {item.selected && <Text style={styles.checkMark}>✓</Text>}
-                    </View>
-                    <Text style={styles.receiptEmoji}>{item.emoji}</Text>
-                    <View style={styles.receiptInfo}>
-                      <Text style={styles.receiptName}>{item.name}</Text>
-                      <Text style={styles.receiptMeta}>
-                        Qty: {item.qty} · ${item.price.toFixed(2)}
-                      </Text>
-                    </View>
-                    <ExpiryBadge daysLeft={item.daysLeft} expirySource="PRESET_ESTIMATE" compact />
-                  </Pressable>
-                ))}
-
-                {/* Edit/verify note */}
-                <View style={styles.editHint}>
-                  <Text style={styles.editHintText}>
-                    ✦ Expiry dates are estimated — tap any item to edit before adding.
-                    Never auto-imported without your review.
-                  </Text>
-                </View>
-
-                <PrimaryButton
-                  label={`✓ Add ${receiptItems.filter(i => i.selected).length} Items to Kitchen`}
-                  onPress={handleAddHaul}
-                  style={{ marginTop: Spacing.sm }}
-                />
-                <PrimaryButton
-                  label="Scan Another Receipt"
-                  onPress={handleReceiptScan}
-                  variant="ghost"
-                  style={{ marginTop: Spacing.sm }}
-                />
-              </View>
-            )}
+            <CameraPermissionGate permission={permission} onChange={setPermission}>
+              <ReceiptReview />
+            </CameraPermissionGate>
           </View>
         )}
 
@@ -248,89 +124,22 @@ export default function ScannerScreen() {
         {mode === 'barcode' && (
           <View style={styles.scannerSection}>
             <View style={styles.scannerTopRow}>
-              <Pressable onPress={() => { setMode('none'); setBarcodeResult(null); setScanning(false); }}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Change Scanner Mode" onPress={() => setMode('none')}>
                 <Text style={styles.backLink}>← Change Mode</Text>
               </Pressable>
               <Text style={styles.modeTitleLabel}>Barcode Scan</Text>
             </View>
 
-            {/* Viewfinder */}
-            <View style={styles.viewfinder}>
-              <View style={styles.viewfinderCorner1} />
-              <View style={styles.viewfinderCorner2} />
-              <View style={styles.viewfinderCorner3} />
-              <View style={styles.viewfinderCorner4} />
-              <Text style={styles.viewfinderEmoji}>▣</Text>
-              {scanning && <View style={styles.scanLine} />}
-              <Text style={styles.viewfinderHint}>
-                {scanning ? '⚡ Reading barcode...' : 'Align barcode in frame'}
-              </Text>
-            </View>
-
-            {!barcodeResult && (
-              <PrimaryButton
-                label="▣ Simulate Barcode Scan"
-                onPress={handleBarcodeScan}
-                loading={scanning}
-                style={{ marginTop: Spacing.base }}
-              />
-            )}
-
-            {/* Result card */}
-            {barcodeResult && !scanning && (
-              <View style={styles.barcodeResult}>
-                <Text style={styles.resultTitle}>✓ Item Identified</Text>
-                <View style={styles.resultCard}>
-                  <View style={styles.resultThumb}>
-                    <Text style={{ fontSize: 36 }}>{barcodeResult.imageEmoji}</Text>
-                  </View>
-                  <View style={styles.resultInfo}>
-                    <Text style={styles.resultName}>{barcodeResult.name}</Text>
-                    <Text style={styles.resultMeta}>{barcodeResult.category}</Text>
-                    <ExpiryBadge daysLeft={barcodeResult.daysLeft} expirySource={barcodeResult.expirySource} />
-                  </View>
-                </View>
-
-                {/* Expiry override */}
-                <Text style={styles.overrideLabel}>📅 Override Expiry Date (optional)</Text>
-                <View style={styles.searchBar}>
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={Colors.onSurfaceVariant}
-                    value={expiryOverride}
-                    onChangeText={setExpiryOverride}
-                    keyboardType="numeric"
-                    accessibilityLabel="Override expiry date"
-                  />
-                </View>
-
-                {/* Item queue hint */}
-                <View style={styles.queueHint}>
-                  <Text style={styles.queueHintText}>
-                    💡 Scan another barcode to queue multiple items before adding to pantry.
-                  </Text>
-                </View>
-
-                <PrimaryButton
-                  label="✓ Add to Pantry"
-                  onPress={handleAddBarcode}
-                  style={{ marginTop: Spacing.sm }}
-                />
-                <PrimaryButton
-                  label="▣ Scan Another Barcode"
-                  onPress={() => { setBarcodeResult(null); handleBarcodeScan(); }}
-                  variant="ghost"
-                  style={{ marginTop: Spacing.sm }}
-                />
-              </View>
-            )}
+            <CameraPermissionGate permission={permission} onChange={setPermission}>
+              <BarcodeReview />
+            </CameraPermissionGate>
           </View>
         )}
 
         {/* Bottom clearance */}
         <View style={{ height: Spacing.navClearance }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -338,7 +147,7 @@ export default function ScannerScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.surface },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.screenGutter },
+  content: { paddingHorizontal: Spacing.screenGutter, width: '100%', maxWidth: 600, alignSelf: 'center' },
 
   screenTitle: {
     fontSize: FontSize.headlineLg,

@@ -55,11 +55,12 @@ export default function FormInput({
           }}
           placeholderTextColor={Colors.onSurfaceVariant}
         />
-        {rightIcon ? (
-          <Pressable onPress={onRightIconPress} accessibilityRole="button">
+        {rightIcon ? onRightIconPress ? (
+          <Pressable onPress={onRightIconPress} accessibilityRole="button"
+            accessibilityLabel={`Toggle ${label.toLowerCase()} visibility`}>
             <Text style={styles.rightIcon}>{rightIcon}</Text>
           </Pressable>
-        ) : null}
+        ) : <Text style={styles.rightIcon} accessible={false}>{rightIcon}</Text> : null}
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>

@@ -27,6 +27,7 @@ export interface PantryItem {
   imageEmoji: string;
   note?: string;
   source?: 'MANUAL' | 'RECEIPT' | 'BARCODE';
+  barcode?: string; // Synthetic catalog identity for Phase 1 barcode duplicate review.
 }
 
 export interface Recipe {

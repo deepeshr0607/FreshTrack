@@ -197,7 +197,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ## Project Status
 
 **Current phase: Phase 1 — IN PROGRESS**
-Latest inspected checkpoint: `62ddb1d` (`wip: FreshTrack Phase 1 progress`).
+Latest inspected checkpoint: `d349d24` (`wip: save FreshTrack progress`); working tree was clean before this receipt slice.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
@@ -237,7 +237,7 @@ Completed in this continuation:
   navigation exception. Recipes contains AI Chef; Insights contains Analytics. No duplicate dashboard.
 - New typed fixtures live in `lib/mock.ts`; shared recipe/preferences contexts and pure
   `lib/recipes.ts`/`lib/analytics.ts` selectors avoid independent screen mock records.
-  Existing scanner fixtures still need centralization.
+  Receipt fixtures are centralized in `lib/receipt.ts`; packaged barcode fixtures now live in `lib/barcode.ts`.
 
 Browser checks verified Recipe navigation, save, deduplicated shopping additions, purchased clearing,
 cook cancellation/confirmation, two-item shared Pantry removal and Insights session value ($92.98),
@@ -317,25 +317,172 @@ remain pending. The edits are uncommitted while Phase 1 remains incomplete.
 - Home Recent Additions uses a different card and remains a separate gesture task. Phase 1 remains
   in progress; the next slice is Scanner editable receipt review and confirmed mock insertion.
 
+### Receipt review checkpoint — 11 October 2026
+
+- Preserved Scanner route/mode selection and barcode preview. Replaced receipt alert-only success
+  with scan/loading → editable review → final confirmation → shared atomic insertion → View Pantry.
+  Added safe-area/keyboard-aware handling and capped content width. No dependencies or integrations.
+- Central typed `lib/receipt.ts` fixtures reproduce the four visible reference groceries ($16.16).
+  Reference decorative eight-item/$28.16 totals disagree with those rows; displayed totals are derived.
+  Review supports include/exclude, category/name/quantity/unit/whole-entry value/date edits, cancelled
+  edits, Add Missing into the pending haul, explicit Skip/Add separately duplicate choices and rescan.
+  Name matching is conservative (case/punctuation-normalized), not a fuzzy catalog lookup.
+- Estimated dates stay estimates; changed/new dates are user entered. Receipt origin is retained,
+  unknown values count as $0. Existing purchases are never merged/consumed. Import validates every row,
+  blocks partial/replayed batches and disables resubmission after success. Receipt timers clean up on unmount.
+- Browser verified duplicate gate, zero-quantity rejection/cancel, edited 0.5 gallon/$2.50/date,
+  exclusion plus duplicate skip, confirmation back/review and two-item insertion (8 → 10 Pantry items);
+  separate-purchase four-item success, mock error/empty/retry and Add Missing pending row.
+  Review layout checked at 375 × 812; native keyboard/accessibility/device QA remains pending.
+- `npx tsc --noEmit` root/backend passed; `node --experimental-strip-types --test tests/*.test.mjs`
+  passed 20/20 (four receipt tests, existing module-type warning). Initial test runner import-resolution
+  issue and float assertion were fixed. `npm test` in backend passed 1/1 after sandbox local-listen EPERM
+  required an approved rerun. Root `npm run lint` fails (no script); backend lint fails (ESLint absent),
+  both pre-existing. Web/iOS/Android export passed using `/private/tmp/freshtrack-receipt-review-final`;
+  `git diff --check` passed. Expo Doctor was not rerun; SDK/dependencies unchanged.
+- Preview failures: open `/scanner?preview=error` or `?preview=empty`, choose Receipt, then simulate.
+  Retry uses the successful sample. Changing mode discards pending receipt review. No camera permission,
+  OCR, receipt upload, alerts or persistence is connected. Viewfinder and emoji thumbnails remain
+  approximations; the reference's overlay/photographic assets and final side-by-side native QA are pending.
+
+### Barcode/package queue checkpoint — 11 October 2026
+
+- Inspected `d349d24`, the existing uncommitted receipt slice and packaged-item reference; preserved
+  receipt/manual/Pantry behavior. Replaced barcode alert-only success with an actual pending queue.
+- Central typed `lib/barcode.ts` contains synthetic catalog codes for the three visible packaged
+  products: Chobani Greek Yogurt, Kettle Sea Salt Chips and Sourdough Crackers. Review shows queue
+  progress, stamp target, manual date, simulated stamp/estimate options and remaining queue controls.
+  No real OCR/camera/catalog, new dependency, SDK/configuration change or backend implementation.
+- Confirm Date & Next validates fields and records review without inserting. Auto-Estimate Pending
+  applies only to unconfirmed rows and retains already-confirmed package/manual dates. Items can be
+  revisited, removed or skipped; final confirmation atomically inserts separate purchases into shared
+  inventory. Estimated/user-entered/simulated-package provenance, barcode identity, quantity and
+  whole-entry purchase value are preserved. Unknown prices count as $0; past dates remain allowed.
+  Home labels new receipt/barcode additions by source instead of deriving an age from expiry.
+- Duplicate checks compare active names and synthetic barcode identity (including renamed Pantry
+  purchases), plus earlier queue entries. Explicit Skip/Add separately is required; no merge/consume.
+  Replayed batches and repeated submit are blocked. Mode change discards pending queue and cleans
+  scan timers; navigating to the existing manual form and cancelling preserves pending queue.
+- Browser verified missing/invalid date rejection, simulated stamp, manual date/0.5 quantity/$2 edit,
+  three-item queue, duplicate gate/separate choice, pending-only estimates, confirmation back and
+  insertion (8 → 11 Pantry items, $51.01 tracked). Existing chips purchase stayed intact.
+  Error/retry, malformed digits, unknown lookup, manual fallback/cancel, queue removal and mode reset
+  also checked. Home showed the new purchase with Added from barcode. Phone form inspected at 375 × 812; native keyboard/touch/accessibility remain unverified.
+- Preview failures: `/scanner?preview=barcode-error` or `barcode-missing`, choose Barcode and simulate;
+  Retry attempts the sample catalog. An unknown valid-digit code always returns Product not found.
+- Root/backend `npx tsc --noEmit` passed; `node --experimental-strip-types --test tests/*.test.mjs`
+  passed 25/25 (five new barcode tests, existing module-type warning); backend `npm test` passed 1/1
+  with approved local test-port access. Final web/iOS/Android export passed using
+  `/private/tmp/freshtrack-barcode-review-complete`; `git diff --check` passed. Root lint script is absent;
+  backend lint fails because ESLint is absent. Expo Doctor not rerun; dependencies unchanged.
+- Fixed an empty-string conditional detected by browser development warnings. Reference photography,
+  camera overlay/glass, exact sheet layout and real device QA remain pending. Reference auto-saved
+  produce/date/confidence decorations are not represented as actions that actually happened.
+
+### Scanner permission checkpoint — 11 October 2026
+
+- Preserved the uncommitted receipt/barcode slices, routes, review queues and configuration.
+  Added shared `features/scanner/CameraPermissionGate.tsx` and typed copy/state fixtures in
+  `lib/scannerPermission.ts`; only the existing Scanner screen is wired to them.
+- Choosing a scan mode initially shows the demo permission explanation with Allow/Deny responses.
+  Denial blocks receipt/barcode controls and offers retry or the existing manual form. Blocked access
+  offers local Demo Camera Settings with a checkbox, save and cancel. Keeping access off remains
+  blocked; saving demo access on returns to scanning. No OS settings, permission API or camera is used.
+- Demo permission state is shared across receipt/barcode modes while Scanner is mounted; reload
+  resets it. Review components mount only after demo access is allowed. Manual entry remains available.
+  No separate permission design was supplied; supporting cards use the existing tokens/components.
+- Browser verified initial request/deny, hidden receipt controls while denied, manual entry/cancel
+  returning to denial, retry/allow and receipt scan, allowed state across barcode mode, hidden barcode
+  controls while blocked, checkbox/cancel, save-off remaining blocked and save-on enabling barcode
+  scan. Blocked/recovery layouts checked at 375 × 812. Native accessibility/device QA remains pending.
+- Preview routes: `/scanner?permission=denied`, `blocked` or `granted` initialize the relevant mock
+  state on fresh page load; unknown values use the initial prompt. Choose Receipt or Barcode afterward.
+  Existing scan failure previews still work after Allow Demo Access, or append `&permission=granted`.
+  No actual camera authorization is implied by the preview or demo controls.
+- Root/backend `npx tsc --noEmit` passed; `node --experimental-strip-types --test tests/*.test.mjs`
+  passed 25/25 (existing module-type warnings); backend `npm test` passed 1/1 with approved local port
+  access. `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-scanner-permission`
+  passed all three platforms; `git diff --check` passed. Root `npm run lint` fails (no script), backend
+  `npm run lint` fails (ESLint absent), both pre-existing. Expo Doctor not rerun; no SDK/dependency changes.
+- Phase 1 remains in progress: Home gestures, Pantry batch/category/currency, mock auth/OTP and
+  further Settings/privacy coverage, complete design review and real device validation remain.
+
+### Home Recent Additions swipe slice — 11 October 2026
+
+- Extracted the existing compact cards into `components/RecentPantryItemCard.tsx`, preserving
+  source labels, price, expiry and freshness bar. Right swipe requests Used; left swipe requests
+  Wasted. Both close the row and open the existing cancellable `PantryConfirmation` sheet.
+  Shared inventory changes only after confirmation. No dependencies or integrations added.
+- Added named Used/Wasted fallback buttons with 44-point minimum height and an empty-state
+  Add entry. These supporting controls extend the reference card; final native visual review remains.
+  The former inactive Swipe link is now an explanatory label.
+- Browser verified at 375 × 812: short swipe/no confirmation then details tap, right/left confirmation,
+  cancellation/repeated swipe, confirmed Used/Wasted, keyboard Wasted fallback, Used button,
+  vertical drag without navigation, and shared Home/Pantry inventory changing from 8 to 6 items.
+  Resolving all remaining mock items showed the empty card; Add opened `/pantry/add`.
+  Native touch, diagonal scrolling, screen-reader and dynamic-text checks remain pending.
+- Root/backend `npx tsc --noEmit` passed; `node --experimental-strip-types --test tests/*.test.mjs`
+  passed 25/25 (existing module-type warnings); backend `npm test` passed 1/1.
+  `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-home-swipes`
+  passed all platforms and 28 static routes. `git diff --check` passed.
+  Root `npm run lint` fails (missing script); backend `npm run lint` fails (ESLint absent), both
+  pre-existing. Expo Doctor was not rerun because SDK/dependencies are unchanged.
+- Browser preview: attempted port 8081 was occupied; used a separate offline Expo preview on 8082.
+  Existing static digest/recipe summary counts and scanned-age labels still need the documented
+  data/visual review; resolving items does not make these decorative snapshots dynamic.
+
+### Auth and Settings prototype slice — 11 October 2026
+
+- Preserved the supplied sign-up/login forms. Added inline name/email/password validation,
+  loading/duplicate-submit guards and a shared cancellable delay hook (cleared on unmount).
+  Email status decoration now requires a valid address. Passwords are not stored in a context,
+  route or fixture; any syntactically valid demo login opens the app, without verifying identity.
+- Central typed demo profile, OTP configuration and validation live in `lib/auth.ts`.
+  OTP accepts only the public sample code `123456`, expires after two minutes, supports full-code
+  paste into any digit, and has incomplete/invalid/expired/simulated failure/retry states.
+  Resend clears digits, renews expiry and imposes a 30-second timestamp-based cooldown.
+  Its clock interval and pending local requests clean up on unmount. Native autofill hints are set;
+  real OS autofill, keyboard and screen-reader behavior remain unverified.
+- Added `/(auth)/recover` email-recovery preview with validation/loading/failure/retry and return
+  navigation. No email or password change occurs. Google/Apple/biometric buttons now give inline
+  email-fallback feedback rather than silently doing nothing; those providers remain unintegrated.
+  Auth Terms/Privacy links open clearly labeled prototype information, not a published legal policy.
+- Settings now includes `/settings/profile` validated save/cancel, `/settings/privacy` demo data
+  information, shared remember-device preference and cancellable Sign Out of Demo/Leave action.
+  Profile and sign-up digest choices share the existing in-memory preferences context. Demo exit
+  returns to welcome, disables remember-device and retains kitchen data until reload; there is
+  no real session, route protection or persistence. No separate Settings/recovery/OTP design exists.
+- Browser verified at 375 × 812: sign-up validation/failure/retry/profile-to-OTP propagation;
+  incomplete/incorrect code, paste into first/third digit, success; expired code/resend/cleared
+  digits/cooldown; verification and resend failure/retry; login validation/password reveal/failure/
+  retry; all three provider feedback controls; Forgot Password validation/success/back and failure/
+  retry; profile save/unsaved cancel/shared Settings display, privacy/Done, preference validation/
+  save, and demo-exit cancel/confirm. OTP and privacy layouts visually inspected at phone width.
+- Root/backend `npx tsc --noEmit` pass; `node --experimental-strip-types --test tests/*.test.mjs`
+  passes 28/28, including three new validation/OTP boundary/paste tests (existing module-type warnings).
+  Backend `npm test` passes 1/1. `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-auth-settings`
+  passes all three platforms and 32 static routes. `git diff --check` passes.
+  Root `npm run lint` fails (missing script); backend `npm run lint` fails (ESLint absent), pre-existing.
+  Expo Doctor not rerun; no SDK/dependency changes. Native runtime interaction is not implied by exports.
+
 ### Remaining Phase 1 work
 
-- Home Recent Additions swipe gestures, Pantry batch/category
-  controls, currency normalization and final phone/dynamic-text design review.
-- Scanner permission/error/empty states, editable receipt review, packaged-date queue, barcode
-  lookup failure states, duplicate confirmation and actual receipt/barcode insertion into shared mock inventory.
+- Pantry batch/category controls, currency normalization and final phone/dynamic-text design review.
+- Scanner final native/visual review. Mock permission request/denial/retry/blocked recovery and receipt/barcode
+  review/queue/duplicate choices/confirmed insertion/error/fallback are implemented.
   The standalone manual-entry fallback is now available.
-- Auth invalid/expired OTP, paste/autofill, timer cleanup and placeholder recovery/social/biometric
-  interactions. Profile/privacy and further Settings states need UI scope/design review.
+- Native auth OTP autofill/backspace/keyboard/accessibility and timer lifecycle checks; final auth
+  visual review. Profile/privacy prototype UI exists; account-deletion/currency UI scope remains
+  unresolved without separate designs. Production legal policies/account operations are deferred.
 - Final native verification of new Recipe/Insights/detail/shopping/preferences/reconciliation flows,
   native sharing checks and complete side-by-side visual review. Gradients/glass blur remain surface
   approximations; pantry thumbnails still use emoji; See All's stir-fry reuses supplied pasta artwork.
 - Reference audit totals disagree; preserved snapshots and session-only value deltas are documented
   in the inventory. Food mass/carbon values remain illustrative rather than production calculations.
 
-**Exact next step:** Centralize Scanner receipt fixtures, implement editable receipt candidate review,
-then add the confirmed haul to shared mock inventory with explicit duplicate handling. Complete
-Scanner permission/lookup/error states afterward. Phase 1 remains in progress and must be reviewed
-before Phase 2; authentication proof-of-concept requires explicit user approval.
+**Exact next step:** Add Pantry category filtering from the existing typed categories, composing with
+search/freshness filters and preserving the supplied Pantry layout; verify no-match/reset behavior.
+Phase 1 remains in progress and must be reviewed before Phase 2; real integrations require approval.
 
 ### Phase 0 results
 

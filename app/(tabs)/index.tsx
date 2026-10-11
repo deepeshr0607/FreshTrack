@@ -14,7 +14,9 @@ import {
 import { router } from 'expo-router';
 import ScreenHeader from '@/components/ScreenHeader';
 import ExpiryBadge from '@/components/ExpiryBadge';
-import FreshnessBar from '@/components/FreshnessBar';
+import RecentPantryItemCard from '@/components/RecentPantryItemCard';
+import PantryConfirmation from '@/components/PantryConfirmation';
+import type { PantryItem } from '@/lib/mock';
 import { Colors, Elevation, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 import {
   MOCK_RECIPES,
@@ -26,7 +28,12 @@ import { useMockPantry } from '@/context/MockPantryContext';
 type Mode = 'at-home' | 'shopping';
 
 export default function HomeScreen() {
-  const { items } = useMockPantry();
+  const { items, dispatch } = useMockPantry();
+  const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED' } | null>(null);
+  const requestStatus = (id: string, action: 'CONSUMED' | 'WASTED') => {
+    const item = items.find((candidate) => candidate.id === id && candidate.status === 'ACTIVE');
+    if (item) setConfirmation({ item, action });
+  };
   const activeItems = items.filter((item) => item.status === 'ACTIVE');
   const [mode, setMode] = useState<Mode>('at-home');
   const expiringItems = activeItems.filter((i) => i.daysLeft <= 7 && i.status === 'ACTIVE').slice(0, 5);
@@ -208,37 +215,22 @@ export default function HomeScreen() {
         {/* Recent Additions */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Additions</Text>
-          <Pressable accessibilityRole="link">
-            <Text style={styles.seeAll}>↔ Swipe</Text>
-          </Pressable>
+          <Text style={styles.seeAll}>↔ Swipe actions</Text>
         </View>
 
         {recentItems.map((item) => (
-          <Pressable
-            key={item.id}
-            style={styles.recentCard}
-            onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
-            accessibilityRole="button"
-            accessibilityLabel={item.name}
-          >
-            <View style={styles.recentThumb}>
-              <Text style={{ fontSize: 26 }}>{item.imageEmoji}</Text>
-            </View>
-            <View style={styles.recentInfo}>
-              <Text style={styles.recentName}>{item.name}</Text>
-              <Text style={styles.recentMeta}>
-                {item.category} · {item.source === 'MANUAL' ? 'Added manually' : `Scanned ${item.daysLeft < 1 ? 'today' : `${item.daysLeft}h ago`}`}
-              </Text>
-            </View>
-            <View style={styles.recentRight}>
-              <Text style={styles.recentDays}>{item.daysLeft} days</Text>
-              <Text style={styles.recentPrice}>${item.price.toFixed(2)}</Text>
-            </View>
-            <View style={styles.recentBarFull}>
-              <FreshnessBar daysLeft={item.daysLeft} />
-            </View>
-          </Pressable>
+          <RecentPantryItemCard key={item.id} item={item} onRequestStatus={requestStatus}
+            onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })} />
         ))}
+        {recentItems.length === 0 && (
+          <View style={styles.emptyRecent}>
+            <Text style={styles.emptyRecentText}>No active groceries yet.</Text>
+            <Pressable onPress={() => router.push('/pantry/add')} accessibilityRole="button"
+              accessibilityLabel="Add a pantry item" style={styles.emptyRecentButton}>
+              <Text style={styles.seeAll}>Add a pantry item →</Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Swipe hint */}
         <View style={styles.swipeHintRow}>
@@ -253,6 +245,11 @@ export default function HomeScreen() {
         {/* Bottom padding for floating nav */}
         <View style={{ height: Spacing.navClearance }} />
       </ScrollView>
+      <PantryConfirmation item={confirmation?.item ?? null} action={confirmation?.action ?? 'CONSUMED'}
+        onCancel={() => setConfirmation(null)} onConfirm={() => {
+          if (confirmation) dispatch({ type: 'status', id: confirmation.item.id, status: confirmation.action });
+          setConfirmation(null);
+        }} />
     </SafeAreaView>
   );
 }
@@ -521,45 +518,9 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
 
-  recentCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.sm,
-    alignItems: 'center',
-    gap: Spacing.md,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    flexWrap: 'wrap',
-    ...Elevation.card,
-  },
-  recentThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.surfaceContainerLow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recentInfo: { flex: 1 },
-  recentName: {
-    fontSize: FontSize.headlineSm,
-    fontWeight: FontWeight.semibold,
-    color: Colors.onSurface,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-  recentMeta: { fontSize: FontSize.bodySm, color: Colors.onSurfaceVariant, marginTop: 2 },
-  recentRight: { alignItems: 'flex-end' },
-  recentDays: {
-    fontSize: FontSize.labelLg,
-    fontWeight: FontWeight.bold,
-    color: Colors.cautionAmber,
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  recentPrice: { fontSize: FontSize.bodySm, color: Colors.onSurfaceVariant },
-  recentBarFull: { width: '100%' },
-
+  emptyRecent: { padding: Spacing.md, backgroundColor: Colors.surfaceContainerLowest, borderRadius: Radius.lg },
+  emptyRecentText: { fontSize: FontSize.bodyMd, color: Colors.onSurfaceVariant },
+  emptyRecentButton: { minHeight: 44, justifyContent: 'center' },
   swipeHintRow: {
     flexDirection: 'row',
     justifyContent: 'center',
