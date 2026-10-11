@@ -22,6 +22,8 @@ import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 import type { ItemCategory, PantryItem } from '@/lib/mock';
 import { PANTRY_CATEGORIES } from '@/lib/pantry';
+import { useRealPantry } from '@/context/RealPantryContext';
+import { rupeeValue } from '@/lib/pantryApi';
 
 type FilterChip = 'All' | 'Critical' | 'Caution' | 'Fresh';
 type SortMode = 'expiry' | 'name' | 'category';
@@ -34,7 +36,14 @@ const FILTER_CHIPS: { key: FilterChip; label: string; color: string }[] = [
 ];
 
 export default function PantryScreen() {
-  const { items, dispatch } = useMockPantry();
+  const demo = useMockPantry();
+  const real = useRealPantry();
+  const { dispatch } = demo;
+  const items: PantryItem[] = real.enabled ? real.items.map(item => {
+    const category = PANTRY_CATEGORIES.find(entry => entry.name.toUpperCase() === item.category)!;
+    return { ...item, category: category.name, quantity: Number(item.quantity), price: (item.totalCostMinor ?? 0) / 100, imageEmoji: category.emoji };
+  }) : demo.items;
+  useEffect(() => { if (real.enabled) void real.reload(); }, [real.enabled, real.reload]);
   const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED' } | null>(null);
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -215,19 +224,19 @@ export default function PantryScreen() {
               <Text style={styles.bannerTitle}>Dual-Tier Freshness Engine</Text>
               <Text style={styles.bannerStatus}>Active</Text>
             </View>
-            <Text style={styles.bannerSub}><Text style={styles.confirmedLabel}>● Confirmed: </Text>Package date in demo fixture.</Text>
-            <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>Suggested shelf life for loose produce.</Text>
-            <Text style={styles.bannerNote}>Demo sources; no AI or package verification.</Text>
+            <Text style={styles.bannerSub}><Text style={styles.confirmedLabel}>● {real.enabled ? 'User set' : 'Confirmed'}: </Text>{real.enabled ? 'Your entered expiry dates, tracked in Asia/Kolkata.' : 'Package date in demo fixture.'}</Text>
+            <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>{real.enabled ? 'Shelf-life presets are coming in a later Pantry slice.' : 'Suggested shelf life for loose produce.'}</Text>
+            <Text style={styles.bannerNote}>{real.enabled ? `Your household · INR · ${items.length} of ${real.total} items loaded. Filters apply to loaded items.` : 'Demo sources; no AI or package verification.'}</Text>
           </View>
         </View>
 
         {/* Value at stake */}
         <View style={styles.valueRow}>
-          <Text style={styles.valueLabel}>📊 Value tracked:</Text>
-          <Text style={styles.valueAmount}>${totalValue.toFixed(2)}</Text>
+          <Text style={styles.valueLabel}>📊 {real.enabled ? 'Loaded known value:' : 'Value tracked:'}</Text>
+          <Text style={styles.valueAmount}>{real.enabled ? '₹' : '$'}{totalValue.toFixed(2)}</Text>
           {atRiskItems.length > 0 && (
             <Text style={styles.atRisk}>
-              · <Text style={{ color: Colors.criticalRose }}>${
+              · <Text style={{ color: Colors.criticalRose }}>{real.enabled ? '₹' : '$'}{
                 atRiskItems
                   .reduce((s, i) => s + i.price, 0)
                   .toFixed(2)
@@ -242,12 +251,12 @@ export default function PantryScreen() {
             onPress={() => router.push('/pantry/add')}>
             <Text style={styles.chipText}>＋ Add Item Manually</Text>
           </Pressable>
-          <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
+          {!real.enabled && <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
             onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems}
             accessibilityRole="button" accessibilityLabel={batchMode ? 'Cancel batch selection' : 'Batch Select'}
             accessibilityState={{ expanded: batchMode }} aria-expanded={batchMode}>
             <Text style={[styles.chipText, batchMode && styles.chipTextActive]}>{batchMode ? 'Cancel Selection' : '☑ Batch Select'} ({selectedItems.length})</Text>
-          </Pressable>
+          </Pressable>}
           {batchMode && <Pressable style={styles.chip} disabled={!filtered.length}
             onPress={() => setSelectedIds(selectedItems.length === filtered.length ? [] : filtered.map((item) => item.id))}
             accessibilityRole="button" accessibilityLabel={selectedItems.length === filtered.length && filtered.length > 0 ? 'Deselect visible items' : 'Select visible items'}>
@@ -260,16 +269,21 @@ export default function PantryScreen() {
           <PrimaryButton label="Mark Selected Wasted" variant="ghost" disabled={!selectedItems.length} onPress={() => requestBatch('WASTED')} />
         </View>}
         {!!batchNotice && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{batchNotice}</Text>}
+        {real.enabled && <>
+          <PrimaryButton label="Refresh Pantry" variant="ghost" loading={real.loading} onPress={() => void real.reload()} />
+          {!!real.error && <Text style={[styles.swipeHint, { color: Colors.error }]} accessibilityRole="alert">{real.error} {items.length ? 'Showing previously loaded items.' : ''}</Text>}
+          <Text style={styles.swipeHint}>Manual add and item viewing are connected. Editing, Used/Wasted and scanner imports are coming next; other tabs remain prototypes.</Text>
+        </>}
         {/* Items list */}
-        {!batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
-        {filtered.length === 0 ? (
+        {!real.enabled && !batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
+        {real.enabled && !items.length && (real.loading || real.error) ? <Text style={styles.swipeHint}>{real.loading ? 'Loading your household pantry…' : 'Your pantry could not be loaded. Tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🥦</Text>
             <Text style={styles.emptyTitle}>
               {!hasActiveItems ? 'Your pantry is empty' : search.trim() ? `No items matching "${search.trim()}" with these filters` : category !== 'All' ? `No ${category.toLowerCase()} items match these filters` : 'No items match this freshness filter'}
             </Text>
             <Text style={styles.emptySub}>
-              {hasActiveItems ? 'Clear the filters or try a different search or category.' : 'Scan a receipt or add an item manually.'}
+              {hasActiveItems ? 'Clear the filters or try a different search or category.' : real.enabled ? 'Add your first grocery manually. It will be saved to your household.' : 'Scan a receipt or add an item manually.'}
             </Text>
             {filtersActive && <PrimaryButton label="Show All Items" variant="ghost" onPress={resetFilters} />}
             <PrimaryButton label={hasActiveItems ? 'Add Item Manually' : 'Add Your First Item'} onPress={() => router.push('/pantry/add')} />
@@ -282,11 +296,14 @@ export default function PantryScreen() {
               onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
               onSelect={batchMode ? () => toggleSelection(item.id) : undefined}
               selected={batchMode && selectedIds.includes(item.id)}
-              onConsume={(id) => requestStatus(id, 'CONSUMED')}
-              onWaste={(id) => requestStatus(id, 'WASTED')}
+              valueLabel={real.enabled ? rupeeValue(real.items.find(entry => entry.id === item.id)!.totalCostMinor) : undefined}
+              hideActions={real.enabled}
+              onConsume={real.enabled ? undefined : (id) => requestStatus(id, 'CONSUMED')}
+              onWaste={real.enabled ? undefined : (id) => requestStatus(id, 'WASTED')}
             />
           ))
         )}
+        {real.enabled && real.hasMore && <PrimaryButton label="Load More Items" variant="ghost" loading={real.loading} onPress={() => void real.loadMore()} />}
 
         {/* Add item FAB hint */}
         <Pressable

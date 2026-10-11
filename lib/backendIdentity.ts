@@ -2,9 +2,7 @@ import type { ApiFailure, HouseholdResponse, IdentityResponse } from '../types/a
 // @ts-expect-error Node's native TypeScript test runner requires explicit extensions; Metro accepts them.
 import { NeonAuthError, type AuthIdentity } from './neonAuth.ts';
 
-/** Development acceptance check; the API derives identity from its own JWT verification. */
-export async function checkBackendIdentity(baseUrl: string | undefined, getToken: () => Promise<string>, expected: AuthIdentity,
-  allowLocalHttp = false, fetcher: typeof fetch = fetch): Promise<void> {
+export function apiOrigin(baseUrl: string | undefined, allowLocalHttp = false): string {
   let base: URL;
   try {
     base = new URL(baseUrl || '');
@@ -13,11 +11,18 @@ export async function checkBackendIdentity(baseUrl: string | undefined, getToken
     if ((base.protocol !== 'https:' && !(allowLocalHttp && base.protocol === 'http:' && local))
       || base.username || base.password || base.search || base.hash || base.pathname !== '/') throw new Error();
   } catch { throw new NeonAuthError('API_CONFIG', 'Configure the development API URL before checking backend identity.'); }
+  return base.origin;
+}
+
+/** Development acceptance check; the API derives identity from its own JWT verification. */
+export async function checkBackendIdentity(baseUrl: string | undefined, getToken: () => Promise<string>, expected: AuthIdentity,
+  allowLocalHttp = false, fetcher: typeof fetch = fetch): Promise<void> {
+  const origin = apiOrigin(baseUrl, allowLocalHttp);
   const token = await getToken();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
-    const response = await fetcher(`${base.origin}/api/v1/auth/me`, {
+    const response = await fetcher(`${origin}/api/v1/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }, credentials: 'omit', redirect: 'error', signal: controller.signal,
     });
     if (!response.ok) throw new NeonAuthError(response.status === 401 ? 'API_UNAUTHORIZED' : 'API_UNAVAILABLE',

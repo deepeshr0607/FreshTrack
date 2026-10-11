@@ -26,9 +26,11 @@ interface Props {
   selected?: boolean;
   onConsume?: (id: string) => void;
   onWaste?: (id: string) => void;
+  valueLabel?: string;
+  hideActions?: boolean;
 }
 
-export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSelect, selected = false }: Props) {
+export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSelect, selected = false, valueLabel, hideActions = false }: Props) {
   const swipeable = useRef<SwipeableMethods>(null);
   const swiping = useRef(false);
   const requestAction = (direction: 'right' | 'left') => {
@@ -66,7 +68,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
         accessibilityState={onSelect ? { checked: selected } : undefined}
         aria-checked={onSelect ? selected : undefined}
         accessibilityLabel={onSelect ? `Select ${item.name}` : `${item.name}, ${item.daysLeft} days left`}
-        accessibilityHint={onSelect ? 'Select this whole entry for a confirmed batch action.' : 'Open item details. Swipe right for Used or left for Wasted; both require confirmation.'}
+        accessibilityHint={onSelect ? 'Select this whole entry for a confirmed batch action.' : hideActions ? 'Open item details.' : 'Open item details. Swipe right for Used or left for Wasted; both require confirmation.'}
       >
         {/* Main content row */}
         <View style={styles.row}>
@@ -85,7 +87,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
             <View style={styles.metaRow}>
               <Text style={[styles.source, { color: sourceColor }]}>{sourceLabel}</Text>
               <Text style={styles.dot}> · </Text>
-              <Text style={styles.meta}>${item.price.toFixed(2)}</Text>
+              <Text style={styles.meta}>{valueLabel ?? `$${item.price.toFixed(2)}`}</Text>
               <Text style={styles.dot}> · </Text>
               <Text style={styles.meta}>{item.category}</Text>
             </View>
@@ -102,7 +104,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
       </CardPressable>
 
       {/* Quick action buttons (shown as accessible fallback for swipe) */}
-      {!onSelect && <View style={styles.actions}>
+      {!onSelect && !hideActions && <View style={styles.actions}>
         <Pressable
           onPressIn={() => { swiping.current = false; }}
           onPress={() => { if (!swiping.current) requestAction('right'); }}

@@ -1,0 +1,57 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const request = require('supertest');
+const { createApp } = require('../dist/app.js');
+const { pantryInput, PantryFailure } = require('../dist/services/pantry.js');
+const { AuthFailure } = require('../dist/services/auth.js');
+const valid = { name: '  Milk  ', category: 'DAIRY', quantity: '0.500', unit: ' l ', expiresOn: '2026-10-20', totalCostMinor: 6050 };
+test('manual input keeps paise and exact quantities; rejects identity overrides and invalid domain fields', () => {
+  assert.deepEqual(pantryInput(valid), { ...valid, name: 'Milk', quantity: '0.5', unit: 'l' });
+  for (const fields of [{ userId: 'victim' }, { householdId: 'victim' }, { name: '' }, { name: 'secret\u0000' },
+    { unit: 'x'.repeat(33) }, { quantity: '0' }, { quantity: '1.2345' }, { quantity: 1 }, { totalCostMinor: -1 },
+    { totalCostMinor: 1.2 }, { totalCostMinor: undefined }, { expiresOn: '2026-02-30' }, { category: 'Unknown' }]) {
+    assert.throws(() => pantryInput({ ...valid, ...fields }));
+  }
+  assert.equal(pantryInput({ ...valid, totalCostMinor: null }).totalCostMinor, null);
+  assert.equal(pantryInput({ ...valid, totalCostMinor: 0 }).totalCostMinor, 0);
+});
+const identity = { id: 'freshtrack-dev-test:pantry', email: 'fixture@example.test', name: 'Fixture' };
+const verifyIdentity = async token => { if (token !== 'a.b.c') throw new AuthFailure(); return identity; };
+test('Pantry routes require identity; validated create/list/detail derive it only from the verified session', async () => {
+  const calls = [];
+  const pantryService = {
+    list: async (account, pagination) => { calls.push([account, pagination]); return { items: [], pagination }; },
+    create: async (account, input, key) => { calls.push([account, input, key]); return { id: 'saved-item' }; },
+    find: async (account, id) => { calls.push([account, id]); return { id }; },
+  };
+  const app = createApp({ verifyIdentity, pantryService });
+  assert.equal((await request(app).get('/api/v1/pantry')).status, 401);
+  assert.equal(calls.length, 0);
+  const saved = await request(app).post('/api/v1/pantry').set('Authorization', 'Bearer a.b.c')
+    .set('Idempotency-Key', 'manual-retry-key-123').set('x-user-id', 'victim').send(valid);
+  assert.equal(saved.status, 200); assert.equal(saved.headers['cache-control'], 'no-store');
+  assert.equal(calls[0][0].id, identity.id); assert.equal(calls[0][1].totalCostMinor, 6050);
+  assert.equal(calls[0][2], 'manual-retry-key-123');
+  assert.equal((await request(app).get('/api/v1/pantry?page=2&pageSize=5').set('Authorization', 'Bearer a.b.c')).status, 200);
+  assert.deepEqual(calls[1][1], { page: 2, pageSize: 5 });
+  assert.equal((await request(app).get('/api/v1/pantry/11111111-1111-1111-1111-111111111111').set('Authorization', 'Bearer a.b.c')).status, 200);
+});
+test('bad request bodies, retry keys, item IDs and pagination fail before accessing pantry services', async () => {
+  const unexpected = async () => assert.fail('Service must not be reached');
+  const app = createApp({ verifyIdentity, pantryService: { list: unexpected, create: unexpected, find: unexpected } });
+  for (const path of ['/api/v1/pantry?page=0', '/api/v1/pantry?page=1&page=2', '/api/v1/pantry?userId=victim', '/api/v1/pantry/not-an-id']) {
+    assert.equal((await request(app).get(path).set('Authorization', 'Bearer a.b.c')).status, 400);
+  }
+  assert.equal((await request(app).post('/api/v1/pantry').set('Authorization', 'Bearer a.b.c').send(valid)).status, 400);
+  assert.equal((await request(app).post('/api/v1/pantry').set('Authorization', 'Bearer a.b.c')
+    .set('Idempotency-Key', 'manual-retry-key-123').send({ ...valid, householdId: 'victim' })).status, 400);
+});
+test('pantry failures are safe HTTP envelopes with server-owned request IDs', async () => {
+  for (const [code, status] of [['PANTRY_UNAVAILABLE', 503], ['HOUSEHOLD_REQUIRED', 409], ['IDEMPOTENCY_CONFLICT', 409], ['ITEM_NOT_FOUND', 404]]) {
+    const fail = async () => { throw new PantryFailure(code); };
+    const app = createApp({ verifyIdentity, pantryService: { list: fail, create: fail, find: fail } });
+    const response = await request(app).get('/api/v1/pantry').set('Authorization', 'Bearer a.b.c');
+    assert.equal(response.status, status); assert.equal(response.body.error.code, code);
+    assert.equal(response.body.error.requestId, response.headers['x-request-id']);
+  }
+});

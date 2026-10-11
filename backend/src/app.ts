@@ -15,6 +15,8 @@ import { InvalidApiInput, sendFailure } from './lib/api';
 import { healthRouter } from './routes/health';
 import { createAuthRouter } from './routes/auth';
 import { createHouseholdRouter } from './routes/households';
+import { createPantryRouter } from './routes/pantry';
+import type { PantryService } from './services/pantry';
 import type { HouseholdService } from './services/households';
 import { createIdentityVerifier, type VerifyIdentity } from './services/auth';
 
@@ -22,7 +24,7 @@ import { createIdentityVerifier, type VerifyIdentity } from './services/auth';
 
 // ── App factory ──────────────────────────────────────────────────────────────
 
-export function createApp(options: { verifyIdentity?: VerifyIdentity; householdService?: HouseholdService } = {}): express.Application {
+export function createApp(options: { verifyIdentity?: VerifyIdentity; householdService?: HouseholdService; pantryService?: PantryService } = {}): express.Application {
   const app = express();
   const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '').split(',').map((o) => o.trim()).filter(Boolean);
 
@@ -74,6 +76,7 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity; householdS
   const verifyIdentity = options.verifyIdentity ?? createIdentityVerifier(process.env['NEON_AUTH_URL']);
   app.use('/api/v1', createAuthRouter(verifyIdentity));
   app.use('/api/v1', createHouseholdRouter(verifyIdentity, options.householdService));
+  app.use('/api/v1', createPantryRouter(verifyIdentity, options.pantryService));
 
   // ── 404 handler ──────────────────────────────────────────────────────────
   app.use((req: Request, res: Response) => {

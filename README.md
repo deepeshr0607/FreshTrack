@@ -188,7 +188,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
-| 4 | Pantry CRUD end-to-end | ⬜ Not started |
+| 4 | Pantry CRUD end-to-end | 🟡 Household/list/manual add deployed; iPhone acceptance pending |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
@@ -199,22 +199,40 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Phase 3 development acceptance is complete: data model, migrations, household access, API foundation and hosted Preview.**
+**Phase 4 is in progress: household setup, persisted Pantry list/manual add and read-only details are deployed to development.**
+Demo mode is preserved. iPhone acceptance is pending; edit/lifecycle and remaining Pantry work follow.
+See [first-slice implementation, checks and limits](docs/Phase_4_Pantry_First_Slice.md).
+
+Phase 3 development acceptance is complete: data model, migrations, household access, API foundation and hosted Preview.
 Phase 2 development acceptance is complete. The user selected INR (integer paise) and Asia/Kolkata.
 The initial migration is applied to verified Neon development. Explicit authenticated setup now
 atomically creates one household/membership/preferences; reads are scoped to verified membership.
-The mobile kitchen still uses mock data and does not call household setup. Shared response types,
+The signed-in Pantry now calls household setup; other kitchen tabs/preferences still use mock data. Shared response types,
 bounded pagination and exact money/quantity/date/expiry/status helpers are ready. Item 5’s
 Preview is deployed to Vercel and publicly reachable after the user-approved hosting change.
 Neon authentication still protects account/household routes. Hosted signed identity passes the
 user's iPhone check. The authenticated hosted database read also passes with the expected
-no-household result. Final review is complete; Phase 4 has not started.
+no-household result. Phase 3 final review is complete; Phase 4's first slice now uses persisted Pantry data.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
+
+### Phase 4 first slice (12 October 2026)
+
+Preserved the existing Pantry designs and demo interactions. Signed-in native Pantry uses real
+household list/create/detail endpoints, refresh/loading/error/empty/load-more states, exact INR cost
+and Kolkata expiry. Item creation and its event commit together; unchanged form retries reuse the
+same server key to prevent duplicate saves. Real editing and Used/Wasted are not connected yet.
+Search/filter/alternate sort apply to loaded pages; the banner labels this limitation.
+
+Both TypeScript/build checks, root76/76, backend33/33, live Pantry3/3 with fixture cleanup, health1/1,
+Doctor21/21 and web/iOS/Android exports pass. The new Vercel Preview is READY; public health200 and
+tokenless Pantry401 pass. Existing lint gaps remain. iPhone write/restart/sort tests are pending.
+Next: complete the requested iPhone check, then persisted editing and confirmed lifecycle actions.
+No new dependency/schema/migration or Phase 5 work. Exact commands/limits are in the first-slice report.
 
 ### Phase 3 final review (12 October 2026)
 
