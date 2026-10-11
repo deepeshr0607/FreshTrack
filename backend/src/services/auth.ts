@@ -1,6 +1,6 @@
 import type { JWTVerifyGetKey } from 'jose' with { "resolution-mode": "import" };
 
-import type { ApiIdentity } from '../../../types/api';
+import type { ApiIdentity } from '../contracts/api';
 
 export type VerifiedIdentity = ApiIdentity;
 export type VerifyIdentity = (token: string) => Promise<VerifiedIdentity>;

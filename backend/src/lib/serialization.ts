@@ -1,4 +1,4 @@
-import type { EntryCost } from '../../../types/api';
+import type { EntryCost } from '../contracts/api';
 import { InvalidApiInput } from './api';
 
 const MAX_MINOR = 2_147_483_647;

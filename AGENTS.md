@@ -194,9 +194,9 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 3 — ITEMS 1–4 COMPLETE; DEPLOYMENT/FINAL REVIEW PENDING
+### Current phase: Phase 3 — ITEMS 1–4 COMPLETE; PREVIEW DEPLOYED, ACCESS/FINAL CHECKS PENDING
 
-- User authorized Phase 3 items 1–4 and selected INR (integer paise), Asia/Kolkata.
+- User authorized Phase 3 items 1–5 and selected INR (integer paise), Asia/Kolkata.
 - Initial transactional application migration applied only to Console-verified development branch
   br-long-glade-b3ovlfn0 / endpoint ep-dry-paper-b3ftfkqd. Auth structure unchanged before/after.
 - Household membership, compound item/event/receipt references, immutable event snapshots,
@@ -204,7 +204,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   docs/Phase_3_Data_Model.md. SQL domain checks now installed; service guarantees/cleanup remain open.
 - Prisma 5.22 client/singleton and CLI readiness are ready. Direct/pooled checks/status pass.
   Guarded/idempotent seed stores two synthetic fixture households, never real Neon accounts.
-  Mutation tools require development environment, pinned endpoint and explicit consent. Node 20.12+.
+  Mutation tools require development environment, pinned endpoint and explicit consent. Node 24.x (now pinned for backend/Vercel).
 - Both TypeScript checks, root 70/70, backend auth 9/9, health 1/1, guards 4/4, live database tests
   14/14 and seed replay 1/1 pass. Existing lint gaps remain. No mobile source/config/dependency change;
   Expo Doctor/exports not repeated. See docs/Phase_3_Database_Setup.md for commands and limits.
@@ -222,8 +222,18 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - Item 4 checks: foundation 10/10, auth 9/9, household 6/6, health 1/1, root 70/70, guards 4/4,
   live development household 5/5 with cleanup, both TypeScript checks/build pass. Existing lint gaps
   remain; Expo/device checks not repeated. See docs/Phase_3_API_Foundation.md for limits and commands.
-- Next: item 5 Vercel deployment/environment configuration, then final Phase 3 review. Phase 4
-  and production writes are not authorized.
+- Item 5 Preview configuration/deployment ready: dedicated dragon-2818/freshtrack-api, exported
+  index.cjs wrapper, Node24, generate/tsc-only build, Preview-only development credentials, upload
+  exclusions and strict target/env/pool guard. Canonical type declarations moved into backend with
+  root mobile re-export; isolated backend compiles. No dependency/schema/migration/UI change.
+- Vercel Preview dpl_FuadUxp8mfkBc2N3EbK1qdmNHj2V is READY. CLI health200 and tokenless household401
+  pass; public health redirects302 to Vercel login. Access-policy decision/native signed check pending.
+  First production-labelled attempt failed safely; no working production or production DB/auth changes.
+  Git auto-link failed; CLI deploy succeeded. See docs/Phase_3_Deployment.md.
+- Both TypeScript/build/local preview build, backend29/29, final deployment4/4, root70/70, health1/1,
+  guards4/4 pass. Runtime audit0; full cloud audit36 dev-tool findings. Existing lint gaps remain.
+- Next: resolve hosting protection, hosted native identity/DB verification, then Phase 3 item6 final
+  review. Phase 4 and production writes are not authorized.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
 

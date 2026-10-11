@@ -1,6 +1,6 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import type { HouseholdDto } from '../../../types/api';
+import type { HouseholdDto } from '../contracts/api';
 import { utcTimestamp } from '../lib/inventoryRules';
 import { AuthFailure, type VerifiedIdentity } from './auth';
 

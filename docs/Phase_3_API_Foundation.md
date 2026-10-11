@@ -6,10 +6,12 @@ Mobile remains a mock kitchen; household enrollment/Pantry persistence is not co
 
 ## Shared contracts and errors
 
-`types/api.d.ts` contains mobile/backend type-only JSON contracts: success/failure, verified identity,
+`types/api.d.ts` exposes mobile/backend type-only JSON contracts: success/failure, verified identity,
 household DTO, paginated responses, pantry statuses and entry costs. It imports no database/native
 module and emits no runtime code. Both TypeScript projects consume it without changing their roots.
-Types describe the wire format; they do not validate untrusted JSON by themselves.
+Types describe the wire format; they do not validate untrusted JSON by themselves. Item 5 subsequently
+moved the canonical declarations to `backend/src/contracts/api.d.ts`, with the root file re-exporting
+them, so the backend deploys independently. Contract contents are unchanged.
 
 Existing health/auth/household success responses use `success(data)`; auth, household, 404, rate-limit
 and global errors use `sendFailure`. Responses remain `{ data: ... }` or

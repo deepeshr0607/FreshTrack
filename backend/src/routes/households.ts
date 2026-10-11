@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { sendFailure, success } from '../lib/api';
-import type { HouseholdResponse } from '../../../types/api';
+import type { HouseholdResponse } from '../contracts/api';
 import { requireIdentity } from '../middleware/auth';
 import { AuthFailure, type VerifiedIdentity, type VerifyIdentity } from '../services/auth';
 import { createHouseholdService, HouseholdUnavailable, type HouseholdService } from '../services/households';

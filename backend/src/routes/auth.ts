@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { success } from '../lib/api';
-import type { ApiIdentity, IdentityResponse } from '../../../types/api';
+import type { ApiIdentity, IdentityResponse } from '../contracts/api';
 import { requireIdentity } from '../middleware/auth';
 import type { VerifyIdentity } from '../services/auth';
 
