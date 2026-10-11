@@ -17,33 +17,57 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { validateCredentials, validEmail } from '@/lib/auth';
 import { useMockPreferences } from '@/context/MockPreferencesContext';
 import useDemoRequest from '@/features/auth/useDemoRequest';
+import useAuthRequest from '@/features/auth/useAuthRequest';
+import { nativeAuthProbe as auth } from '@/features/auth/nativeProbe';
+import { NeonAuthError } from '@/lib/neonAuth';
+import { useAuth } from '@/context/AuthContext';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 
 export default function SignInScreen() {
+  const { session } = useAuth();
   const preferences = useMockPreferences();
-  const [email, setEmail] = useState('');
+  const { preview, mode, email: initialEmail, verified } = useLocalSearchParams<{ preview?: string; mode?: string; email?: string; verified?: string }>();
+  const realAuth = Platform.OS !== 'web' && mode !== 'demo';
+  const [email, setEmail] = useState(typeof initialEmail === 'string' ? initialEmail : '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(preferences.rememberDevice);
-  const { loading, run } = useDemoRequest();
-  const { preview } = useLocalSearchParams<{ preview?: string }>();
-  const [notice, setNotice] = useState('');
+  const demoRequest = useDemoRequest();
+
+  const [notice, setNotice] = useState(verified === 'yes' ? 'Email verified. Log in with your password.' : '');
+  const realRequest = useAuthRequest(setNotice);
+  const loading = demoRequest.loading || realRequest.loading;
+  const run = demoRequest.run;
   const [simulateFailure, setSimulateFailure] = useState(preview === 'error');
   const [providerNotice, setProviderNotice] = useState('');
-  const explainProvider = (provider: string) => setProviderNotice(`${provider} is unavailable in this demo. Use the email form to continue.`);
+  const explainProvider = (provider: string) => setProviderNotice(`${provider} is not connected yet. Use the email form to continue.`);
 
   const handleSubmit = () => {
+    if (loading) return;
     const error = validateCredentials(email, password);
     if (error) { setNotice(error); return; }
+    if (realAuth && (password.length < 8 || password.length > 128)) { setNotice('Use a password with 8–128 characters.'); return; }
     setNotice('');
+    if (realAuth) {
+      void realRequest.run(async (isMounted) => {
+        if (!auth) throw new NeonAuthError('CONFIG', 'The development Auth URL or app origin is missing or invalid.');
+        const client = auth;
+        preferences.setRememberDevice(rememberDevice);
+        await session.authenticate(() => client.signIn(email.trim().toLowerCase(), password, rememberDevice));
+        if (!isMounted()) return;
+        setPassword('');
+
+      });
+      return;
+    }
     // Phase 1: simulate successful login → navigate to app; no password is retained.
     run(() => {
       if (simulateFailure) { setSimulateFailure(false); setNotice('Unable to log in in this demo. Try again.'); return; }
       preferences.setProfile({ ...preferences.profile, email: email.trim().toLowerCase() });
       preferences.setRememberDevice(rememberDevice);
-      router.replace('/(tabs)');
+      if (!session.enterDemo()) setNotice('Demo preview is unavailable. Use real sign-in.');
     });
   };
 
@@ -82,7 +106,7 @@ export default function SignInScreen() {
           <View style={styles.tabSwitcher}>
             <Pressable
               style={styles.tabBtn}
-              onPress={() => router.replace('/(auth)/sign-up' as any)}
+              onPress={() => router.replace({ pathname: '/(auth)/sign-up', params: { mode: realAuth ? 'real' : 'demo' } })}
               accessibilityRole="tab"
               accessibilityState={{ selected: false }}
             >
@@ -97,7 +121,7 @@ export default function SignInScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.subtext}>Demo only. Use sample details; no account is created.</Text>
+          <Text style={styles.subtext}>{realAuth ? 'Development account: real authentication. Kitchen data remains a demo.' : 'Demo only. Use sample details; no account is created.'}</Text>
           {/* Form card */}
           <View style={styles.formCard}>
             <FormInput
@@ -138,12 +162,21 @@ export default function SignInScreen() {
                 </View>
                 <Text style={styles.rememberText}>Remember this device</Text>
               </Pressable>
-              <Pressable accessibilityRole="link" onPress={() => router.push('/(auth)/recover')}>
+              <Pressable accessibilityRole="link" onPress={() => realAuth ? setProviderNotice('Password recovery is not connected yet. The demo recovery screen cannot reset a Neon password.') : router.push('/(auth)/recover')}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </Pressable>
             </View>
 
             {!!notice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{notice}</Text>}
+            {realAuth && <Pressable accessibilityRole="button" disabled={loading} onPress={() => {
+              if (!validEmail(email)) { setNotice('Enter your email first.'); return; }
+              setNotice('');
+              void realRequest.run(async (isMounted) => {
+                if (!auth) throw new NeonAuthError('CONFIG', 'The development Auth URL or app origin is missing or invalid.');
+                await auth.sendVerificationOtp(email.trim().toLowerCase());
+                if (isMounted()) { setPassword(''); router.push({ pathname: '/(auth)/verify-otp', params: { mode: 'real', email: email.trim().toLowerCase() } }); }
+              });
+            }}><Text style={styles.forgotText}>Verify an unverified email</Text></Pressable>}
             <PrimaryButton
               label="Log In to Kitchen →"
               onPress={handleSubmit}
@@ -177,7 +210,7 @@ export default function SignInScreen() {
             Don't have an account?{' '}
             <Text
               style={styles.footerLink}
-              onPress={() => router.replace('/(auth)/sign-up' as any)}
+              onPress={() => router.replace({ pathname: '/(auth)/sign-up', params: { mode: realAuth ? 'real' : 'demo' } })}
             >
               Sign Up
             </Text>

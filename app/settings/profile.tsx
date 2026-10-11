@@ -6,14 +6,24 @@ import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { useMockPreferences } from '@/context/MockPreferencesContext';
 import { validateProfile } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 
 /** Session-only profile editor; no separate reference screen was supplied. */
 export default function Profile() {
   const preferences = useMockPreferences();
+  const { state } = useAuth();
   const [name, setName] = useState(preferences.profile.name);
   const [email, setEmail] = useState(preferences.profile.email);
   const [notice, setNotice] = useState('');
   const back = () => router.canGoBack() ? router.back() : router.replace('/settings');
+  if (state.user) return <PrototypeScreen back={back}>
+    <Text style={ui.title}>Your Account</Text>
+    <View style={ui.card}>
+      <Text style={ui.heading}>{state.user.name}</Text><Text style={ui.text}>{state.user.email}</Text>
+      <Text style={ui.text}>Verified session with Neon. Account editing will be added later; editing the demo profile does not change this account.</Text>
+      <PrimaryButton label="Back to Settings" variant="ghost" onPress={back} />
+    </View>
+  </PrototypeScreen>;
   return <PrototypeScreen back={back}>
     <Text style={ui.title}>Your Profile</Text>
     <View style={ui.card}>

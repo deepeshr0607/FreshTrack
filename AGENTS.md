@@ -194,7 +194,71 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 1 — IN PROGRESS
+### Current phase: Phase 2 — FINAL ACCEPTANCE REVIEW PENDING
+
+- User approved Phase 2 continuation and the lower-level Neon API native proof of concept.
+- Development credentials are in ignored `backend/.env`; only public Auth URL is in ignored
+  `.env.local`. The tracked environment example contains placeholders.
+- Added development-only Welcome entry to `/(auth)/native-check`: real email OTP transport,
+  branch-scoped Expo SecureStore, server-checked session restoration and provider sign-out.
+- Published Neon Auth 0.5.0-beta has no Expo entry point; Expo adapter PR #213 remains draft.
+  User confirmed real email delivery, OTP acceptance and verified signed-in session on iPhone.
+  Initial bearer restoration failed; signed provider-cookie correction passed native sign-in.
+  Restart persistence and sign-out/restart also pass user testing. Sign-out needed Origin/Referer;
+  user approved http://192.168.1.21:8085 in development's trusted domains. Custom freshtrack://
+  scheme was rejected by Neon. Production has not been changed.
+- Mobile/backend TypeScript, 39 unit tests, backend health test and three-platform exports pass.
+  Backend lint still lacks eslint. See `docs/Phase_2_Auth_Proof_of_Concept.md` for limits and checks.
+- Remaining item 1 implemented: existing native sign-up/password login/OTP/resend call Neon;
+  web and explicit native Preview Demo remain prototypes. Verified login finishes at native-check
+  with provider sign-out and Continue to Demo Kitchen; protected routing is the next slice.
+- Remember-device choice controls SecureStore versus process memory, including cookie rotation.
+  New-account email/OTP, wrong-password failure, password login and both remember-device
+  restart cases pass user testing on iPhone. Email-verification resend/newest-code verification also
+  passes by user report; 48 unit tests pass.
+- Both TypeScript checks, backend health 1/1, Expo Doctor 21/21 and all-platform exports pass.
+  Existing backend ESLint absence/mobile no lint script remain. This slice adds no dependencies.
+- Password recovery/OAuth/biometrics are not connected. Real identity is not a mock kitchen profile.
+- Remaining item 2 implemented: shared AuthContext, serialized provider checks, startup/resume loading,
+  SDK 57 Stack.Protected for all kitchen routes, public Privacy, direct Home after auth/restoration,
+  provider identity/read-only details/real Sign Out in Settings, explicit process-only demo mode.
+- iPhone user reports startup/restart/Home/Settings identity, item/back, sign-out/private-history/deep-link
+  blocking and demo/exit pass. Browser private deep links/demo/exit/public Privacy checks pass.
+- 55/55 tests, both TypeScript checks, backend health 1/1, Expo Doctor 21/21 and all-platform exports pass.
+  Lint setup gaps remain. Demo is disabled in production native; mock Pantry/recipe state is scoped by
+  session identity. No real data API, backend authentication or additional dependency in this slice.
+- Remaining item 3 implemented: provider JWT from authenticated /token, backend jose/JWKS EdDSA
+  signature/issuer/audience/expiry/subject/verified-email checks, GET /api/v1/auth/me and reusable
+  authentication middleware. No client-supplied userId is trusted. No database/data API changes.
+- User reports Settings → Check Backend Identity passes on iPhone. Live development JWKS returns
+  200, health returns 200 and unauthenticated identity returns 401. 60 mobile/shared tests and seven
+  backend auth tests pass, health 1/1, both TypeScript checks, Doctor 21/21 and all-platform exports pass.
+- JWTs are not persisted by mobile and may remain valid for up to their 15-minute lifetime after
+  provider sign-out. Production revocation policy remains an explicit acceptance decision.
+- Next: deliberate provider failure-policy/offline checks and remaining Phase 2 acceptance review.
+  Android and release checks remain incomplete. Phase 2 changes are uncommitted;
+  no Phase 3 work is authorized.
+- Remaining item 4 complete for iPhone development checks: non-JSON HTTP auth failures preserve status, rate-limit labels are
+  safe/allowlisted, verified/non-banned restoration required, and existing-code diagnostic avoids
+  replacing OTPs during reuse/expiry checks. No additional dependency or database change.
+- iPhone offline resume/private blocking and reconnect/retry pass by user report. Wrong OTP, valid
+  retry and reused-code rejection also pass. User confirmed Too many attempts and fresh-code recovery.
+  Email states a 10-minute lifetime; user reports expired-code rejection and fresh-code recovery
+  after the requested 11-minute wait. Final acceptance/production/revocation review remains open.
+  Fixtures alone are not proof of provider policy.
+- 65/65 root tests, backend auth 7/7, health 1/1, both TypeScript checks, Doctor 21/21 and all-platform
+  exports pass. See docs/Phase_2_Failure_Checks.md. Android/revocation/release decisions remain open.
+- Item 5 local release preparation complete: EAS preview/production profiles, dynamic config that
+  preserves app.json, explicit owner-supplied IDs/project/public HTTPS inputs, input validation and
+  release template. Expo Go config/dev env untouched; no repository dependency added.
+- Root tests 70/70, focused config 5/5, official EAS schema, both TypeScript checks, auth 7/7,
+  health 1/1, Doctor 21/21 and all-platform exports pass. Synthetic release resolution is not a build.
+- User has no paid Apple membership; no EAS linking/account/env/signing/build/deploy/upload ran.
+  Android device testing and live production/signing checks are deferred. See release configuration doc.
+- Next: final Phase 2 acceptance/architecture/JWT revocation review and checkpoint before Phase 3.
+- Do not start Phase 3 or production data endpoints until the Phase 2 native auth gate passes.
+
+### Phase 1 — remaining QA deferred by user
 
 - Existing welcome/auth/OTP/Home/Pantry/scanner prototype preserved; shared Pantry detail/edit,
   missing-item state and Used/Wasted sheets remain implemented.
@@ -236,7 +300,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   Scanner/duplicate/reconciliation checks also reported passing. Android unavailable; see `docs/Phase_1_End_to_End_Checks.md`.
 - Item 4 user-verified on iPhone; Android end-to-end checks pending device/emulator availability.
   Visual/general native/auth QA items 1–3 deferred at the user’s request.
-- Phase 1 requires review; Phase 2 requires explicit user approval.
+- Phase 1 requires final review; user has authorized the Phase 2 proof of concept while QA is deferred.
 
 ---
 
@@ -244,7 +308,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 | Risk | Status |
 |---|---|
-| Neon Auth OTP + Expo native SDK compatibility | **Unverified** — must be confirmed in Phase 2 before building production auth |
+| Neon Auth OTP + Expo native SDK compatibility | Lower-level native API sign-up/OTP/password/session flow passes iPhone user checks; published Expo adapter, Android and full Phase 2 acceptance remain open |
 | Barcode catalog provider | **Not selected** — decide in Phase 6 |
 | Receipt OCR accuracy | **Known limitation** — return editable candidates only; never auto-import |
 | Auto-consuming item on rescan | **Deferred** — require user confirmation in MVP |

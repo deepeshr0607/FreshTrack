@@ -183,7 +183,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 |---|---|---|
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
-| 2 | Validate Neon Auth + Expo OTP flow | ⬜ Not started |
+| 2 | Validate Neon Auth + Expo OTP flow | In progress: forms and protected navigation pass iPhone checks; backend/failure-policy/Android gates pending |
 | 3 | Prisma schema, migrations, API foundation | ⬜ Not started |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
@@ -196,8 +196,9 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Current phase: Phase 1 — IN PROGRESS**
-Latest inspected checkpoint: `d349d24` (`wip: save FreshTrack progress`); working tree was clean before this receipt slice.
+**Current phase: Phase 2 — iPhone failure checks and local release configuration preparation complete; final review remains open.**
+Remaining Phase 1 QA is deferred by the user. The Phase 2 acceptance gate is still open.
+Latest inspected checkpoint: `8e9a195` (`wip: save FreshTrack progress`). Phase 2 changes are currently uncommitted; prior work is preserved.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
@@ -668,6 +669,30 @@ See [the implementation plan § 4](<docs/FreshTrack_Implementation_Plan (1).md>)
 
 ---
 
+## Phase 2 development authentication check — 11 October 2026
+
+User authorized a limited Neon API proof of concept while the remaining Phase 1 QA stays deferred.
+Welcome → **Test Real Email Sign-In** (development builds) opens `/(auth)/native-check` on Expo Go.
+It sends real email OTPs to the development branch, persists provider session material with
+Expo SecureStore and checks restoration/sign-out against Neon. Existing kitchen/auth prototypes
+remain mock flows. Native delivery, authenticated bearer transport and restart/logout acceptance
+have now **passed user testing on iPhone/Expo Go**; Phase 2 is not complete and Phase 3 has not started.
+The user confirmed email delivery, OTP acceptance and a verified signed-in session on iPhone.
+Initial bearer restoration failed; the signed provider-cookie correction passed native sign-in.
+Restart persistence and sign-out followed by restart now pass user testing. Sign-out needed the
+actual Expo development origin registered in the development branch's trusted domains.
+
+Only public `EXPO_PUBLIC_NEON_AUTH_URL` and `EXPO_PUBLIC_NEON_AUTH_ORIGIN` belong in root `.env.local`;
+database credentials stay in `backend/.env`. Both files are ignored. Register the actual development
+app origin in the development Auth domains and restart Expo after changing configuration. Web shows a
+native-device instruction instead of storing authentication material in browser storage.
+
+Checks: mobile/backend TypeScript passed; 39/39 unit tests and 1/1 backend health test passed;
+web/iOS/Android exports passed; Expo Doctor passed 21/21. Backend lint still fails because eslint
+is absent; mobile has no lint script. Install reported 29 audit findings requiring a separate
+dependency review. Details and the next auth acceptance steps are in
+[Phase 2 Auth Proof of Concept](docs/Phase_2_Auth_Proof_of_Concept.md).
+
 ## Security Notes
 
 - No API keys, database URLs, or credentials belong in mobile source code or `EXPO_PUBLIC_*` variables.
@@ -680,3 +705,231 @@ See [the implementation plan § 4](<docs/FreshTrack_Implementation_Plan (1).md>)
 ## License
 
 [See LICENSE](LICENSE)
+
+
+## Phase 2 existing account forms — 11 October 2026
+
+User authorized remaining item 1: connect the supplied sign-up, sign-in, six-digit verification and
+resend screens to real Neon. Existing colors, typography, form layout and Expo Router routes are
+preserved. Native Get Started/Log In now use the configured development Auth service. Missing native
+configuration reports an error rather than succeeding as a demo. Web stays explicitly labeled demo;
+Welcome → Preview Demo Kitchen preserves the local prototype on native devices too.
+
+- Sign-up calls `/sign-up/email` with name/email/password. Neon automatically sends the verification
+  code; the app does not immediately send another code. Unverified responses are never saved as sessions.
+- Existing OTP inputs verify through `/email-otp/verify-email`; resend uses `email-verification`, not
+  passwordless sign-in. A 30-second UI cooldown prevents immediate repeated resend taps; Neon controls
+  actual expiry and rate limits. Accepted verification can retry session restoration without reusing OTP.
+- If verification has no auto-sign-in cookie, the app returns to the password login form. Password
+  login uses `/sign-in/email`; safe errors cover wrong password, unverified email, duplicates and limits.
+  Login includes a verification-code entry for an unfinished registration.
+- Remember checked stores the provider cookie in SecureStore; unchecked clears any older disk cookie
+  and uses memory for this app process. Cookie rotation preserves that choice. Passwords/OTPs are never
+  stored or put in route parameters. Real identities are not copied into mock kitchen profiles.
+- Success currently shows the existing provider session-check screen with sign-out and an explicit
+  Continue to Demo Kitchen action. This preserves a reviewable verified session until protected
+  navigation is implemented. Digest/remember UI preferences remain local, not backend preferences.
+- OAuth, biometrics and real password recovery are not connected; buttons explain that limitation.
+
+User confirmed new-account email delivery/OTP verification, wrong-password failure, correct password
+login, no restored session with Remember unchecked, and restored identity with Remember checked on
+iPhone/Expo Go. These are user-reported device results. The user also confirmed verification resend delivered a new
+code and completed verification. Automated fixtures cover the distinct email-verification transport.
+
+Checks for this slice:
+
+| Command | Actual result |
+| --- | --- |
+| `npx tsc --noEmit` (mobile and backend) | Both passed |
+| `node --experimental-strip-types --test tests/*.test.mjs` | 48/48 passed; existing module-type warnings |
+| `npm test -- --runInBand` (backend) | 1/1 passed outside sandbox; initial sandbox attempt failed with loopback EPERM |
+| `npx expo-doctor` | 21/21 passed |
+| `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-auth-forms-final` | All three platforms/34 routes passed |
+| `npm run lint` (backend) | Existing failure: ESLint absent (exit 127) |
+| Mobile lint | No lint script configured |
+| `git diff --check` | Passed |
+
+No dependency was added in this forms slice. Candidate source/docs secret/debug scan passed.
+
+Next: implement remaining item 2—shared
+verified auth state, startup restoration and protected Expo Router navigation. Backend identity
+verification, provider failure-policy/device checks, Android, production config and final checkpoint
+remain Phase 2 work. Phase 3 has not started.
+
+
+## Phase 2 protected navigation — 11 October 2026
+
+User authorized remaining item 2. `context/AuthContext.tsx` now owns shared verified identity and
+explicit demo state. `lib/authSession.ts` serializes provider checks/authentication/sign-out and
+ignores superseded results. The navigator waits for initial restoration; foreground checks show
+an opaque loading overlay while preserving the current route. Background controls are disabled and
+hidden from screen readers during verification. A null/expired session removes access.
+A failed check blocks kitchen access and offers Retry Session Check on Welcome; provider cookie
+material is retained by the existing transport for retry. Sign-out failure keeps the prior verified
+state with a retry error; successful provider sign-out clears state and private navigation history.
+
+`app/_layout.tsx` uses SDK 57-compatible `Stack.Protected` for tabs, Pantry add/details, Recipe
+details/shopping, financial Analytics, Settings/profile and the legacy modal. Welcome/auth routes
+are available only outside kitchen access. Privacy and not-found remain public. No SDK 58-only
+`redirectTo` prop or direct React Navigation API is used. This is client navigation protection;
+server-side API authorization remains the next Phase 2 slice.
+
+Verified login/OTP now enter Home directly; a remembered session restores Home on cold startup.
+Settings displays the provider identity, read-only account details and real Sign Out. Mock profile
+editing stays available only for demo. Public prototype information now accurately distinguishes
+real development authentication from mock groceries and simulated camera/notifications.
+
+Preview Demo Kitchen is explicit and process-only. It is allowed in development native and web
+prototype builds, disabled in production native, and never supplies a real authenticated identity.
+Demo cannot activate while a session operation is running. Pantry/recipe mock state resets when
+switching between anonymous/demo/authenticated subjects to avoid carrying another session's prototype
+edits across identities. Local form/preferences state remains separate so mock profile and signup
+digest choices continue working. No real database persistence or protected data endpoint was added.
+
+Verification:
+
+- User-reported iPhone passes: direct Home after login/startup, correct account email in Settings,
+  remembered restart, Pantry details/back, Sign Out → Welcome, blocked back/swipe and signed-out
+  Pantry-add deep link, explicit demo entry, demo labeling and confirmed exit.
+- Browser directly verified: signed-out Pantry add, account details and shopping-list URLs redirect
+  to Welcome; Preview Demo → Home → Settings → exit works; browser Back does not reopen the kitchen;
+  Privacy remains public and Done returns to Welcome.
+- Mobile/backend `npx tsc --noEmit`: passed.
+- `node --experimental-strip-types --test tests/*.test.mjs`: **55/55 passed**, including startup,
+  provider identity mismatch, no-auto-sign-in verification, failed/expired resume, retry, late
+  restoration versus sign-out, revocation failure/retry and explicit demo eligibility.
+- Backend `npm test -- --runInBand`: **1/1 passed** with loopback access.
+- `npx expo-doctor`: **21/21 passed**.
+- `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-protected-navigation-final`:
+  all platforms/34 routes passed. Exports are not device interaction tests.
+- `git diff --check` and candidate source/docs secret/debug scan: passed.
+- Backend `npm run lint`: unchanged failure (`eslint: command not found`, exit 127); mobile has no
+  lint script. Existing Node module-type warnings remain. No dependency added in this slice.
+
+Remaining Phase 2: backend identity verification and unauthenticated rejection, deliberate provider
+expiry/reused-code/rate-limit/offline checks, Android, production HTTPS origin/release configuration,
+final review/docs/checkpoint commit. Offline/expiry/race paths above have injected-client coverage;
+those cases have not been deliberately exercised against Neon on the device in this slice.
+Next: remaining item 3—establish backend server-side identity verification. Phase 3 has not started.
+
+
+## Phase 2 backend identity verification — 11 October 2026
+
+User authorized remaining item 3. The API now exposes `GET /api/v1/auth/me` behind reusable
+`requireIdentity` middleware. Mobile obtains a short-lived signed JWT from Neon's documented
+`GET /token` using its existing provider cookie, sends only the JWT as a Bearer credential to the
+API, and does not persist the JWT or place it in React state. The opaque session token is not used
+as an API JWT. Demo sessions cannot perform this check.
+
+The server uses `jose` and branch-specific public JWKS, verifies EdDSA signature, issuer and audience
+against the configured Auth URL's origin, requires subject/expiry/issued-at, enforces a 15-minute
+maximum age, and rejects unverified email, banned accounts and inconsistent subject/id claims.
+Client `userId`, cookie-only requests and identity headers cannot select the account. Invalid
+credentials return safe 401 errors; missing configuration/key-service failure returns safe 503.
+Responses include request IDs and `Cache-Control: no-store`; health remains public. No database
+connection, migration, Pantry endpoint or Phase 3 work was added.
+
+Neon JWTs can remain valid until their 15-minute expiry after provider sign-out. The app does not
+cache them, but immediate revocation of an already-issued JWT is not implemented. The production
+revocation policy must be agreed during Phase 2 acceptance. Provider docs:
+[Neon JWT plugin](https://neon.com/docs/auth/guides/plugins/jwt),
+[jose verification](https://github.com/panva/jose).
+
+Local setup: set `backend/.env`'s `NEON_AUTH_URL` to the same development branch used by mobile;
+no signing secret is required. Set ignored mobile `.env.local`'s `EXPO_PUBLIC_API_URL` to
+`http://YOUR_PRIVATE_LAN_IP:3001`. This is public endpoint configuration, never a database URL.
+Private-LAN HTTP is accepted only by the development check; production requires HTTPS.
+Run `npm run build` in `backend/`, then `node --env-file=.env dist/server.js` there (Node 20+).
+Restart Expo after changing public env variables. Development Settings → Check Backend Identity
+compares the API's verified subject/email with the current account. This button is absent in
+production and the demo. Backend CommonJS output is preserved; Node16 module resolution/native
+ESM import supports jose 6, and isolated compilation keeps the existing Jest health test compatible.
+
+Verification results for this slice:
+
+- Root `npx tsc --noEmit`: exit 0. Backend `npx tsc --noEmit`: exit 0.
+- `node --experimental-strip-types --test tests/*.test.mjs`: **60/60 passed**.
+- Backend `npm run test:auth`: build succeeds, **7/7 passed**, using real generated Ed25519
+  signatures and local test JWKS. Covers forgery/algorithm, expiry/future/stale claims,
+  wrong branch/audience, unknown keys, invalid/unverified/banned claims, identity spoofing,
+  missing credentials/configuration and provider outage. No real credentials are in these tests.
+- Backend `npm test -- --runInBand`: health **1/1 passed** with local socket permission.
+  A restricted rerun failed with sandbox `listen EPERM`; rerunning with permission passed.
+- Actual development JWKS: **200**, public keys present. Running API: health **200**,
+  unauthenticated `/api/v1/auth/me` **401 / UNAUTHORIZED**.
+- User reports the Settings backend identity check passes on **iPhone/Expo Go**. This is a
+  user-observed result; automated native UI and Android checks have not been performed.
+- `npx expo-doctor`: **21/21 passed**.
+- `npx expo export --platform web --platform ios --platform android --output-dir
+  /private/tmp/freshtrack-backend-identity`: exit 0, all three bundles and 34 static routes exported.
+- Backend `npm run lint`: existing failure, exit 127 (`eslint` absent). Mobile has no lint script.
+- Dependency install added only backend `jose`; npm reported 36 audit findings (5 moderate,
+  31 high). No broad dependency upgrade/audit fix was applied.
+- `git diff --check`: passed. Credential/debug scan of changed source and documentation passed.
+
+Next: deliberate provider expired/reused/rate-limit and offline/retry checks, decide revocation
+policy, document/review the remaining Phase 2 acceptance and production configuration. Android
+verification remains pending device availability. Phase 2 is not complete; Phase 3 has not started.
+
+
+## Phase 2 failure/offline checks — 11 October 2026
+
+User authorized remaining item 4. Actual offline background/resume on iPhone blocks the kitchen and
+shows the session-verification error; reconnect/Retry Session Check restores the same account without
+another OTP, by user report. Wrong-code rejection, subsequent valid-code login, and rejection of a
+previously successful code without replacement also pass by user report. User specifically confirmed
+Too many attempts appeared and a fresh code then worked. The email states a 10-minute lifetime;
+user reports unused-code rejection after the requested 11-minute wait and successful resend/new-code
+recovery. Item 4 is complete for the iPhone development flow. [Failure-check matrix](docs/Phase_2_Failure_Checks.md) separates fixtures from real-device
+results and gives bounded development-only test steps.
+
+Focused changes: auth transport preserves non-JSON HTTP failures (401 session invalidation and 429
+rate-limit feedback), reports malformed successful responses safely, and permits cookie-preserving
+retry after gateway/transport failures. Only allowlisted provider error labels are exposed. Native
+passwordless sign-in and restoration now require verified, non-banned provider identity; rejected
+restorations clear local session material. The existing development diagnostic adds Use a Code
+Already Received, which opens the OTP form without sending/replacing a code. It still calls Neon
+verification, never bypasses it, and does not store codes persistently. No new dependency or backend/
+database change was added for item 4.
+
+Checks: root and backend `npx tsc --noEmit` exit 0; root
+`node --experimental-strip-types --test tests/*.test.mjs` **65/65 pass**; backend
+`npm run test:auth` **7/7 pass** after build; backend `npm test -- --runInBand` health **1/1 pass**
+with local socket permission. `npx expo-doctor` **21/21 pass**. Three-platform export
+`npx expo export --platform web --platform ios --platform android --output-dir
+/private/tmp/freshtrack-auth-failure-checks` exits 0 (34 static routes). Existing module-type/color
+warnings remain. Lint setup gaps remain unchanged (backend ESLint absent, mobile no lint script).
+`git diff --check` passes. Phase 2 remains open; Phase 3 has not started.
+
+
+Final item-4 result: user confirmed expired-code rejection/private-route blocking and fresh-code
+recovery on iPhone after the requested wait. This is user-reported native evidence, not an automated
+observation. Only documentation changed when recording this result; the previous 65/65 root tests,
+7/7 backend auth tests, health 1/1, TypeScript, Doctor and export results were not rerun.
+Next: final Phase 2 acceptance/architecture review, production configuration and JWT revocation
+policy decision, Android verification when available, then checkpoint commit before any Phase 3 work.
+
+
+## Phase 2 release configuration preparation — 11 October 2026
+
+User approved shared/iOS release preparation with Android settings and deferred Android device QA.
+The user has no paid Apple Developer membership. Nothing was uploaded or deployed, no account was
+created, and no signing credentials or native build were generated. Expo Go development can continue.
+
+Added `eas.json` preview/production profiles, `app.config.js` preserving `app.json`, release-input
+validation, `.env.release.example`, and five configuration tests. Preview has separate name/scheme/IDs;
+production uses EAS-managed build numbering. Chosen app identifier, EAS project UUID and actual
+HTTPS Auth/origin/API settings must be supplied later. Release validation rejects missing/placeholder
+settings and LAN/insecure transport, preventing accidental use of local development URLs. No repository
+dependency or current development env change. Actual root env files remain ignored.
+
+Checks: both TypeScript commands exit 0; root tests 70/70; focused release tests 5/5; backend auth 7/7,
+health 1/1; Doctor 21/21; all-platform export/34 routes pass. Development public Expo config resolves;
+synthetic preview/production configs resolve through actual Expo CLI and production LAN API settings
+are rejected. Official @expo/eas-json 24.9.0 schema passes. Expo exports do not verify signed release
+builds. Existing lint gaps remain. Detailed setup, commands and verification limits:
+[Release configuration preparation](docs/Phase_2_Release_Configuration.md).
+
+Next: final Phase 2 acceptance/architecture and JWT revocation review; explicitly record Android and
+live signing/production verification as deferred. Checkpoint commit is required before Phase 3, which
+has not started. Apple membership can wait until a standalone iPhone build/distribution is needed.

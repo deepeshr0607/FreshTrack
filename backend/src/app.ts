@@ -9,8 +9,11 @@
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import { randomUUID } from 'node:crypto';
 
 import { healthRouter } from './routes/health';
+import { createAuthRouter } from './routes/auth';
+import { createIdentityVerifier, type VerifyIdentity } from './services/auth';
 
 // ── Environment ──────────────────────────────────────────────────────────────
 
@@ -21,7 +24,7 @@ const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '')
 
 // ── App factory ──────────────────────────────────────────────────────────────
 
-export function createApp(): express.Application {
+export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): express.Application {
   const app = express();
 
   // Trust proxy headers from Vercel / reverse proxies
@@ -48,9 +51,7 @@ export function createApp(): express.Application {
 
   // ── Request ID ────────────────────────────────────────────────────────────
   app.use((req: Request, _res: Response, next: NextFunction) => {
-    req.headers['x-request-id'] =
-      req.headers['x-request-id'] ??
-      `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    req.headers['x-request-id'] = randomUUID();
     next();
   });
 
@@ -67,6 +68,7 @@ export function createApp(): express.Application {
 
   // ── Routes ────────────────────────────────────────────────────────────────
   app.use('/api/v1', healthRouter);
+  app.use('/api/v1', createAuthRouter(options.verifyIdentity ?? createIdentityVerifier(process.env['NEON_AUTH_URL'])));
 
   // ── 404 handler ──────────────────────────────────────────────────────────
   app.use((_req: Request, res: Response) => {

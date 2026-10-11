@@ -12,9 +12,11 @@ import {
   Pressable,
 } from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 
 export default function WelcomeScreen() {
+  const { session, state, allowDemo } = useAuth();
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -86,6 +88,21 @@ export default function WelcomeScreen() {
             I already have an account — <Text style={styles.loginLink}>Log In</Text>
           </Text>
         </Pressable>
+
+        {__DEV__ && <Pressable onPress={() => router.push('/(auth)/native-check')} accessibilityRole="button">
+          <Text style={styles.loginLink}>Test Real Email Sign-In</Text>
+        </Pressable>}
+
+        {allowDemo && <Pressable onPress={() => session.enterDemo()} accessibilityRole="button">
+          <Text style={styles.loginLink}>Preview Demo Kitchen</Text>
+        </Pressable>}
+
+        {state.status === 'error' && <View>
+          <Text style={styles.subtext} accessibilityLiveRegion="polite">{state.error}</Text>
+          <Pressable accessibilityRole="button" onPress={() => void session.refresh().catch(() => undefined)}>
+            <Text style={styles.loginLink}>Retry Session Check</Text>
+          </Pressable>
+        </View>}
 
         {/* Legal */}
         <Text style={styles.legal}>
