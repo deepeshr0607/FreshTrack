@@ -539,7 +539,22 @@ release/Android deferrals, then checkpoint before Phase 3. Phase 2 remains open;
 
 **Goal:** Establish a stable database contract before connecting screens.
 
-### Current slice — item 1 complete locally (11 October 2026)
+### Current slice — items 1–2 complete (11 October 2026)
+
+User approved item 2. Console-verified development endpoint/branch matches the ignored environment.
+Initial transactional migration is applied to the previously empty public application schema;
+SQL checks/compound references/indexes are installed, managed auth structure unchanged. Prisma 5.22
+client/singleton, readiness CLI and pinned-development/consent guards are implemented. Two reserved
+synthetic fixture households seed idempotently; they are not linked to real accounts or mobile mocks.
+
+Live migration/status/direct-and-pooled readiness pass. Tests: guards 4/4, rollback-only database
+14/14, seed replay 1/1, root 70/70, backend auth 9/9 and health 1/1; both TypeScript checks and
+Prisma generate/validate pass. Lint gaps remain; mobile/Expo/device tests not repeated with no mobile
+changes. No production migration, kitchen API or mobile persistence. See [database setup](Phase_3_Database_Setup.md).
+Next: item 3, household bootstrap from verified identity and isolation/race tests. Phase 3 remains
+incomplete; protected data API/contracts/deployment foundation still follow.
+
+### Earlier checkpoint — item 1 complete locally (11 October 2026)
 
 User authorized Phase 3 model definition, selected INR (integer paise) and Asia/Kolkata.
 `backend/prisma/schema.prisma` now defines six application models, enums, household-scoped compound
