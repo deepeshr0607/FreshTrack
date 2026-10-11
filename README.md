@@ -187,7 +187,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
-| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–2 complete; household/API foundation pending |
+| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–3 complete; API contracts/deployment pending |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
@@ -199,17 +199,35 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Phase 3 items 1–2 are complete: model, development migration, Prisma client and guarded seed.**
+**Phase 3 items 1–3 are complete: model, development database setup and authenticated household access.**
 Phase 2 development acceptance is complete. The user selected INR (integer paise) and Asia/Kolkata.
-The initial migration is applied to verified Neon development; direct/pooled readiness and live
-constraint/seed tests pass. No real kitchen API or mobile persistence exists yet. Next: item 3,
-authenticated household setup and isolation.
+The initial migration is applied to verified Neon development. Explicit authenticated setup now
+atomically creates one household/membership/preferences; reads are scoped to verified membership.
+The mobile kitchen still uses mock data and does not call household setup. Next: item 4, shared
+protected API contracts, pagination and date/money/expiry helpers; deployment and final verification follow.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
+
+### Phase 3 item 3 — authenticated household access (11 October 2026)
+
+Added explicit `POST /api/v1/households/current` setup and membership-scoped current/by-ID reads.
+Serializable transactions, unique-subject conflict retries and rollback prevent duplicate/orphan
+households. Repeated setup preserves preferences; foreign and unknown IDs both return 404.
+Identity comes only from verified JWTs; request identity/settings fields are rejected. No schema,
+migration, mobile, dependency or production changes. No real account was enrolled by these tests.
+
+Checks: mobile/backend `npx tsc --noEmit` and backend build pass; root tests 70/70, household
+HTTP/service tests 6/6, live development household tests 5/5, backend auth 9/9, health 1/1 and
+existing database guards 4/4 pass. Temporary live records were removed and cleanup asserted.
+An initial health regression from eager JWT-library loading was fixed with lazy loading; the
+health and auth reruns pass. Backend lint remains exit 127 (ESLint absent); mobile has no lint script.
+Expo/device checks were not repeated for this backend-only change. `git diff --check` passes.
+See [API contract, commands and verification limits](docs/Phase_3_Household_Access.md).
+Next: Phase 3 item 4 API foundation; Pantry CRUD/mobile persistence remains Phase 4.
 
 ### Phase 3 item 2 — development database setup (11 October 2026)
 

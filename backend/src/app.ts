@@ -13,13 +13,15 @@ import { randomUUID } from 'node:crypto';
 
 import { healthRouter } from './routes/health';
 import { createAuthRouter } from './routes/auth';
+import { createHouseholdRouter } from './routes/households';
+import type { HouseholdService } from './services/households';
 import { createIdentityVerifier, type VerifyIdentity } from './services/auth';
 
 // ── Environment ──────────────────────────────────────────────────────────────
 
 // ── App factory ──────────────────────────────────────────────────────────────
 
-export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): express.Application {
+export function createApp(options: { verifyIdentity?: VerifyIdentity; householdService?: HouseholdService } = {}): express.Application {
   const app = express();
   const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '').split(',').map((o) => o.trim()).filter(Boolean);
 
@@ -70,7 +72,9 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity } = {}): ex
 
   // ── Routes ────────────────────────────────────────────────────────────────
   app.use('/api/v1', healthRouter);
-  app.use('/api/v1', createAuthRouter(options.verifyIdentity ?? createIdentityVerifier(process.env['NEON_AUTH_URL'])));
+  const verifyIdentity = options.verifyIdentity ?? createIdentityVerifier(process.env['NEON_AUTH_URL']);
+  app.use('/api/v1', createAuthRouter(verifyIdentity));
+  app.use('/api/v1', createHouseholdRouter(verifyIdentity, options.householdService));
 
   // ── 404 handler ──────────────────────────────────────────────────────────
   app.use((req: Request, res: Response) => {

@@ -15,20 +15,23 @@ export function createIdentityVerifier(authUrl: string | undefined, getKey?: JWT
       || endpoint.username || endpoint.password || endpoint.search || endpoint.hash) throw new Error();
   } catch { return async () => { throw new AuthFailure(true); }; }
   // Preserve native import for the ESM-only jose package while keeping the existing CommonJS backend.
-  const verifier = import('jose').then(({ createRemoteJWKSet, jwtVerify }) => ({
+  const loadVerifier = () => import('jose').then(({ createRemoteJWKSet, jwtVerify }) => ({
     jwtVerify,
     key: getKey ?? createRemoteJWKSet(new URL(`${endpoint.href.replace(/\/$/, '')}/.well-known/jwks.json`), {
       timeoutDuration: 5000, cooldownDuration: 30_000, cacheMaxAge: 600_000,
     }),
   }));
+  // Public health/startup must not load authentication tooling before a token is checked.
+  let verifier: ReturnType<typeof loadVerifier> | undefined;
   return async (token) => {
     try {
-      const { jwtVerify, key } = await verifier;
+      const { jwtVerify, key } = await (verifier ??= loadVerifier());
       const { payload } = await jwtVerify(token, key, {
         algorithms: ['EdDSA'], issuer: endpoint.origin, audience: endpoint.origin,
         requiredClaims: ['sub', 'exp', 'iat'], maxTokenAge: '15m', clockTolerance: 5,
       });
-      if (typeof payload.sub !== 'string' || !payload.sub.trim()
+      if (typeof payload.sub !== 'string' || !payload.sub.trim() || payload.sub.length > 255
+        || payload.sub.trim() !== payload.sub || /[\u0000-\u001f\u007f]/.test(payload.sub)
         || typeof payload.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)
         || payload.emailVerified !== true || payload.banned === true
         || (payload.id !== undefined && payload.id !== payload.sub)) throw new AuthFailure();
