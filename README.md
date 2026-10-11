@@ -236,8 +236,13 @@ API or production DB/auth change. A Preview retry needed explicit NODE_ENV befor
 Both TypeScript checks/build and local preview build pass; backend 29/29, final deployment 4/4,
 root 70/70, health 1/1 and guards 4/4 pass. Existing ESLint gap remains. Runtime audit reports zero;
 cloud full audit reports 36 development-tool findings. See [configuration, commands and limits](docs/Phase_3_Deployment.md).
-Next: verify an authenticated household read through the hosted API's Prisma/Neon connection,
-then complete Phase 3 final review. Identity verification alone does not query the database.
+Development-only Settings → Check Backend Database is now ready: it verifies backend identity and
+reads the authenticated household endpoint without creating records. A specific no-household result
+also confirms a successful database query. iPhone hosted database verification remains pending.
+Both TypeScript checks and root tests 73/73 pass; backend health 1/1 passes after the sandbox listener
+restriction was lifted. Backend lint remains unavailable (ESLint absent); mobile has no lint script.
+Expo all-platform export passes for web, iOS and Android; this is not native database verification.
+Next: reload Expo Go → Settings → Check Backend Database, then complete Phase 3 final review.
 
 ### Phase 3 item 4 — API contracts and helpers (11 October 2026)
 

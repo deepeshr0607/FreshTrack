@@ -237,7 +237,13 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   guards4/4 pass. Runtime audit0; full cloud audit36 dev-tool findings. Existing lint gaps remain.
 - Both TypeScript checks pass again after environment update. Expo runs at exp://192.168.1.248:8085;
   existing trusted Neon Auth origin preserved. No hosting bypass token in mobile.
-- Next: authenticated hosted household read to verify Prisma/Neon, then Phase 3 item6 final
+- Development-only Settings → Check Backend Database added: matched identity then same transient JWT
+  for read-only scoped household GET; specific HOUSEHOLD_NOT_FOUND accepted as successful DB query,
+  unrelated errors rejected. No bootstrap/writes/token persistence/real Pantry connection.
+  Both TypeScript checks, root73/73 and health1/1 pass; initial health sandbox EPERM resolved with
+  allowed localhost listener. Existing lint gaps remain. iPhone hosted DB result pending user check.
+  Web/iOS/Android exports pass; no backend deploy/schema/dependency change in this probe slice.
+- Next: iPhone Settings database check to verify Prisma/Neon, then Phase 3 item6 final
   review. Phase 4 and production writes are not authorized.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
