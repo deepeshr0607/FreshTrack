@@ -539,7 +539,24 @@ release/Android deferrals, then checkpoint before Phase 3. Phase 2 remains open;
 
 **Goal:** Establish a stable database contract before connecting screens.
 
-### Current slice — items 1–4 complete; item 5 Preview deployed (11 October 2026)
+### Current status — Phase 3 development acceptance complete (12 October 2026)
+
+User authorized item 6 final review. All five acceptance criteria have recorded development evidence:
+initial migration onto an empty application schema, guarded seed, public health/authenticated reads,
+JWT and household isolation, and server-only credentials. User verified hosted identity and scoped
+database read on iPhone. See [final acceptance report](Phase_3_Final_Review.md) for evidence limits.
+
+Final checks pass: both TypeScript checks/build, root73/73, backend29/29, health1/1, guards4/4,
+live database14/14, live household5/5 with cleanup, seed replay1/1, migration status/readiness,
+Prisma validation, Doctor21/21 and public health200/auth401/CORS403. Existing lint gap remains;
+prior all-platform export passed. Only review/status documents changed in this final slice.
+
+Android/earlier Phase 1 QA and production/release checks remain deferred; hosted household writes
+and hosted two-account isolation are not claimed. The mobile kitchen remains mock. Phase 4 is not
+authorized or started. Exact next step after approval: household setup and persisted Pantry
+list/manual-add with a transactional CREATED event, client service and account-isolation tests.
+
+### Earlier slice — items 1–5 verified (11 October 2026)
 
 User authorized deployment preparation and completed Vercel login. Dedicated freshtrack-api Preview
 is READY using reviewed Neon development credentials. Exported Express entry, Node24, generate/tsc
@@ -555,8 +572,8 @@ Initial production-labelled attempt failed safely, Preview retry needed NODE_ENV
 
 Both TypeScript/build/local preview build pass; backend29/29, deployment rerun4/4, root70/70,
 health1/1 and guards4/4 pass. Runtime audit0; full cloud audit36 dev-tool findings; lint gaps remain.
-See [deployment evidence and next steps](Phase_3_Deployment.md). Next: final Phase 3 acceptance review
-and checkpoint. Phase 4 has not started.
+See [deployment evidence and next steps](Phase_3_Deployment.md). Final Phase 3 review is now complete;
+Phase 4 has not started.
 
 Read-only native database probe is now implemented under development Settings. It verifies matching
 identity then calls household GET with the same transient JWT, accepts the specific no-household

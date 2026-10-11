@@ -121,7 +121,7 @@ specific `HOUSEHOLD_NOT_FOUND` envelope confirms the scoped query completed; gen
 service errors and malformed responses fail the check. It does not bootstrap, mutate, persist tokens,
 or connect the mock Pantry to real data. Native hosted no-household result is confirmed by the user.
 Keep data on Neon development.
-Then Phase 3 item 6: final acceptance/review and checkpoint. Production release, Git integration
+Phase 3 item 6 is now complete; see [final review](Phase_3_Final_Review.md). Production release, Git integration
 permissions and development-tool dependency findings remain separate follow-up work. Pantry
 persistence/endpoints and mutation/event transactions still belong to Phase 4.
 
