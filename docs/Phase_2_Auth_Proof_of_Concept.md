@@ -177,3 +177,13 @@ diagnostic enables reuse/expiry checks without sending a replacement code. No de
 provider-policy change. 65/65 root tests, backend auth 7/7, health 1/1, both TypeScript checks, Doctor
 21/21 and all-platform exports pass. See Phase_2_Failure_Checks.md for the result matrix.
 Phase 2 remains open; no Phase 3 work.
+
+
+## Final acceptance — 11 October 2026
+
+The Phase 2 development gate is complete with the recorded iPhone user evidence, architecture
+review and explicit acceptance of bounded 15-minute JWT validity for the MVP. Android/live
+production/signing checks remain deferred. Final review fixed redaction/request-ID errors and
+passed 70 root tests, nine backend auth/boundary tests, health 1/1, both TypeScript checks and
+Doctor 21/21. See Phase_2_Final_Review.md and decisions/001-native-neon-auth.md. The final checkpoint
+is `feat: validate native authentication and protected route flow` (see Git log). Phase 3 has not started.
