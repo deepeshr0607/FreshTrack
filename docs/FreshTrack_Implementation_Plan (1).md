@@ -557,6 +557,13 @@ health1/1 and guards4/4 pass. Runtime audit0; full cloud audit36 dev-tool findin
 See [deployment evidence and next steps](Phase_3_Deployment.md). Next: authenticated hosted household
 read to verify the database connection, then final Phase 3 review. Phase 4 has not started.
 
+Read-only native database probe is now implemented under development Settings. It verifies matching
+identity then calls household GET with the same transient JWT, accepts the specific no-household
+response, and rejects service/auth/invalid-response failures. No records are created and Pantry stays
+mock. Both TypeScript checks, root73/73 and backend health1/1 pass; existing lint gaps remain.
+Hosted database success is not yet claimed: user iPhone check is pending.
+Web/iOS/Android exports pass; no backend redeployment, dependency or schema change.
+
 ### Earlier checkpoint — items 1–4 complete (11 October 2026)
 
 User authorized item 4. Added shared type-only wire contracts, centralized safe success/failure

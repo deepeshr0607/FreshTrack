@@ -10,7 +10,7 @@ import { MOCK_CURRENCY } from '@/lib/mock';
 import { useAuth } from '@/context/AuthContext';
 import useAuthRequest from '@/features/auth/useAuthRequest';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
-import { checkBackendIdentity } from '@/lib/backendIdentity';
+import { checkBackendHousehold, checkBackendIdentity } from '@/lib/backendIdentity';
 
 /** Supporting prototype preference screen; no separate Settings reference was supplied. */
 export default function Settings() {
@@ -21,6 +21,7 @@ export default function Settings() {
   const [notice, setNotice] = useState('');
   const signOutRequest = useAuthRequest(setNotice);
   const backendRequest = useAuthRequest(setNotice);
+  const householdRequest = useAuthRequest(setNotice);
   const [confirmExit, setConfirmExit] = useState(false);
   return <PrototypeScreen back={() => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/insights')}>
     <Text style={ui.title}>Kitchen Preferences</Text>
@@ -52,6 +53,13 @@ export default function Settings() {
           onPress={() => { setNotice(''); void backendRequest.run(async (isMounted) => {
             await checkBackendIdentity(process.env.EXPO_PUBLIC_API_URL, () => nativeAuthProbe!.getApiToken(), state.user!, __DEV__);
             if (isMounted()) setNotice('Backend identity verified for your signed-in account.');
+          }); }} />}
+        {__DEV__ && nativeAuthProbe && <PrimaryButton label="Check Backend Database" variant="ghost" loading={householdRequest.loading}
+          onPress={() => { setNotice(''); void householdRequest.run(async (isMounted) => {
+            const result = await checkBackendHousehold(process.env.EXPO_PUBLIC_API_URL, () => nativeAuthProbe!.getApiToken(), state.user!, __DEV__);
+            if (isMounted()) setNotice(result === 'ready'
+              ? 'Backend database verified. Your household is available (INR, Asia/Kolkata).'
+              : 'Backend database verified. No household is set up for this account yet.');
           }); }} />}
         <Text style={ui.text}>Your remember-device choice is set when you log in. Sign out revokes this session and returns to Welcome.</Text>
         <PrimaryButton label="Sign Out" variant="ghost" loading={signOutRequest.loading}

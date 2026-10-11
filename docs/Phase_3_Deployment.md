@@ -112,11 +112,22 @@ Local/live development isolation evidence remains in item 3.
 
 The iPhone hosted identity check passed by user report on 11 October 2026. The next check is an
 authenticated household read through the hosted function to verify its Prisma/Neon connection.
-This is not yet wired into mobile; do not treat the identity check as database verification.
+Development-only Settings → Check Backend Database now verifies matching backend identity, then
+uses the same transient JWT for `GET /api/v1/households/current`. A valid household response or the
+specific `HOUSEHOLD_NOT_FOUND` envelope confirms the scoped query completed; generic 404s, 401s,
+service errors and malformed responses fail the check. It does not bootstrap, mutate, persist tokens,
+or connect the mock Pantry to real data. Native hosted result is pending the user's iPhone test.
 Keep data on Neon development.
 Then Phase 3 item 6: final acceptance/review and checkpoint. Production release, Git integration
 permissions and development-tool dependency findings remain separate follow-up work. Pantry
 persistence/endpoints and mutation/event transactions still belong to Phase 4.
+
+Probe validation: both `npx tsc --noEmit` checks pass; root strip-types tests 73/73 pass, including
+read-only requests, expected no-household versus failures, and mismatched identity blocking.
+Backend `npm test -- --runInBand` passes 1/1 after permitting its temporary localhost listener
+(initial sandbox EPERM). Backend lint still exits 127 because ESLint is absent; mobile has no lint script.
+`npx expo export --platform all --output-dir /private/tmp/freshtrack-phase3-db-check-export` passes
+for web, iOS and Android (34 static routes). Exports do not prove native interaction or hosted DB access.
 
 References: [Express entry/export support](https://vercel.com/docs/frameworks/backend/express),
 [Vercel configuration](https://vercel.com/docs/project-configuration/vercel-json),
