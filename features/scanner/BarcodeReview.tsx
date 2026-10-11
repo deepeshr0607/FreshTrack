@@ -7,6 +7,7 @@ import PrimaryButton from '@/components/PrimaryButton';
 import ExpiryBadge from '@/components/ExpiryBadge';
 import { ui } from '@/components/PrototypeScreen';
 import { Colors, Radius, Spacing } from '@/constants/Theme';
+import { MOCK_CURRENCY } from '@/lib/mock';
 import { useMockPantry } from '@/context/MockPantryContext';
 import { expiryDays, validatePantryDraft } from '@/lib/pantry';
 import { barcodeDuplicates, barcodeLookup, dateAfter, MOCK_BARCODE_PRODUCTS, newBarcodeCandidate,
@@ -148,7 +149,7 @@ export default function BarcodeReview() {
         current.expirySource === 'PRESET_ESTIMATE' ? 'Suggested shelf life, not a verified package date.' : 'Manual date: recorded as user entered.'}</Text>
       <FormInput label="Quantity" accessibilityLabel="Packaged quantity" value={current.draft.quantity} keyboardType="decimal-pad"
         onChangeText={(value) => update(current.id, { draft: { ...current.draft, quantity: value }, confirmed: false })} />
-      <FormInput label="Whole-entry value ($, optional)" accessibilityLabel="Packaged purchase value" value={current.draft.price} keyboardType="decimal-pad"
+      <FormInput label={`Whole-entry value (${MOCK_CURRENCY.symbol}, optional)`} accessibilityLabel="Packaged purchase value" value={current.draft.price} keyboardType="decimal-pad"
         onChangeText={(value) => update(current.id, { draft: { ...current.draft, price: value }, confirmed: false })} />
       <Text style={ui.text}>Unknown values count as $0. Past dates are allowed for reconciliation.</Text>
       <PrimaryButton label="Confirm Date & Next" onPress={() => {

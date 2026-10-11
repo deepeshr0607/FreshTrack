@@ -10,7 +10,7 @@
  * - Swipe actions: right = consumed (green), left = wasted (red)
  */
 import React, { useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable as NativePressable, StyleSheet, Text, View } from 'react-native';
 import { Pressable } from 'react-native-gesture-handler';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -22,11 +22,13 @@ import type { PantryItem } from '../lib/mock';
 interface Props {
   item: PantryItem;
   onPress?: () => void;
+  onSelect?: () => void;
+  selected?: boolean;
   onConsume?: (id: string) => void;
   onWaste?: (id: string) => void;
 }
 
-export default function PantryItemCard({ item, onPress, onConsume, onWaste }: Props) {
+export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSelect, selected = false }: Props) {
   const swipeable = useRef<SwipeableMethods>(null);
   const swiping = useRef(false);
   const requestAction = (direction: 'right' | 'left') => {
@@ -52,28 +54,24 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste }: Pr
   const sourceColor =
     item.expirySource === 'PACKAGE_DATE' ? Colors.freshGreen : Colors.smartAzure;
 
-  return (
-    <ReanimatedSwipeable ref={swipeable} containerStyle={styles.swipeContainer}
-      friction={1} leftThreshold={72} rightThreshold={72}
-      dragOffsetFromLeftEdge={20} dragOffsetFromRightEdge={20}
-      overshootLeft={false} overshootRight={false} enableTrackpadTwoFingerGesture
-      enabled={item.status === 'ACTIVE' && !!(onConsume || onWaste)}
-      renderLeftActions={onConsume ? () => actionPanel(true) : undefined}
-      renderRightActions={onWaste ? () => actionPanel(false) : undefined}
-      onSwipeableOpenStartDrag={() => { swiping.current = true; }}
-      onSwipeableCloseStartDrag={() => { swiping.current = true; }}
-      onSwipeableOpen={requestAction}>
-    <View style={styles.card}>
-      <Pressable
+  // Selection uses a regular press target outside the disabled swipe gesture tree.
+  const CardPressable = onSelect ? NativePressable : Pressable;
+  const card = (
+    <View style={[styles.card, selected && { borderColor: Colors.primary, borderWidth: 2 }]}>
+      <CardPressable
         onPressIn={() => { swiping.current = false; }}
-        onPress={() => { if (!swiping.current) onPress?.(); }}
+        onPress={() => { if (!swiping.current) (onSelect ?? onPress)?.(); }}
         style={({ pressed }) => [pressed && styles.cardPressed]}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.name}, ${item.daysLeft} days left`}
-        accessibilityHint="Open item details. Swipe right for Used or left for Wasted; both require confirmation."
+        accessibilityRole={onSelect ? 'checkbox' : 'button'}
+        accessibilityState={onSelect ? { checked: selected } : undefined}
+        aria-checked={onSelect ? selected : undefined}
+        accessibilityLabel={onSelect ? `Select ${item.name}` : `${item.name}, ${item.daysLeft} days left`}
+        accessibilityHint={onSelect ? 'Select this whole entry for a confirmed batch action.' : 'Open item details. Swipe right for Used or left for Wasted; both require confirmation.'}
       >
         {/* Main content row */}
         <View style={styles.row}>
+          {onSelect && <MaterialCommunityIcons accessible={false} aria-hidden
+            name={selected ? 'checkbox-marked-circle-outline' : 'checkbox-blank-circle-outline'} size={24} color={Colors.primary} />}
           {/* Emoji thumbnail */}
           <View style={styles.thumb}>
             <Text style={styles.emoji}>{item.imageEmoji}</Text>
@@ -101,10 +99,10 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste }: Pr
         <View style={styles.barRow}>
           <FreshnessBar daysLeft={item.daysLeft} />
         </View>
-      </Pressable>
+      </CardPressable>
 
       {/* Quick action buttons (shown as accessible fallback for swipe) */}
-      <View style={styles.actions}>
+      {!onSelect && <View style={styles.actions}>
         <Pressable
           onPressIn={() => { swiping.current = false; }}
           onPress={() => { if (!swiping.current) requestAction('right'); }}
@@ -125,8 +123,22 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste }: Pr
         >
           <Text style={[styles.actionText, { color: Colors.criticalRose }]}>🗑 Wasted</Text>
         </Pressable>
-      </View>
+      </View>}
     </View>
+  );
+  if (onSelect) return <View style={styles.swipeContainer}>{card}</View>;
+  return (
+    <ReanimatedSwipeable ref={swipeable} containerStyle={styles.swipeContainer}
+      friction={1} leftThreshold={72} rightThreshold={72}
+      dragOffsetFromLeftEdge={20} dragOffsetFromRightEdge={20}
+      overshootLeft={false} overshootRight={false} enableTrackpadTwoFingerGesture
+      enabled={!onSelect && item.status === 'ACTIVE' && !!(onConsume || onWaste)}
+      renderLeftActions={onConsume ? () => actionPanel(true) : undefined}
+      renderRightActions={onWaste ? () => actionPanel(false) : undefined}
+      onSwipeableOpenStartDrag={() => { swiping.current = true; }}
+      onSwipeableCloseStartDrag={() => { swiping.current = true; }}
+      onSwipeableOpen={requestAction}>
+      {card}
     </ReanimatedSwipeable>
   );
 }

@@ -465,14 +465,87 @@ remain pending. The edits are uncommitted while Phase 1 remains incomplete.
   Root `npm run lint` fails (missing script); backend `npm run lint` fails (ESLint absent), pre-existing.
   Expo Doctor not rerun; no SDK/dependency changes. Native runtime interaction is not implied by exports.
 
+### Pantry category filter slice — 11 October 2026
+
+- Reused `PANTRY_CATEGORIES` for category pills with active-inventory counts, composing with existing
+  freshness/search/sort controls. Category counts describe all active entries in that category;
+  the title count, tracked value and at-risk value describe the visible filtered entries.
+  The freshness-engine critical banner still describes the whole active inventory.
+- Added Clear Filters and Show All Items in filtered empty states; both clear category/freshness/
+  search and preserve sorting. Search now trims whitespace and remains case insensitive. Successful
+  manual-add return clears category along with the existing search/freshness reset; cancellation
+  preserves filters. No data/dependency/backend changes.
+- Category pills reuse the reference inventory carousel styling in a second row to preserve the
+  working freshness controls. This is a documented layout extension to the reference's single
+  mixed carousel. Filter pills/reset have 44-point touch targets and checked-state accessibility
+  props, including explicit web ARIA state. Final native and full visual comparison remain pending.
+- Browser verified at 375 × 812: Dairy gives 3 entries/$16.27; Dairy+Caution+`  MILK  ` gives
+  1/$4.49; Critical combination gives a filtered empty state; Show All/Clear resets restore results;
+  keyboard Dairy selection and alphabetical ordering; confirmed milk Used changes Dairy 3 → 2 and
+  active inventory 8 → 7; Meat(0) empty/add; a new Produce item returns with All Categories selected
+  and visible, restoring 8 entries; add/cancel preserves Meat; Produce+Fresh shows the new $2.50 item.
+- Root/backend `npx tsc --noEmit` pass. `node --experimental-strip-types --test tests/*.test.mjs`
+  passes 28/28 (existing module-type warnings); backend `npm test` passes 1/1.
+  `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-pantry-category`
+  passes all platforms and 32 static routes; `git diff --check` passes.
+  Root `npm run lint` fails (missing script), backend `npm run lint` fails (ESLint absent), pre-existing.
+  Expo Doctor not rerun because SDK/dependencies are unchanged. Native gestures/dynamic text and
+  screen-reader testing remain unverified; bundle exports only establish build compatibility.
+
+### Pantry Batch Select slice — 11 October 2026
+
+- Added the reference Batch Select pill, explicit whole-entry checkboxes, select/deselect-visible,
+  selected count/value, disabled empty actions and Cancel Selection. Filter/search changes clear
+  selection; sorting preserves it. Normal details/swipes/buttons return when selection mode ends.
+- Extended the shared confirmation sheet for batches: every selected name/quantity/value, total
+  value and whole-entry explanation appear before Used/Wasted confirmation. Cancel preserves the
+  selection and inventory; confirmed actions exit selection mode and keep the active filters/sort.
+  Batch selection uses normal press targets outside the swipe wrapper so taps/keyboard work;
+  normal cards retain the existing gesture-handler press target and swipe behavior.
+- Added one atomic in-memory reducer action. Empty, repeated, missing or already-resolved IDs reject
+  the entire batch; replay cannot count an outcome twice. Existing comments/data/config preserved;
+  no dependencies, APIs or persistence added. Supporting selection/confirmation controls use existing
+  tokens; no separate supplied expanded-selection or batch-confirmation design exists.
+- Browser verified at 375 × 812: disabled empty actions, checkbox keyboard/tap selection, review of
+  two entries/$8.28, Cancel retaining selection, filters clearing it, sorting preserving it,
+  select/deselect-visible, two confirmed Used entries and three filtered Dairy Wasted entries/$16.27,
+  cancellation of Waste, Home active inventory 8 → 3, and Insights showing $92.78 rescued plus
+  session 2 used/3 wasted ($16.27). Both normal swipe directions still open single-item confirmations;
+  cancelling them and exiting selection preserve all three remaining entries. Native touch/scroll,
+  screen-reader, dynamic-text and larger-batch sheet QA remain pending.
+- Root/backend `npx tsc --noEmit` pass; `node --experimental-strip-types --test tests/*.test.mjs`
+  passes 30/30, including two new atomic/replay/stale-selection tests (existing module-type warnings).
+  Backend `npm test` passes 1/1. `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-pantry-batch`
+  passes all platforms and 32 static routes; `git diff --check` passes.
+  Root `npm run lint` fails (missing script); backend `npm run lint` fails (ESLint absent), pre-existing.
+  Expo Doctor not rerun; SDK/dependencies unchanged. Exports establish bundling, not native interactions.
+
+### Currency consistency checkpoint — 11 October 2026
+
+- Audited existing dollar labels against Pantry and financial design PNGs. Displayed values already
+  matched the reference currency; preserved their formatting and numbers. Centralized fixed typed
+  `MOCK_CURRENCY` metadata feeds Pantry/receipt/barcode value-input labels and a read-only USD ($)
+  Settings explanation. Corrected the incorrect INR fixture comment and documented whole-entry
+  dollar values versus historical financial cents. No conversion, configurable currency or dependencies.
+- Browser verified at 375 × 812: Settings note wraps correctly; manual entry of two bags with $4.50
+  retains $4.50 in details; June financial $64.80/$12.40, weekly $18/$9/$4/$2 and category
+  $6.20/$3.80/$2.40 remain correct. Native interactions remain unverified.
+- Root/backend `npx tsc --noEmit` pass. `node --experimental-strip-types --test tests/*.test.mjs`
+  passes 30/30 (existing module-type warnings). Backend `npm test` first failed on sandbox local-port
+  `EPERM`, then passed 1/1 outside the sandbox. `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-currency-audit`
+  passes all platforms and 32 static routes. Root `npm run lint` fails (missing script); backend
+  `npm run lint` fails (ESLint absent), both pre-existing. `EXPO_OFFLINE=1 npx expo install --check`
+  exits 0 (dependencies up to date; offline validation warning). `git diff --check` passes.
+  No SDK/dependency changes. Expo Doctor was not rerun for this slice.
+
 ### Remaining Phase 1 work
 
-- Pantry batch/category controls, currency normalization and final phone/dynamic-text design review.
+- Pantry cards/imagery, filter/sort layout and dynamic-text design review; top-section phone layout updated.
 - Scanner final native/visual review. Mock permission request/denial/retry/blocked recovery and receipt/barcode
   review/queue/duplicate choices/confirmed insertion/error/fallback are implemented.
   The standalone manual-entry fallback is now available.
 - Native auth OTP autofill/backspace/keyboard/accessibility and timer lifecycle checks; final auth
-  visual review. Profile/privacy prototype UI exists; account-deletion/currency UI scope remains
+  visual review. Profile/privacy prototype UI exists; account-deletion UI scope remains
   unresolved without separate designs. Production legal policies/account operations are deferred.
 - Final native verification of new Recipe/Insights/detail/shopping/preferences/reconciliation flows,
   native sharing checks and complete side-by-side visual review. Gradients/glass blur remain surface
@@ -480,9 +553,29 @@ remain pending. The edits are uncommitted while Phase 1 remains incomplete.
 - Reference audit totals disagree; preserved snapshots and session-only value deltas are documented
   in the inventory. Food mass/carbon values remain illustrative rather than production calculations.
 
-**Exact next step:** Add Pantry category filtering from the existing typed categories, composing with
-search/freshness filters and preserving the supplied Pantry layout; verify no-match/reset behavior.
+**Exact next step:** Match Pantry card expiry-source pills and row spacing to the supplied inventory
+reference, preserving swipe/batch actions. Native gesture, keyboard, accessibility and dynamic-text checks remain required.
 Phase 1 remains in progress and must be reviewed before Phase 2; real integrations require approval.
+
+### Pantry top-section visual checkpoint — 11 October 2026
+
+- Compared the live Pantry at phone widths with `kitchen_inventory_swipe_actions/screen.png` and
+  its HTML/design tokens. Existing search/filter/add/batch/swipe logic preserved. Updated only
+  `app/(tabs)/pantry.tsx`: reference Inventory subtitle, search-first hierarchy, white pill search
+  with functional 44-point barcode entry, and light freshness banner after filters with shield icon,
+  headline/Active label and separate Confirmed/Estimated explanations. Demo wording avoids implying
+  actual AI/package verification. Removed the unsupported large title/full-width Add block; manual
+  entry remains a compact accessible button beside Batch Select and in the empty state.
+- Browser screenshots inspected at 320, 375 and 430 px widths; banner wraps at 320 without clipping.
+  Verified no-results/reset, manual-add navigation/cancel, scan-button navigation, one-entry batch
+  review ($4.29)/cancel and exit preserving all eight active items. Full card/imagery/filter/sort and
+  native dynamic-text/gesture review remain pending; this is a focused improvement, not full visual parity.
+- Root/backend `npx tsc --noEmit` pass; `node --experimental-strip-types --test tests/*.test.mjs`
+  passes 30/30 with existing module-type warnings; backend `npm test` passes 1/1 outside the sandbox.
+  `npx expo export --platform web --platform ios --platform android --output-dir /private/tmp/freshtrack-pantry-visual`
+  passes all platforms/32 static routes. Root/backend `npm run lint` still fail respectively for missing
+  script/ESLint (pre-existing). `git diff --check` passes. Doctor/dependency checks were not rerun;
+  SDK/dependencies unchanged. Exports verify bundling, not native interactions.
 
 ### Phase 0 results
 

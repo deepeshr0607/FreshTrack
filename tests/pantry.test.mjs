@@ -95,3 +95,28 @@ test('past-date manual entries can be reconciled and resolved only once', () => 
   assert.equal(resolved[0].status, 'WASTED');
   assert.equal(pantryReducer(resolved, { type: 'status', id: 'manual-1', status: 'CONSUMED' })[0], resolved[0]);
 });
+
+test('batch resolution updates only explicitly selected active entries and cannot replay', () => {
+  const other = { ...item, id: 'test-2', name: 'Yogurt' };
+  const untouched = { ...item, id: 'test-3', name: 'Eggs' };
+  const entries = [item, other, untouched];
+  for (const status of ['CONSUMED', 'WASTED']) {
+    const action = { type: 'batch-status', ids: [item.id, other.id], status };
+    const resolved = pantryReducer(entries, action);
+    assert.equal(resolved[0].status, status);
+    assert.equal(resolved[1].status, status);
+    assert.equal(resolved[2], untouched);
+    assert.equal(resolved[0].price, item.price);
+    assert.equal(item.status, 'ACTIVE');
+    assert.equal(pantryReducer(resolved, action), resolved);
+  }
+});
+
+test('empty, duplicate, missing and stale batch selections reject the entire update', () => {
+  const resolved = { ...item, id: 'resolved', status: 'WASTED' };
+  const entries = [item, resolved];
+  for (const ids of [[], [item.id, item.id], [item.id, 'missing'], [item.id, resolved.id]]) {
+    assert.equal(pantryReducer(entries, { type: 'batch-status', ids, status: 'CONSUMED' }), entries);
+    assert.equal(entries[0].status, 'ACTIVE');
+  }
+});

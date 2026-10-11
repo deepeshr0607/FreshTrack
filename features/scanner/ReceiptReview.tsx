@@ -6,6 +6,7 @@ import PrimaryButton from '@/components/PrimaryButton';
 import ExpiryBadge from '@/components/ExpiryBadge';
 import { ui } from '@/components/PrototypeScreen';
 import { Colors, Radius, Spacing } from '@/constants/Theme';
+import { MOCK_CURRENCY } from '@/lib/mock';
 import { useMockPantry } from '@/context/MockPantryContext';
 import { expiryDays, PANTRY_CATEGORIES, validatePantryDraft, type PantryDraft } from '@/lib/pantry';
 import { MOCK_RECEIPT, newReceiptCandidates, prepareReceiptImport, receiptDuplicates, type ReceiptCandidate } from '@/lib/receipt';
@@ -62,7 +63,7 @@ export default function ReceiptReview() {
       onPress={() => changeDraft('category', category.name)}><Text style={[ui.label, editor.draft.category === category.name && { color: Colors.white }]}>{category.name}</Text></Pressable>)}</View>
     <FormInput label="Quantity" accessibilityLabel="Receipt quantity" keyboardType="decimal-pad" value={editor.draft.quantity} onChangeText={(v) => changeDraft('quantity', v)} />
     <FormInput label="Unit" accessibilityLabel="Receipt unit" value={editor.draft.unit} onChangeText={(v) => changeDraft('unit', v)} maxLength={40} />
-    <FormInput label="Whole-entry value ($, optional)" accessibilityLabel="Receipt purchase value" keyboardType="decimal-pad" value={editor.draft.price} onChangeText={(v) => changeDraft('price', v)} />
+    <FormInput label={`Whole-entry value (${MOCK_CURRENCY.symbol}, optional)`} accessibilityLabel="Receipt purchase value" keyboardType="decimal-pad" value={editor.draft.price} onChangeText={(v) => changeDraft('price', v)} />
     <Text style={ui.text}>Unknown values count as $0 for this demo. Value applies to the whole entry.</Text>
     <FormInput label="Expiry date (YYYY-MM-DD)" accessibilityLabel="Receipt expiry date" value={editor.draft.expiresOn} onChangeText={(v) => changeDraft('expiresOn', v)} maxLength={10} />
     <Text style={ui.text}>Changing the suggested date marks it as user entered. Keeping it retains the estimate; a package date is not verified by this demo.</Text>

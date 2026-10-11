@@ -203,7 +203,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   supporting mock digest/reminder preferences are now implemented with centralized typed fixtures.
 - All 11 supplied screen PNGs inspected and mapped in `docs/Phase_1_Screen_Inventory.md`.
   Docks explicitly show Home, Pantry, Scanner, Recipes and Insights, preserved under the user exception.
-- Mobile/backend TypeScript, 28 unit tests, backend health test, Expo Doctor 21/21 and web/iOS/Android
+- Mobile/backend TypeScript, 30 unit tests, backend health test, Expo Doctor 21/21 and web/iOS/Android
   exports pass. Backend lint remains unavailable (`eslint` absent); mobile has no lint script.
   Native interaction/dynamic-text and final complete visual review remain pending.
 - Pantry manual add (11 October) is implemented with shared validated insertion and Scanner fallback.
@@ -220,10 +220,18 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - Mock auth validation/error/retry, OTP invalid/expiry/paste/resend, recovery preview/provider
   fallback feedback, Settings profile/privacy/remember-device/demo exit are implemented.
   Browser checks pass; native autofill/keyboard/accessibility remain unverified.
-- Pantry batch/category/currency, account-deletion UI scope and final native/design QA remain
+- Pantry categories/search/freshness composition, active counts and filtered reset states implemented;
+  browser checks pass, native accessibility/layout review remains pending.
+- Pantry Batch Select/visible selection/cancellable confirmation and atomic Used/Wasted updates
+  implemented; browser shared Home/Insights and normal swipe regression checks pass.
+- Fixed USD mock currency documented and shared across value-input labels/Settings; existing dollar
+  values preserved, whole-entry dollars versus historic cents clarified. Browser audit passes.
+- Pantry top section aligned with reference search-first ordering, scan entry and freshness banner;
+  manual add retained beside Batch Select. Browser 320/375/430-width/navigation/cancellation checks pass.
+- Account-deletion UI scope and final native/design QA remain
   incomplete. See README for verification limits. No real auth/session infrastructure was added.
 - Actual implementation-plan filename: `docs/FreshTrack_Implementation_Plan (1).md`.
-- Next slice: Pantry category filtering composed with search/freshness, including no-match/reset states.
+- Next slice: Pantry card expiry-source pills/row spacing; preserve swipe and batch actions.
 - Phase 1 requires review; Phase 2 requires explicit user approval.
 
 ---

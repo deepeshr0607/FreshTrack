@@ -14,7 +14,7 @@ Paths below are relative to `design-reference/`. Route groups are shown explicit
 | `freshtrack_account_sign_up_login` | `/(auth)/sign-up` | Validated form/mock OTP navigation/error/retry; native QA pending |
 | `freshtrack_account_log_in` | `/(auth)/sign-in` | Validated mock login/error/retry; recovery preview/provider fallback feedback; native QA pending |
 | `freshtrack_dynamic_hub` | `/(tabs)` | Existing Home; Recipe/details/Cook links; Recent Additions Used/Wasted swipes, button fallbacks and empty Add entry implemented; native QA pending |
-| `kitchen_inventory_swipe_actions` | `/(tabs)/pantry`, `/pantry/[id]` | Existing list and validated detail/edit; manual add and Used/Wasted gestures implemented; batch/native gesture QA pending |
+| `kitchen_inventory_swipe_actions` | `/(tabs)/pantry`, `/pantry/[id]` | Existing list and validated detail/edit; manual add, categories, Used/Wasted gestures and Batch Select implemented; native gesture/visual QA pending |
 | `packaged_item_expiry_verification` | `/(tabs)/scanner` barcode mode | Implemented typed lookup, stamp/manual/estimate queue, duplicate choices and confirmed shared insertion; native/visual QA pending |
 | `receipt_ocr_scanner` | `/(tabs)/scanner` receipt mode | Implemented typed scan/review/edit/Add Missing/duplicate choices/confirmed shared insertion; native/visual QA pending |
 | `recipe` | `/(tabs)/recipes`, `/recipe/[id]`, `/recipe/shopping-list` | Implemented prototype; final native QA pending |
@@ -42,8 +42,9 @@ stack routes. The original four product functions remain available.
 | OTP incomplete/invalid/expired/network/resend | `/verify-otp` | Implemented incomplete/invalid/expired/simulated failure/retry/resend cooldown and full-code paste; native autofill/lifecycle QA pending |
 | Pantry details/edit/missing item | `/pantry/[id]` | Implemented with date/quantity/name/unit validation |
 | Pantry add/manual fallback | `/pantry/add` | Implemented: validated category/quantity/unit/date/optional value, shared insertion and cancellation |
+| Pantry batch selection | Pantry | Whole-entry checkbox/visible selection, count/value, cancellable shared confirmation and atomic outcomes; filter changes clear selection/sort preserves it; native QA pending |
 | Pantry consume/waste confirmation | Home, Pantry and item detail | Shared cancellable sheet from Home/Pantry swipes/buttons and detail buttons; removes active inventory only on confirmation |
-| Pantry search/filter/no matches | Pantry | Existing; manual-add entry implemented; full native loading/error/offline states pending |
+| Pantry search/filter/no matches | Pantry | Search/freshness/typed category filters compose with sorting; active category counts, no-match/reset and add-return reset implemented; native loading/error/offline QA pending |
 | Scanner permission request/denial/recovery | Scanner, shared receipt/barcode gate | Implemented demo request/deny/retry, blocked settings save/cancel and manual fallback; no real permission requests; native QA pending |
 | Receipt review/empty/error/edit | Scanner receipt mode | Implemented scan/loading/edit/selection/Add Missing/confirmation/shared insertion; mock error/empty/retry; native QA pending |
 | Barcode lookup failure/manual entry | Scanner barcode mode → `/pantry/add` | Implemented lookup loading/failure/retry/unknown code, manual form fallback; cancel preserves queue |
@@ -59,7 +60,7 @@ stack routes. The original four product functions remain available.
 | Settings/reminder window | `/settings` | Supporting prototype preferences (digest/time) persist in memory; no separate supplied Settings image |
 | Profile/privacy/demo exit | `/settings/profile`, `/settings/privacy`, `/settings` | Validated save/cancel, demo information, remember-device and exit confirmation implemented; no real session/policies |
 | Recovery/provider fallback | `/(auth)/recover`, auth forms | Email preview validation/failure/retry; Google/Apple/biometric controls explain email fallback |
-| Account deletion/currency | Settings (remaining UI scope) | No supplied reference; UI scope pending; production operations deferred |
+| Account deletion/currency | Settings | Fixed USD explanation implemented; deletion UI scope pending without reference; production operations deferred |
 
 ## Prototype data and documented differences
 
@@ -127,3 +128,34 @@ auth/session, email, provider sign-in or password changes. Browser validation/er
 expiry/resend/profile/preferences/privacy/exit flows verified at 375 × 812; 28 tests, TypeScript,
 health test and three-platform exports pass. Native autofill/keyboard/accessibility/timer lifecycle
 and full visual QA remain pending. Production policies/deletion and currency UI remain deferred.
+
+Category checkpoint (11 October): existing typed categories/counts in a second reference-style pill
+carousel; search/freshness/category compose with sorting. Visible tracked/at-risk values follow the
+filtered list; banner/category counts remain inventory-wide. Clear/Show All resets, keyboard selection,
+Used/count update, zero-category/add-return/cancel and Fresh composition browser verified at 375 × 812.
+TypeScript, 28 tests, health test and all-platform exports pass. Native and full visual QA pending.
+Next: reference Batch Select with cancellable Used/Wasted confirmation.
+
+Batch checkpoint (11 October): reference pill, whole-entry checkboxes, select/deselect-visible,
+count/value and cancellable Used/Wasted review implemented. Atomic transition rejects stale/missing/
+duplicate/empty selections and replay. Browser keyboard/tap/filter/sort/cancel/outcomes, Home/Insights
+propagation and normal swipe regression verified at 375 × 812; 30 tests and all-platform checks pass.
+No separate expanded batch design supplied; controls reuse tokens. Native and large-batch sheet QA
+remain pending. Next: prototype currency consistency against supplied dollar references.
+
+Currency checkpoint (11 October): supplied dollar values retained. Fixed typed USD metadata supplies
+Pantry/receipt/barcode input labels and a read-only Settings note (no separate currency design).
+Pantry, hero and sustainability values are whole-entry dollars; historic financial month/chart/category
+costs are cents divided by 100 before display. No conversion or production currency decision.
+Browser verified Settings at 375 × 812, two-bag/$4.50 detail, financial $64.80/$12.40 and reference
+weekly/category dollar values. TypeScript, 30 tests, health test and three-platform exports pass;
+lint gaps and native/final visual QA remain. Next: phone-width Pantry design comparison.
+
+Pantry visual checkpoint (11 October): reference search-first top hierarchy restored; functional
+barcode search entry, Inventory subtitle, light shield/Active/expiry-explanation banner after filters.
+Unsupported large title/full-width add block replaced with compact manual entry beside Batch Select;
+empty-state entry retained. Demo wording avoids claiming AI/package verification. Browser widths
+320/375/430 inspected; search/reset, add/cancel, scanner and batch cancel/exit verified. TypeScript,
+30 tests, health and three-platform exports pass; lint gaps remain. Remaining differences include
+two filter rows/sort-chip placement, emoji thumbnails/card badges and gradients; full native/dynamic-text
+review pending. Next: Pantry card expiry-source pills and row spacing.

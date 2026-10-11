@@ -7,6 +7,7 @@ import PrimaryButton from '@/components/PrimaryButton';
 import { useMockPantry } from '@/context/MockPantryContext';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import { Colors } from '@/constants/Theme';
+import { MOCK_CURRENCY } from '@/lib/mock';
 
 /** Supporting form styled from the supplied design system; no separate add image exists. */
 export default function PantryAddScreen() {
@@ -42,7 +43,7 @@ export default function PantryAddScreen() {
       <FormInput label="Expiry date (YYYY-MM-DD)" accessibilityLabel="Expiry date" placeholder="YYYY-MM-DD"
         autoCapitalize="none" maxLength={10} value={draft.expiresOn} onChangeText={(value) => change('expiresOn', value)} />
       <Text style={ui.text}>Enter the date you want to track. Past dates are allowed for items needing reconciliation.</Text>
-      <FormInput label="Purchase value ($, optional)" accessibilityLabel="Purchase value" keyboardType="decimal-pad"
+      <FormInput label={`Purchase value (${MOCK_CURRENCY.symbol}, optional)`} accessibilityLabel="Purchase value" keyboardType="decimal-pad"
         value={draft.price} onChangeText={(value) => change('price', value)} placeholder="Unknown" />
       <Text style={ui.text}>Value of this whole entry, not per unit. Unknown values count as $0 in this prototype.</Text>
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
