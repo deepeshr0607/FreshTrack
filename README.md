@@ -187,7 +187,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
-| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–3 complete; API contracts/deployment pending |
+| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–4 complete; deployment/final review pending |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
@@ -199,18 +199,35 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Phase 3 items 1–3 are complete: model, development database setup and authenticated household access.**
+**Phase 3 items 1–4 are complete: data model, development database, household access and API contracts/helpers.**
 Phase 2 development acceptance is complete. The user selected INR (integer paise) and Asia/Kolkata.
 The initial migration is applied to verified Neon development. Explicit authenticated setup now
 atomically creates one household/membership/preferences; reads are scoped to verified membership.
-The mobile kitchen still uses mock data and does not call household setup. Next: item 4, shared
-protected API contracts, pagination and date/money/expiry helpers; deployment and final verification follow.
+The mobile kitchen still uses mock data and does not call household setup. Shared response types,
+bounded pagination and exact money/quantity/date/expiry/status helpers are ready. Next: item 5,
+Vercel deployment/environment configuration, followed by final Phase 3 verification.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
+
+### Phase 3 item 4 — API contracts and helpers (11 October 2026)
+
+Added shared type-only wire contracts used by backend and mobile identity checking; centralized
+success/error responses preserve existing endpoint behavior. Added strict bounded pagination,
+INR rupee/paise conversion, nullable cost provenance, exact decimal quantity strings, calendar/UTC
+serialization, household-timezone expiry and pure status-transition rules. No Pantry endpoint,
+status write, mobile persistence, schema/migration or dependency change.
+
+Both `npx tsc --noEmit` checks and backend build pass. Foundation tests 10/10, auth 9/9,
+household 6/6, health 1/1, live development household 5/5 (temporary records cleaned), guards 4/4
+and root tests 70/70 pass. Sandbox-blocked localhost tests passed with approved escalation.
+Backend lint still exits 127 (ESLint absent); mobile has no lint script. Existing Node warnings remain;
+Expo/device checks were not repeated with only a type import changed in mobile. `git diff --check` passes.
+See [contracts, exact commands and limits](docs/Phase_3_API_Foundation.md).
+Next: item 5 Vercel/environment configuration, then final Phase 3 review. Phase 4 has not started.
 
 ### Phase 3 item 3 — authenticated household access (11 October 2026)
 

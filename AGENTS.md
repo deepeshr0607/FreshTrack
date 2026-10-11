@@ -194,9 +194,9 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 3 — ITEMS 1–3 COMPLETE; API CONTRACTS/DEPLOYMENT PENDING
+### Current phase: Phase 3 — ITEMS 1–4 COMPLETE; DEPLOYMENT/FINAL REVIEW PENDING
 
-- User authorized Phase 3 items 1–3 and selected INR (integer paise), Asia/Kolkata.
+- User authorized Phase 3 items 1–4 and selected INR (integer paise), Asia/Kolkata.
 - Initial transactional application migration applied only to Console-verified development branch
   br-long-glade-b3ovlfn0 / endpoint ep-dry-paper-b3ftfkqd. Auth structure unchanged before/after.
 - Household membership, compound item/event/receipt references, immutable event snapshots,
@@ -215,8 +215,15 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   cross-account isolation and temporary-record cleanup. Auth 9/9, health 1/1, root 70/70, guards 4/4
   and both TypeScript checks pass. Eager JWT loading health regression fixed with lazy import.
   No schema/migration/dependency change; existing lint gaps remain. See docs/Phase_3_Household_Access.md.
-- Next: item 4, shared protected API contracts/pagination/date-money/expiry helpers, then deployment
-  and final Phase 3 review. Phase 4 and production writes are not authorized.
+- Item 4 adds types/api.d.ts shared wire types, centralized safe responses, bounded raw-query
+  pagination, exact INR paise/decimal quantity serialization, timezone/calendar expiry and pure status
+  rules. Existing routes use shared helpers; mobile identity checker has a type-only import change.
+  No Pantry endpoint/status write, schema/migration/native/dependency change.
+- Item 4 checks: foundation 10/10, auth 9/9, household 6/6, health 1/1, root 70/70, guards 4/4,
+  live development household 5/5 with cleanup, both TypeScript checks/build pass. Existing lint gaps
+  remain; Expo/device checks not repeated. See docs/Phase_3_API_Foundation.md for limits and commands.
+- Next: item 5 Vercel deployment/environment configuration, then final Phase 3 review. Phase 4
+  and production writes are not authorized.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
 

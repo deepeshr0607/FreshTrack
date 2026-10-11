@@ -1,6 +1,8 @@
 import type { JWTVerifyGetKey } from 'jose' with { "resolution-mode": "import" };
 
-export interface VerifiedIdentity { id: string; email: string; name: string }
+import type { ApiIdentity } from '../../../types/api';
+
+export type VerifiedIdentity = ApiIdentity;
 export type VerifyIdentity = (token: string) => Promise<VerifiedIdentity>;
 export class AuthFailure extends Error {
   constructor(readonly unavailable = false) { super('Authentication could not be verified.'); }

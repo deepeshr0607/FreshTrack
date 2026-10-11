@@ -1,4 +1,5 @@
 import type { RequestHandler } from 'express';
+import { sendFailure } from '../lib/api';
 import { AuthFailure, type VerifyIdentity } from '../services/auth';
 
 export function requireIdentity(verify: VerifyIdentity): RequestHandler {
@@ -13,11 +14,8 @@ export function requireIdentity(verify: VerifyIdentity): RequestHandler {
     } catch (error) {
       const unavailable = !(error instanceof AuthFailure) || error.unavailable;
       if (!unavailable) res.setHeader('WWW-Authenticate', 'Bearer');
-      res.status(unavailable ? 503 : 401).json({ error: {
-        code: unavailable ? 'AUTH_UNAVAILABLE' : 'UNAUTHORIZED',
-        message: unavailable ? 'Authentication is temporarily unavailable. Please retry.' : 'Sign in with a valid verified account.',
-        requestId: req.headers['x-request-id'],
-      } });
+      sendFailure(req, res, unavailable ? 503 : 401, unavailable ? 'AUTH_UNAVAILABLE' : 'UNAUTHORIZED',
+        unavailable ? 'Authentication is temporarily unavailable. Please retry.' : 'Sign in with a valid verified account.');
     }
   };
 }
