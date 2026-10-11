@@ -1,7 +1,7 @@
 # Phase 4 — household Pantry list and manual add
 
 12 October 2026. User approved Phase 4. The first slice is implemented and deployed to development;
-iPhone acceptance is pending. No production database/auth settings, Prisma schema/migration,
+iPhone add/details/restart/refresh/sorting acceptance passed by user report. No production database/auth settings, Prisma schema/migration,
 dependency version or supplied primary navigation changed. Phase 5 has not started.
 
 ## Implemented
@@ -64,8 +64,10 @@ Tests are evidence for the API/client boundaries, not proof of iPhone form inter
 
 ## Native acceptance and remaining work
 
-Pending user checks: add Milk (0.5 l, ₹60.50), details, restart persistence, refresh without duplicates,
-then add earlier-expiry Apples with unknown price and confirm expiry sorting. These are intentional
+User reported all requested checks working: add Milk (0.5 l, ₹60.50), details, restart persistence,
+refresh without duplicates, then earlier-expiry Apples with unknown price and expiry sorting.
+This confirms the hosted write/read flow on iPhone; Android and native failure/retry cases remain
+unverified. These are intentional
 development-account records, separate from synthetic test fixtures.
 
 Save retries reuse a key while the unchanged form remains mounted; retry keys and unsaved forms are
@@ -73,7 +75,7 @@ not persisted across app termination. Reads retain already-loaded items on failu
 disk-backed offline inventory/queued mutations are not implemented. Login/session offline policy from
 Phase 2 still blocks private navigation when provider verification cannot complete.
 
-Next: resolve any iPhone acceptance failures, then the next Phase 4 slice: persisted editing and
+Next: the next Phase 4 slice is persisted editing and
 confirmed Used/Wasted actions with transactional history. Remaining Phase 4 also includes server-wide
 filters, presets/expiry precedence, duplicate handling, offline/retry coverage and final review.
 Android/Phase 1 visual QA and production/signing checks remain deferred.

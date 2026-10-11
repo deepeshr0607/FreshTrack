@@ -188,7 +188,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
-| 4 | Pantry CRUD end-to-end | 🟡 Household/list/manual add deployed; iPhone acceptance pending |
+| 4 | Pantry CRUD end-to-end | 🟡 Household/list/manual add verified on iPhone; editing/lifecycle next |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
@@ -200,7 +200,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ## Project Status
 
 **Phase 4 is in progress: household setup, persisted Pantry list/manual add and read-only details are deployed to development.**
-Demo mode is preserved. iPhone acceptance is pending; edit/lifecycle and remaining Pantry work follow.
+Demo mode is preserved. User reports iPhone add/details/restart/refresh/sorting checks pass;
+edit/lifecycle and remaining Pantry work follow.
 See [first-slice implementation, checks and limits](docs/Phase_4_Pantry_First_Slice.md).
 
 Phase 3 development acceptance is complete: data model, migrations, household access, API foundation and hosted Preview.
@@ -230,8 +231,9 @@ Search/filter/alternate sort apply to loaded pages; the banner labels this limit
 
 Both TypeScript/build checks, root76/76, backend33/33, live Pantry3/3 with fixture cleanup, health1/1,
 Doctor21/21 and web/iOS/Android exports pass. The new Vercel Preview is READY; public health200 and
-tokenless Pantry401 pass. Existing lint gaps remain. iPhone write/restart/sort tests are pending.
-Next: complete the requested iPhone check, then persisted editing and confirmed lifecycle actions.
+tokenless Pantry401 pass. Existing lint gaps remain. User reports iPhone write/details/restart/refresh,
+expiry sorting and unknown-price checks pass. Android/native failure-path tests remain unverified.
+Next: persisted editing and confirmed lifecycle actions.
 No new dependency/schema/migration or Phase 5 work. Exact commands/limits are in the first-slice report.
 
 ### Phase 3 final review (12 October 2026)
