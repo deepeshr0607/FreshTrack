@@ -548,13 +548,14 @@ inside backend with mobile type-only re-export; isolated upload compiles. No dep
 CLI health200 and tokenless household401 pass. User approved disabling Vercel Authentication for this
 dedicated development API; project ssoProtection is null. Public health200, tokenless identity/household401
 and invalid-token401 pass. Ignored mobile API URL points to HTTPS Preview; both TypeScript checks pass
-again. Hosted signed-identity/DB checks remain. Git integration failed; CLI deployment passed.
+again. User confirmed hosted Settings → Check Backend Identity passes on iPhone. Hosted Prisma/Neon
+database access remains unverified. Git integration failed; CLI deployment passed.
 Initial production-labelled attempt failed safely, Preview retry needed NODE_ENV; no production DB writes.
 
 Both TypeScript/build/local preview build pass; backend29/29, deployment rerun4/4, root70/70,
 health1/1 and guards4/4 pass. Runtime audit0; full cloud audit36 dev-tool findings; lint gaps remain.
-See [deployment evidence and next steps](Phase_3_Deployment.md). Next: native
-hosted verification, then final Phase 3 review. Phase 4 has not started.
+See [deployment evidence and next steps](Phase_3_Deployment.md). Next: authenticated hosted household
+read to verify the database connection, then final Phase 3 review. Phase 4 has not started.
 
 ### Earlier checkpoint — items 1–4 complete (11 October 2026)
 

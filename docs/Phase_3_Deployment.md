@@ -103,14 +103,17 @@ guard or copied development credentials into Production. Initial schema-check at
 validator/draft-04 meta-schema; generic schema constraints passed with meta-validation skipped, and
 Vercel CLI/cloud accepted the actual config. One initial npm build invocation ran from the wrong
 (root) directory; corrected backend builds passed. Native/device exports were not repeated because
-no UI/native/runtime mobile code changed. No live provider-issued JWT or database query through the
-hosted function is verified yet; local/live development isolation evidence remains in item 3.
+no UI/native/runtime mobile code changed. User subsequently confirmed Settings → Check Backend
+Identity succeeds on iPhone against this HTTPS Preview. This verifies provider-issued JWT identity
+through the hosted function. It does not query Prisma; hosted database access remains unverified.
+Local/live development isolation evidence remains in item 3.
 
 ## Remaining work and exact next step
 
-Verify native Settings → Check Backend Identity using the Preview URL. Expo is started on port 8085;
-the current Mac LAN address is 192.168.1.248, so open `exp://192.168.1.248:8085` on the iPhone.
-Hosted provider-issued identity and database query checks remain unverified. Keep data on Neon development.
+The iPhone hosted identity check passed by user report on 11 October 2026. The next check is an
+authenticated household read through the hosted function to verify its Prisma/Neon connection.
+This is not yet wired into mobile; do not treat the identity check as database verification.
+Keep data on Neon development.
 Then Phase 3 item 6: final acceptance/review and checkpoint. Production release, Git integration
 permissions and development-tool dependency findings remain separate follow-up work. Pantry
 persistence/endpoints and mutation/event transactions still belong to Phase 4.

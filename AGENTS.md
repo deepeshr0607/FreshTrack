@@ -194,7 +194,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 3 — ITEMS 1–4 COMPLETE; PREVIEW DEPLOYED, ACCESS/FINAL CHECKS PENDING
+### Current phase: Phase 3 — PREVIEW AND NATIVE IDENTITY VERIFIED; DB/FINAL CHECKS PENDING
 
 - User authorized Phase 3 items 1–5 and selected INR (integer paise), Asia/Kolkata.
 - Initial transactional application migration applied only to Console-verified development branch
@@ -229,14 +229,15 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - Vercel Preview dpl_FuadUxp8mfkBc2N3EbK1qdmNHj2V is READY. CLI health200 and tokenless household401
   pass. User approved removal of Vercel Authentication on this dedicated development API project;
   confirmed ssoProtection null, public health200, tokenless identity/household401 and invalid-token401.
-  Ignored mobile API URL points to HTTPS Preview. Hosted native identity/DB checks remain pending.
+  Ignored mobile API URL points to HTTPS Preview. User confirmed hosted Backend Identity passes on
+  iPhone; provider-issued JWT identity is verified. Hosted database access remains unverified.
   First production-labelled attempt failed safely; no working production or production DB/auth changes.
   Git auto-link failed; CLI deploy succeeded. See docs/Phase_3_Deployment.md.
 - Both TypeScript/build/local preview build, backend29/29, final deployment4/4, root70/70, health1/1,
   guards4/4 pass. Runtime audit0; full cloud audit36 dev-tool findings. Existing lint gaps remain.
 - Both TypeScript checks pass again after environment update. Expo runs at exp://192.168.1.248:8085;
   existing trusted Neon Auth origin preserved. No hosting bypass token in mobile.
-- Next: hosted native identity/DB verification, then Phase 3 item6 final
+- Next: authenticated hosted household read to verify Prisma/Neon, then Phase 3 item6 final
   review. Phase 4 and production writes are not authorized.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
