@@ -1,0 +1,2 @@
+# Keep the installed Prisma 5 PostgreSQL migration contract.
+provider = "postgresql"

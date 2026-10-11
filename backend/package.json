@@ -12,10 +12,15 @@
     "lint": "eslint src --ext .ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "node --env-file=.env scripts/database.cjs migrate",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
-    "db:seed": "ts-node prisma/seed.ts",
+    "db:seed": "node --env-file=.env prisma/seed.cjs",
+    "db:check": "npm run build && node --env-file=.env scripts/database.cjs check",
+    "db:status": "node --env-file=.env scripts/database.cjs status",
+    "test:database": "node --test tests/database-guard.test.cjs",
+    "test:database:integration": "node --env-file=.env --test tests/database.integration.test.cjs",
+    "test:seed:integration": "node --env-file=.env --test tests/seed.integration.test.cjs",
     "db:studio": "prisma studio",
     "test:auth": "npm run build && node --test tests/auth.test.mjs"
   },
@@ -42,7 +47,7 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.12"
   },
   "allowScripts": {
     "@prisma/client@5.22.0": true,

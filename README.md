@@ -46,7 +46,7 @@ FreshTrack/
 │   │   ├── server.ts       # HTTP server entry-point
 │   │   └── routes/health.ts
 │   ├── prisma/
-│   │   └── schema.prisma   # Phase 3 model defined; migrations not yet applied
+│   │   └── schema.prisma   # Initial migration applied to development
 │   ├── tests/
 │   ├── .env.example        # Required variables with dummy values — copy to .env
 │   ├── package.json
@@ -62,7 +62,7 @@ FreshTrack/
 
 | Tool | Required version |
 |---|---|
-| Node.js | ≥ 20 |
+| Node.js | ≥ 20.12 (backend local environment loader) |
 | npm | ≥ 10 |
 | Expo CLI | installed globally or use `npx expo` |
 
@@ -150,10 +150,13 @@ npm run dev         # Start API server with ts-node-dev (hot reload)
 | `npm start` | `node dist/server.js` | Run compiled build |
 | `npm run typecheck` | `tsc --noEmit` | TypeScript type check |
 | `npm test` | `jest` | Run all tests |
-| `npm run db:migrate` | `prisma migrate dev` | Apply migrations (dev) |
+| `npm run db:migrate` | Guarded Prisma deploy | Apply reviewed development migrations; requires explicit opt-in |
 | `npm run db:migrate:deploy` | `prisma migrate deploy` | Apply migrations (prod) |
 | `npm run db:generate` | `prisma generate` | Regenerate Prisma client |
-| `npm run db:seed` | `ts-node prisma/seed.ts` | Seed development data |
+| `npm run db:seed` | Guarded Node seed | Synthetic development fixtures; requires explicit opt-in |
+| `npm run db:status` | Guarded Prisma status | Check development migration history |
+| `npm run db:check` | Build + readiness CLI | Verify direct/pooled database readiness |
+| `npm run test:database` | Node tests | Development target/seed guards |
 
 ---
 
@@ -184,7 +187,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
-| 3 | Prisma schema, migrations, API foundation | 🟡 Item 1 model defined; migrations/API connection pending |
+| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–2 complete; household/API foundation pending |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
@@ -196,16 +199,31 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Phase 3 item 1 is complete locally: database model defined. Phase 3 remains in progress.**
+**Phase 3 items 1–2 are complete: model, development migration, Prisma client and guarded seed.**
 Phase 2 development acceptance is complete. The user selected INR (integer paise) and Asia/Kolkata.
-No migration, seed, database connection test or real kitchen API has run. Next: item 2, Prisma
-migrations/client and guarded development seeding.
+The initial migration is applied to verified Neon development; direct/pooled readiness and live
+constraint/seed tests pass. No real kitchen API or mobile persistence exists yet. Next: item 3,
+authenticated household setup and isolation.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
+
+### Phase 3 item 2 — development database setup (11 October 2026)
+
+Verified the development branch/endpoint in Neon Console, then applied the initial transactional
+migration to its empty public application schema. Neon-managed Auth structure is unchanged.
+Added the backend Prisma singleton, readiness CLI, environment/endpoint/consent guards and an
+idempotent seed for two synthetic households. No mobile UI/config/dependency changes.
+
+Live migration/status/readiness and seeding passed; guard tests 4/4, database constraint/rollback
+tests 14/14, seed replay 1/1, root tests 70/70, backend auth 9/9 and health 1/1 pass. Both TypeScript
+checks and Prisma generate/validate pass. Existing backend lint failure remains (exit 127, no ESLint);
+mobile has no lint script. Expo/device checks were not repeated for this backend-only slice.
+See [setup commands, evidence and limits](docs/Phase_3_Database_Setup.md). Next: household bootstrap
+from verified identity and authorization tests; no Phase 4 or production migration was started.
 
 ### Phase 3 item 1 — database model (11 October 2026)
 

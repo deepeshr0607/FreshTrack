@@ -1,8 +1,9 @@
 # Phase 3, item 1 — Application database model
 
 11 October 2026. Model defined in `backend/prisma/schema.prisma`, using the existing Prisma 5.22
-installation. This is a local schema contract, not an applied migration or functioning persistence.
-The next slice creates/reviews migrations and adds the database client and development-only seed.
+installation. This document records the model contract established in item 1. Item 2 subsequently
+applied the initial migration to development and added the client/guarded seed; see
+[database setup](Phase_3_Database_Setup.md). Runtime kitchen APIs/mobile persistence remain pending.
 
 ## Confirmed defaults and ownership
 
@@ -87,7 +88,7 @@ identity and include household ID in every owned query. Do not accept body userI
 MVP bootstrap must atomically create household/member/preferences and handle the unique-account
 race; no signup hook or database endpoint is added here.
 
-The next migration must add SQL CHECK constraints, because these rules are not enforced by this
+The initial migration now adds SQL CHECK constraints, because these rules are not enforced by the
 Prisma schema alone: positive quantity; nonnegative nullable costs; cost-source/null consistency;
 positive preset days and required preset for estimated expiry; nonempty trimmed names/unit;
 valid reminder HH:mm; consistent status timestamps. Validate matching rules on the backend too.
@@ -105,16 +106,16 @@ and retryable cleanup for failed deletions; clear candidates after import/cancel
 alone does not delete anything. Cleanup, storage permissions, import idempotency and provider calls
 are not implemented in Phase 3 item 1. Account deletion also requires provider cleanup later.
 
-## Verification and next step
+## Item 1 verification and subsequent work
 
 Checks/results for this slice are recorded in README. Prisma format/validate and offline SQL diff
 check the installed tooling's model/relationship interpretation without connecting to Neon. They do
 not establish that migrations apply, connection credentials work, cross-household APIs are blocked,
-or runtime events are atomic. No migration/seed/generated client/API integration was performed.
+or runtime events are atomic. No migration/seed/generated client/API integration was performed
+at the item 1 checkpoint; item 2's actual live migration/readiness/seed results are recorded separately.
 
-Next: Phase 3 item 2 — review a development-only initial migration (including the checks above),
-verify the development target and live connection, add the Prisma singleton and guarded seed, and
-test migration application. Do not alter managed auth tables or seed production.
+Item 2 is now complete on verified development. Next: Phase 3 item 3 — authenticated household
+bootstrap and isolation/race testing. Do not alter managed auth tables or seed production.
 
 References: [PostgreSQL native-type mapping](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql),
 [Prisma compound constraints](https://docs.prisma.io/docs/orm/v6/prisma-client/special-fields-and-types/working-with-composite-ids-and-constraints).

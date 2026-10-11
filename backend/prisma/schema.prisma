@@ -1,4 +1,4 @@
-// Phase 3 item 1: application data model; no migration has been applied yet.
+// Phase 3: application data model; initial migration lives in prisma/migrations/.
 // The Prisma schema will define the FreshTrack application tables:
 // Household, HouseholdMember, PantryItem, PantryItemEvent,
 // ReceiptScan, UserPreference, and RecipeCache.
@@ -24,7 +24,7 @@ datasource db {
 }
 
 // The original commented placeholder was replaced with the agreed application model.
-// Migrations, SQL check constraints, seeding, and runtime access are the next slice.
+// SQL checks live in the initial migration; seed and runtime client are backend-only.
 
 enum HouseholdRole {
   MANAGER
