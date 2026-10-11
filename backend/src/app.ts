@@ -10,6 +10,7 @@ import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { randomUUID } from 'node:crypto';
+import { InvalidApiInput, sendFailure } from './lib/api';
 
 import { healthRouter } from './routes/health';
 import { createAuthRouter } from './routes/auth';
@@ -64,9 +65,7 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity; householdS
       max: 120,
       standardHeaders: true,
       legacyHeaders: false,
-      handler: (req, res) => res.status(429).json({ error: {
-        code: 'RATE_LIMITED', message: 'Too many requests — please slow down.', requestId: req.headers['x-request-id'],
-      } }),
+      handler: (req, res) => sendFailure(req, res, 429, 'RATE_LIMITED', 'Too many requests — please slow down.'),
     }),
   );
 
@@ -78,9 +77,7 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity; householdS
 
   // ── 404 handler ──────────────────────────────────────────────────────────
   app.use((req: Request, res: Response) => {
-    res.status(404).json({
-      error: { code: 'NOT_FOUND', message: 'The requested endpoint does not exist.', requestId: req.headers['x-request-id'] },
-    });
+    sendFailure(req, res, 404, 'NOT_FOUND', 'The requested endpoint does not exist.');
   });
 
   // ── Global error handler ──────────────────────────────────────────────────
@@ -88,21 +85,15 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity; householdS
   app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     const requestId = req.headers['x-request-id'];
     const suppliedStatus = (err as { status?: number }).status;
-    const status = typeof suppliedStatus === 'number' && suppliedStatus >= 400 && suppliedStatus <= 599 ? suppliedStatus : 500;
-    const code = (err as { code?: string }).code === 'CORS_REJECTED' ? 'CORS_REJECTED'
+    const status = err instanceof InvalidApiInput ? 400 : typeof suppliedStatus === 'number' && suppliedStatus >= 400 && suppliedStatus <= 599 ? suppliedStatus : 500;
+    const code = err instanceof InvalidApiInput ? 'INVALID_REQUEST' : (err as { code?: string }).code === 'CORS_REJECTED' ? 'CORS_REJECTED'
       : status === 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR';
 
     // Do NOT log the full error in production to avoid leaking stack traces.
     // The same redaction applies in development: parser errors can contain raw request bodies.
     console.error(JSON.stringify({ level: 'error', event: 'request_failed', requestId, status, code }));
 
-    res.status(status).json({
-      error: {
-        code,
-        message: status === 500 ? 'An unexpected error occurred.' : 'The request could not be processed.',
-        requestId,
-      },
-    });
+    sendFailure(req, res, status, code, status === 500 ? 'An unexpected error occurred.' : 'The request could not be processed.');
   });
 
   return app;

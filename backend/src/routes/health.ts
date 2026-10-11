@@ -10,16 +10,15 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { success } from '../lib/api';
 
 export const healthRouter = Router();
 
 healthRouter.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({
-    data: {
-      status: 'ok',
-      service: 'freshtrack-api',
-      timestamp: new Date().toISOString(),
-      environment: process.env['APP_ENV'] ?? process.env['NODE_ENV'] ?? 'unknown',
-    },
-  });
+  res.status(200).json(success({
+    status: 'ok',
+    service: 'freshtrack-api',
+    timestamp: new Date().toISOString(),
+    environment: process.env['APP_ENV'] ?? process.env['NODE_ENV'] ?? 'unknown',
+  }));
 });

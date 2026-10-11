@@ -1,5 +1,7 @@
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import type { HouseholdDto } from '../../../types/api';
+import { utcTimestamp } from '../lib/inventoryRules';
 import { AuthFailure, type VerifiedIdentity } from './auth';
 
 export class HouseholdUnavailable extends Error {
@@ -22,12 +24,12 @@ function selection(authSubject: string) {
 }
 
 type SelectedHousehold = Prisma.HouseholdGetPayload<{ select: ReturnType<typeof selection> }>;
-function view(row: SelectedHousehold | null) {
+function view(row: SelectedHousehold | null): HouseholdDto | null {
   const member = row?.members[0];
   if (!row || !member) return null;
   return {
     id: row.id, name: row.name, currencyCode: row.currencyCode, timezone: row.timezone,
-    createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(),
+    createdAt: utcTimestamp(row.createdAt), updatedAt: utcTimestamp(row.updatedAt),
     membership: { role: member.role }, preferences: member.preference,
   };
 }

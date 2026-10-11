@@ -115,7 +115,9 @@ or runtime events are atomic. No migration/seed/generated client/API integration
 at the item 1 checkpoint; item 2's actual live migration/readiness/seed results are recorded separately.
 
 Items 2–3 are now complete on verified development, including household isolation/race tests.
-Next: Phase 3 item 4 shared API contracts/helpers. Do not alter managed auth tables or seed production.
+Item 4 now implements [shared API contracts/helpers](Phase_3_API_Foundation.md), including strict
+date/money/quantity serialization and pure expiry/status tests. Mutation/event transactions remain later
+work. Next: item 5 deployment/environment configuration. Do not alter managed auth tables or seed production.
 
 References: [PostgreSQL native-type mapping](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql),
 [Prisma compound constraints](https://docs.prisma.io/docs/orm/v6/prisma-client/special-fields-and-types/working-with-composite-ids-and-constraints).

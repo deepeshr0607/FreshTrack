@@ -1,3 +1,4 @@
+import type { IdentityResponse } from '../types/api';
 // @ts-expect-error Node's native TypeScript test runner requires explicit extensions; Metro accepts them.
 import { NeonAuthError, type AuthIdentity } from './neonAuth.ts';
 
@@ -21,7 +22,7 @@ export async function checkBackendIdentity(baseUrl: string | undefined, getToken
     });
     if (!response.ok) throw new NeonAuthError(response.status === 401 ? 'API_UNAUTHORIZED' : 'API_UNAVAILABLE',
       response.status === 401 ? 'The API rejected this session. Sign in again.' : 'The API is unavailable. Please retry.');
-    const body = await response.json() as { data?: { user?: Partial<AuthIdentity> } };
+    const body = await response.json() as Partial<IdentityResponse>;
     if (body.data?.user?.id !== expected.id || body.data.user.email !== expected.email) {
       throw new NeonAuthError('API_IDENTITY', 'The backend identity did not match your signed-in account.');
     }

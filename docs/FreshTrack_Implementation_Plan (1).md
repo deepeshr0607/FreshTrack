@@ -539,7 +539,21 @@ release/Android deferrals, then checkpoint before Phase 3. Phase 2 remains open;
 
 **Goal:** Establish a stable database contract before connecting screens.
 
-### Current slice — items 1–3 complete (11 October 2026)
+### Current slice — items 1–4 complete (11 October 2026)
+
+User authorized item 4. Added shared type-only wire contracts, centralized safe success/failure
+responses, bounded pagination, exact paise and decimal quantity serialization, strict calendar/UTC
+helpers, household-timezone expiry and pure status-transition policy. Existing endpoint envelopes
+are preserved. Mobile identity checking consumes the shared response type; no runtime/UI/native,
+Pantry persistence, schema/migration/dependency changes. See [API foundation](Phase_3_API_Foundation.md).
+
+Both TypeScript checks/build pass. Foundation 10/10, auth 9/9, household 6/6, health 1/1, root 70/70,
+guards 4/4 and live development household 5/5 pass with temporary-record cleanup. Initial sandbox
+HTTP failures passed after approved escalation; lint gaps/Node warnings remain. Expo/device checks
+not repeated. Pagination/status helpers do not themselves implement list endpoints or transactional writes.
+Next: item 5 Vercel/environment configuration, then final Phase 3 acceptance. Phase 4 is not started.
+
+### Earlier checkpoint — items 1–3 complete (11 October 2026)
 
 User authorized item 3. Explicit authenticated household setup creates household/member/preferences
 atomically, with serializable transaction retries for concurrent startup. Repeated setup preserves
