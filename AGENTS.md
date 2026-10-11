@@ -194,7 +194,23 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE; PHASE 3 NOT STARTED
+### Current phase: Phase 3 — ITEM 1 MODEL DEFINED; MIGRATIONS PENDING
+
+- User authorized the first Phase 3 slice and selected INR (integer paise), Asia/Kolkata.
+- Six application models/enums now defined in backend/prisma/schema.prisma. No managed auth
+  table changes, client generation, database write/migration/seed or real kitchen API integration.
+- Household membership, compound item/event/receipt references, immutable event snapshots,
+  nullable cost provenance and exact decimal quantity/date/timestamp types are documented in
+  docs/Phase_3_Data_Model.md. SQL checks/service guarantees/cleanup are not yet implemented.
+- Existing backend development connections are configured/ignored/0600 and match Auth's endpoint;
+  no live database connectivity or console branch-identity check has occurred.
+- Prisma format/validate and offline SQL diff pass, including nine generated-SQL inspections.
+  Both TypeScript checks, root 70/70, backend auth 9/9 and health 1/1 pass. Existing lint gaps remain.
+  No mobile source change; Expo Doctor/exports not repeated for the model-only slice.
+- Next: item 2, review initial development migration/SQL checks, confirm target/connectivity,
+  add Prisma singleton and guarded development seed. Phase 4 and production writes are not authorized.
+
+### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
 
 - User approved the lower-level documented Neon API flow; native SDK adapter is not installed.
 - Real account signup/email OTP/resend, password login, remember-device restart, provider sign-out,
@@ -219,7 +235,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   origins/signing/standalone builds/production tests remain pending before release.
 - Prior work is committed at 2b04009; final review checkpoint is
   `feat: validate native authentication and protected route flow` (see Git log).
-- Do not start Phase 3 or production data endpoints without explicit user authorization.
+- Phase 3 item 1 is now authorized; production data endpoints remain outside this slice.
 
 ### Phase 1 — remaining QA deferred by user
 

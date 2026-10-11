@@ -46,7 +46,7 @@ FreshTrack/
 │   │   ├── server.ts       # HTTP server entry-point
 │   │   └── routes/health.ts
 │   ├── prisma/
-│   │   └── schema.prisma   # Placeholder; full schema in Phase 3
+│   │   └── schema.prisma   # Phase 3 model defined; migrations not yet applied
 │   ├── tests/
 │   ├── .env.example        # Required variables with dummy values — copy to .env
 │   ├── package.json
@@ -184,7 +184,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
-| 3 | Prisma schema, migrations, API foundation | ⬜ Not started |
+| 3 | Prisma schema, migrations, API foundation | 🟡 Item 1 model defined; migrations/API connection pending |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
@@ -196,13 +196,40 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Phase 2 development gate is complete. Phase 3 has not started.**
+**Phase 3 item 1 is complete locally: database model defined. Phase 3 remains in progress.**
+Phase 2 development acceptance is complete. The user selected INR (integer paise) and Asia/Kolkata.
+No migration, seed, database connection test or real kitchen API has run. Next: item 2, Prisma
+migrations/client and guarded development seeding.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
+
+### Phase 3 item 1 — database model (11 October 2026)
+
+- Replaced the Prisma placeholder with six application models and matching enums: Household,
+  HouseholdMember, PantryItem, PantryItemEvent, ReceiptScan and UserPreference.
+- Preserved provider-managed auth tables, mobile fixtures/designs and installed Prisma 5.22.
+  Added household-scoped composite foreign keys, event snapshots, nullable price provenance,
+  exact decimal quantities, date-only expiry and timezone-aware timestamps.
+- [Model decisions and remaining enforcement](docs/Phase_3_Data_Model.md) distinguish schema
+  constraints from future service authorization, SQL checks, status transactions and cleanup.
+  RecipeCache/provider integrations remain deferred.
+- Existing ignored backend environment was inspected without exposing credentials: pooled/direct
+  URLs are configured for the same endpoint/database/role, use required TLS and match Auth's
+  endpoint; `.env` permissions are 0600. Live connectivity/branch identity is not yet verified.
+- Checks: `cd backend && ./node_modules/.bin/prisma format --schema prisma/schema.prisma` and
+  `prisma validate` passed. Offline `prisma migrate diff --from-empty --to-schema-datamodel
+  prisma/schema.prisma --script --output /private/tmp/freshtrack-phase3-model.sql` passed; nine
+  inspections of generated SQL passed (six tables, no managed-auth DDL, compound references,
+  exact quantity/date/timestamp types and household idempotency uniqueness).
+- Both `npx tsc --noEmit` checks passed; root strip-types tests 70/70, backend `npm run test:auth`
+  9/9 and health `npm test -- --runInBand` 1/1 passed. Existing module-type warnings remain.
+  Backend `npm run lint` retains its pre-existing exit 127 (`eslint` absent); mobile has no lint script.
+  `git diff --check` and modified-file credential/debug scan passed. Expo checks/exports were not
+  repeated because no mobile/config source changed. No database write or migration applied.
 
 ### Phase 1 audit and current slice (10 October 2026)
 

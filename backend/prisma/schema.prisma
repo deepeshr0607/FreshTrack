@@ -1,4 +1,4 @@
-// This file is intentionally a placeholder for Phase 3.
+// Phase 3 item 1: application data model; no migration has been applied yet.
 // The Prisma schema will define the FreshTrack application tables:
 // Household, HouseholdMember, PantryItem, PantryItemEvent,
 // ReceiptScan, UserPreference, and RecipeCache.
@@ -10,7 +10,8 @@
 // - Use prisma migrate dev (never db push) for permanent migration strategy.
 // - Add a DIRECT_URL to schema.prisma for the non-pooled migration connection.
 //
-// See docs/FreshTrack_Implementation_Plan.md § Phase 3 for the full schema spec.
+// See docs/FreshTrack_Implementation_Plan (1).md § Phase 3 and
+// docs/Phase_3_Data_Model.md for ownership, validation, and migration requirements.
 
 generator client {
   provider = "prisma-client-js"
@@ -22,14 +23,199 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ── Placeholder model (will be replaced in Phase 3) ─────────────────────────
-// Uncomment and run `prisma migrate dev` after setting DATABASE_URL.
-//
-// model Household {
-//   id           String   @id @default(uuid()) @db.Uuid
-//   name         String
-//   currencyCode String   @default("INR")
-//   timezone     String   @default("Asia/Kolkata")
-//   createdAt    DateTime @default(now())
-//   updatedAt    DateTime @updatedAt
-// }
+// The original commented placeholder was replaced with the agreed application model.
+// Migrations, SQL check constraints, seeding, and runtime access are the next slice.
+
+enum HouseholdRole {
+  MANAGER
+}
+
+enum ItemCategory {
+  PRODUCE
+  DAIRY
+  BAKERY
+  SNACKS
+  MEAT
+  FROZEN
+  OTHER
+}
+
+enum PantryItemStatus {
+  ACTIVE
+  CONSUMED
+  WASTED
+  ASSUMED_CONSUMED
+}
+
+enum ExpirySource {
+  PACKAGE_DATE
+  PRESET_ESTIMATE
+  USER_ENTERED
+}
+
+enum PantryItemSource {
+  MANUAL
+  BARCODE
+  RECEIPT
+}
+
+enum CostSource {
+  PURCHASE
+  ESTIMATE
+  UNKNOWN
+}
+
+enum PantryEventType {
+  CREATED
+  EDITED
+  STATUS_CHANGED
+  ARCHIVED
+  RESTORED
+}
+
+enum PantryEventSource {
+  APP
+  NOTIFICATION
+  RECONCILIATION
+  SYSTEM
+}
+
+enum ReceiptScanStatus {
+  UPLOADED
+  PROCESSING
+  REVIEW_REQUIRED
+  IMPORTED
+  FAILED
+}
+
+model Household {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(120)
+  currencyCode String   @default("INR") @db.VarChar(3)
+  timezone     String   @default("Asia/Kolkata") @db.VarChar(64)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  members      HouseholdMember[]
+  pantryItems  PantryItem[]
+  pantryEvents PantryItemEvent[]
+  receiptScans ReceiptScan[]
+}
+
+model HouseholdMember {
+  id          String        @id @default(uuid()) @db.Uuid
+  householdId String        @db.Uuid
+  // MVP: one household per auth subject. No FK into provider-managed neon_auth.
+  authSubject String        @unique @db.VarChar(255)
+  role        HouseholdRole @default(MANAGER)
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  preference   UserPreference?
+  receiptScans ReceiptScan[]
+
+  @@unique([householdId, authSubject])
+}
+
+model PantryItem {
+  id                  String            @id @default(uuid()) @db.Uuid
+  householdId         String            @db.Uuid
+  name                String            @db.VarChar(200)
+  normalizedName      String            @db.VarChar(200)
+  category            ItemCategory      @default(OTHER)
+  quantity            Decimal           @db.Decimal(12, 3)
+  unit                String            @db.VarChar(32)
+  purchaseDate        DateTime?         @db.Date
+  expiresOn           DateTime          @db.Date
+  expirySource        ExpirySource
+  freshnessPresetDays Int?
+  // Paise for INR; total is authoritative for the whole entry. Null is unknown.
+  unitCostMinor       Int?
+  totalCostMinor      Int?
+  costSource          CostSource        @default(UNKNOWN)
+  currencyCode        String            @default("INR") @db.VarChar(3)
+  status              PantryItemStatus  @default(ACTIVE)
+  source              PantryItemSource  @default(MANUAL)
+  barcode             String?           @db.VarChar(64)
+  notes               String?           @db.VarChar(1000)
+  receiptScanId       String?           @db.Uuid
+  createdAt           DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime          @updatedAt @db.Timestamptz(3)
+  statusChangedAt     DateTime          @default(now()) @db.Timestamptz(3)
+  consumedAt          DateTime?         @db.Timestamptz(3)
+  wastedAt            DateTime?         @db.Timestamptz(3)
+  assumedConsumedAt   DateTime?         @db.Timestamptz(3)
+  archivedAt          DateTime?         @db.Timestamptz(3)
+  household           Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  receiptScan         ReceiptScan?      @relation(fields: [householdId, receiptScanId], references: [householdId, id], onDelete: Restrict, onUpdate: Restrict)
+  events              PantryItemEvent[]
+
+  @@unique([householdId, id])
+  @@index([householdId, status, archivedAt, expiresOn])
+  @@index([householdId, normalizedName])
+  @@index([householdId, barcode])
+  @@index([householdId, receiptScanId])
+}
+
+model PantryItemEvent {
+  id             String            @id @default(uuid()) @db.Uuid
+  householdId    String            @db.Uuid
+  pantryItemId   String            @db.Uuid
+  eventType      PantryEventType
+  previousStatus PantryItemStatus?
+  newStatus      PantryItemStatus
+  // Immutable outcome-time snapshots; analytics must not read today's item price.
+  quantity       Decimal           @db.Decimal(12, 3)
+  totalCostMinor Int?
+  costSource     CostSource
+  currencyCode   String            @db.VarChar(3)
+  category       ItemCategory
+  expiresOn      DateTime          @db.Date
+  timezone       String            @db.VarChar(64)
+  occurredAt     DateTime          @default(now()) @db.Timestamptz(3)
+  source         PantryEventSource @default(APP)
+  idempotencyKey String?           @db.VarChar(128)
+  metadata       Json?             @db.JsonB
+  household      Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  pantryItem     PantryItem        @relation(fields: [householdId, pantryItemId], references: [householdId, id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@unique([householdId, idempotencyKey])
+  @@index([householdId, occurredAt])
+  @@index([householdId, pantryItemId, occurredAt])
+}
+
+model ReceiptScan {
+  id                   String            @id @default(uuid()) @db.Uuid
+  householdId          String            @db.Uuid
+  createdByAuthSubject String            @db.VarChar(255)
+  status               ReceiptScanStatus @default(UPLOADED)
+  // Temporary private object key, not an image blob/public URL or raw OCR log.
+  temporaryImageKey    String?           @db.VarChar(512)
+  imageDeleteAfter     DateTime?         @db.Timestamptz(3)
+  detectedItems        Json?             @db.JsonB
+  errorCode            String?           @db.VarChar(64)
+  importedAt           DateTime?         @db.Timestamptz(3)
+  createdAt            DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime          @updatedAt @db.Timestamptz(3)
+  household            Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy            HouseholdMember   @relation(fields: [householdId, createdByAuthSubject], references: [householdId, authSubject], onDelete: Restrict, onUpdate: Restrict)
+  pantryItems          PantryItem[]
+
+  @@unique([householdId, id])
+  @@index([householdId, status, createdAt])
+  @@index([householdId, createdByAuthSubject])
+  @@index([imageDeleteAfter])
+}
+
+model UserPreference {
+  id                        String          @id @default(uuid()) @db.Uuid
+  authSubject               String          @unique @db.VarChar(255)
+  notificationEnabled       Boolean         @default(false)
+  preferredNotificationTime String          @default("18:30") @db.VarChar(5)
+  dateFormat                String          @default("DD/MM/YYYY") @db.VarChar(16)
+  createdAt                 DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime        @updatedAt @db.Timestamptz(3)
+  member                    HouseholdMember @relation(fields: [authSubject], references: [authSubject], onDelete: Cascade, onUpdate: Restrict)
+}
+
+// RecipeCache is intentionally deferred until the Phase 7 provider contract is known.
