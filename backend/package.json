@@ -16,13 +16,15 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "ts-node prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:auth": "npm run build && node --test tests/auth.test.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
+    "jose": "^6.2.12",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

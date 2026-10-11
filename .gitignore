@@ -39,6 +39,10 @@ yarn-error.*
 .env
 .env.local
 .env.*.local
+# Release templates may be committed; actual root environment files must remain local.
+.env.*
+!.env.example
+!.env.release.example
 backend/.env
 backend/.env.local
 backend/.env.development

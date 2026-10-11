@@ -7,13 +7,20 @@ import PrimaryButton from '@/components/PrimaryButton';
 import { useMockPreferences } from '@/context/MockPreferencesContext';
 import { Colors } from '@/constants/Theme';
 import { MOCK_CURRENCY } from '@/lib/mock';
+import { useAuth } from '@/context/AuthContext';
+import useAuthRequest from '@/features/auth/useAuthRequest';
+import { nativeAuthProbe } from '@/features/auth/nativeProbe';
+import { checkBackendIdentity } from '@/lib/backendIdentity';
 
 /** Supporting prototype preference screen; no separate Settings reference was supplied. */
 export default function Settings() {
   const preferences = useMockPreferences();
+  const { session, state } = useAuth();
   const [hour, setHour] = useState(preferences.hour);
   const [digest, setDigest] = useState(preferences.digest);
   const [notice, setNotice] = useState('');
+  const signOutRequest = useAuthRequest(setNotice);
+  const backendRequest = useAuthRequest(setNotice);
   const [confirmExit, setConfirmExit] = useState(false);
   return <PrototypeScreen back={() => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/insights')}>
     <Text style={ui.title}>Kitchen Preferences</Text>
@@ -22,8 +29,9 @@ export default function Settings() {
       <Text style={ui.text}>Values use US dollars to match the supplied designs. Purchase values cover the whole entry. Currency is fixed for this prototype.</Text>
     </View>
     <View style={ui.card}>
-      <Text style={ui.heading}>{preferences.profile.name}</Text><Text style={ui.text}>{preferences.profile.email}</Text>
-      <PrimaryButton label="Edit Profile" variant="ghost" onPress={() => router.push('/settings/profile')} />
+      <Text style={ui.heading}>{state.user?.name || preferences.profile.name}</Text><Text style={ui.text}>{state.user?.email || preferences.profile.email}</Text>
+      <Text style={ui.text}>{state.user ? 'Signed in with Neon. Kitchen data and preferences are still a prototype.' : 'Demo session. No authenticated account.'}</Text>
+      <PrimaryButton label={state.user ? "Account Details" : "Edit Profile"} variant="ghost" onPress={() => router.push('/settings/profile')} />
       <PrimaryButton label="Privacy & Demo Information" variant="ghost" onPress={() => router.push('/settings/privacy')} />
     </View>
     <View style={ui.card}>
@@ -38,16 +46,28 @@ export default function Settings() {
       <Text style={ui.text}>Prototype preferences only. Notifications are not scheduled in Phase 1.</Text>
     </View>
     <View style={ui.card}>
-      <View style={ui.row}><Text style={[ui.heading, { flex: 1 }]}>Remember this device</Text>
-        <Switch value={preferences.rememberDevice} onValueChange={preferences.setRememberDevice}
-          accessibilityLabel="Remember this device" trackColor={{ true: Colors.primary }} /></View>
-      <Text style={ui.text}>Demo preference only; no credentials or session are stored.</Text>
-      {confirmExit ? <>
-        <Text style={ui.heading}>Leave the demo?</Text>
-        <Text style={ui.text}>Return to the welcome screen. Kitchen data stays in memory until reload.</Text>
-        <PrimaryButton label="Leave Demo" onPress={() => { preferences.setRememberDevice(false); router.replace('/(auth)'); }} />
-        <PrimaryButton label="Stay Here" variant="ghost" onPress={() => setConfirmExit(false)} />
-      </> : <PrimaryButton label="Sign Out of Demo" variant="ghost" onPress={() => setConfirmExit(true)} />}
+      {state.user ? <>
+        <Text style={ui.heading}>Account Session</Text>
+        {__DEV__ && nativeAuthProbe && <PrimaryButton label="Check Backend Identity" variant="ghost" loading={backendRequest.loading}
+          onPress={() => { setNotice(''); void backendRequest.run(async (isMounted) => {
+            await checkBackendIdentity(process.env.EXPO_PUBLIC_API_URL, () => nativeAuthProbe!.getApiToken(), state.user!, __DEV__);
+            if (isMounted()) setNotice('Backend identity verified for your signed-in account.');
+          }); }} />}
+        <Text style={ui.text}>Your remember-device choice is set when you log in. Sign out revokes this session and returns to Welcome.</Text>
+        <PrimaryButton label="Sign Out" variant="ghost" loading={signOutRequest.loading}
+          onPress={() => { setNotice(''); void signOutRequest.run(async () => { await session.signOut(); }); }} />
+      </> : <>
+        <View style={ui.row}><Text style={[ui.heading, { flex: 1 }]}>Remember this device</Text>
+          <Switch value={preferences.rememberDevice} onValueChange={preferences.setRememberDevice}
+            accessibilityLabel="Remember this device" trackColor={{ true: Colors.primary }} /></View>
+        <Text style={ui.text}>Demo preference only; no credentials or session are stored.</Text>
+        {confirmExit ? <>
+          <Text style={ui.heading}>Leave the demo?</Text>
+          <Text style={ui.text}>Return to Welcome and clear this prototype session.</Text>
+          <PrimaryButton label="Leave Demo" onPress={() => session.exitDemo()} />
+          <PrimaryButton label="Stay Here" variant="ghost" onPress={() => setConfirmExit(false)} />
+        </> : <PrimaryButton label="Sign Out of Demo" variant="ghost" onPress={() => setConfirmExit(true)} />}
+      </>}
     </View>
   </PrototypeScreen>;
 }

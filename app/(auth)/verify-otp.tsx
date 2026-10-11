@@ -21,20 +21,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DEMO_AUTH, applyOtpInput, otpResult } from '@/lib/auth';
 import { useMockPreferences } from '@/context/MockPreferencesContext';
 import useDemoRequest from '@/features/auth/useDemoRequest';
+import useAuthRequest from '@/features/auth/useAuthRequest';
+import { nativeAuthProbe as auth } from '@/features/auth/nativeProbe';
+import { NeonAuthError } from '@/lib/neonAuth';
+import { useAuth } from '@/context/AuthContext';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 
 const OTP_LENGTH = DEMO_AUTH.length;
 
 export default function VerifyOtpScreen() {
-  const { preview } = useLocalSearchParams<{ preview?: string }>();
+  const { preview, mode, email } = useLocalSearchParams<{ preview?: string; mode?: string; email?: string }>();
+  const realAuth = Platform.OS !== 'web' && mode !== 'demo';
+  const targetEmail = typeof email === 'string' ? email : '';
+  const { session } = useAuth();
   const { profile } = useMockPreferences();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const { loading, run } = useDemoRequest();
-  const [resendReadyAt, setResendReadyAt] = useState(0);
+  const demoRequest = useDemoRequest();
+  const run = demoRequest.run;
+  const [resendReadyAt, setResendReadyAt] = useState(() => realAuth ? Date.now() + DEMO_AUTH.cooldownSeconds * 1000 : 0);
   const [issuedAt, setIssuedAt] = useState(() => Date.now() - (preview === 'expired' ? DEMO_AUTH.lifetimeMs : 0));
   const [now, setNow] = useState(Date.now);
   const [notice, setNotice] = useState('');
+  const realRequest = useAuthRequest(setNotice);
+  const loading = demoRequest.loading || realRequest.loading;
+  const [emailVerified, setEmailVerified] = useState(false);
   const [networkFailure, setNetworkFailure] = useState(preview === 'error');
   const [resendFailure, setResendFailure] = useState(preview === 'resend-error');
   const inputs = useRef<(TextInput | null)[]>([]);
@@ -56,20 +67,51 @@ export default function VerifyOtpScreen() {
     if (key === 'Backspace' && !otp[index] && index > 0) inputs.current[index - 1]?.focus();
   };
   const handleVerify = () => {
+    if (loading) return;
     const code = otp.join('');
-    if (otpResult(code, issuedAt, Date.now()) === 'incomplete') { setNotice('Enter all six digits.'); return; }
+    if (!emailVerified && otpResult(code, issuedAt, Date.now()) === 'incomplete') { setNotice('Enter all six digits.'); return; }
     setNotice('');
+    if (realAuth) {
+      void realRequest.run(async (isMounted) => {
+        if (!auth) throw new NeonAuthError('CONFIG', 'The development Auth URL or app origin is missing or invalid.');
+        const client = auth;
+        if (emailVerified) {
+          const user = await session.refresh();
+          if (isMounted() && !user) router.replace({ pathname: '/(auth)/sign-in', params: { email: targetEmail, verified: 'yes' } });
+          return;
+        }
+        const user = await session.authenticate(async () => {
+          const accepted = await client.verifyEmail(targetEmail, code);
+          if (isMounted()) { setEmailVerified(true); setOtp(Array(OTP_LENGTH).fill('')); }
+          return accepted;
+        });
+        if (isMounted() && !user) router.replace({ pathname: '/(auth)/sign-in', params: { email: targetEmail, verified: 'yes' } });
+      });
+      return;
+    }
     // Phase 1: simulate OTP validation → navigate to app; never contact an auth provider.
     run(() => {
       if (networkFailure) { setNetworkFailure(false); setNotice('Demo verification failed. Try again.'); return; }
       const result = otpResult(code, issuedAt, Date.now());
       if (result === 'expired') { setNotice('This demo code has expired. Resend a code to continue.'); return; }
       if (result !== 'success') { setNotice('That code is incorrect. Check the six-digit demo code.'); return; }
-      router.replace('/(tabs)');
+      if (!session.enterDemo()) setNotice('Demo preview is unavailable. Use real sign-in.');
     });
   };
   const handleResend = () => {
     if (resendCooldown > 0 || loading) return;
+    if (realAuth) {
+      setNotice('');
+      void realRequest.run(async (isMounted) => {
+        if (!auth) throw new NeonAuthError('CONFIG', 'The development Auth URL or app origin is missing or invalid.');
+        await auth.sendVerificationOtp(targetEmail);
+        if (!isMounted()) return;
+        const timestamp = Date.now(); setIssuedAt(timestamp); setNow(timestamp);
+        setOtp(Array(OTP_LENGTH).fill('')); setResendReadyAt(timestamp + DEMO_AUTH.cooldownSeconds * 1000);
+        setNotice('New verification code sent. Use the newest email.'); inputs.current[0]?.focus();
+      });
+      return;
+    }
     run(() => {
       if (resendFailure) { setResendFailure(false); setNotice('Unable to resend the demo code. Try again.'); return; }
       const timestamp = Date.now();
@@ -98,7 +140,7 @@ export default function VerifyOtpScreen() {
 
           <Text style={styles.headline}>Verify Your Email</Text>
           <Text style={styles.subtext}>
-            Enter the six-digit demo code for {profile.email}.
+            {realAuth ? `Enter the six-digit code sent to ${targetEmail || 'your email'}.` : `Enter the six-digit demo code for ${profile.email}.`}
           </Text>
 
           {/* OTP inputs */}
@@ -113,7 +155,7 @@ export default function VerifyOtpScreen() {
                 onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
                 keyboardType="number-pad"
                 maxLength={OTP_LENGTH}
-                editable={!loading}
+                editable={!loading && !emailVerified}
                 autoComplete={i === 0 ? "one-time-code" : "off"}
                 textContentType={i === 0 ? "oneTimeCode" : "none"}
                 selectTextOnFocus
@@ -123,10 +165,10 @@ export default function VerifyOtpScreen() {
             ))}
           </View>
 
-          <Text style={styles.subtext} accessibilityLiveRegion="polite">{remaining ? `Code expires in ${remaining}s` : 'Demo code expired. Resend to continue.'}</Text>
+          <Text style={styles.subtext} accessibilityLiveRegion="polite">{realAuth ? emailVerified ? 'Email verified. Retry the saved session check.' : 'Code expiry is checked by Neon. Use the latest verification email.' : remaining ? `Code expires in ${remaining}s` : 'Demo code expired. Resend to continue.'}</Text>
           {!!notice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{notice}</Text>}
           <PrimaryButton
-            label="Verify & Continue →"
+            label={emailVerified ? 'Check Session →' : 'Verify & Continue →'}
             onPress={handleVerify}
             loading={loading}
           />
@@ -136,7 +178,7 @@ export default function VerifyOtpScreen() {
             <Text style={styles.resendText}>Didn't receive it? </Text>
             <Pressable
               onPress={handleResend}
-              disabled={resendCooldown > 0 || loading}
+              disabled={resendCooldown > 0 || loading || emailVerified}
               accessibilityRole="button"
             >
               <Text style={[styles.resendLink, resendCooldown > 0 && styles.resendDisabled]}>
@@ -145,8 +187,10 @@ export default function VerifyOtpScreen() {
             </Pressable>
           </View>
 
+          {realAuth && <PrimaryButton label="Back to Log In" variant="ghost" disabled={loading}
+            onPress={() => router.replace({ pathname: '/(auth)/sign-in', params: { email: targetEmail } })} />}
           <Text style={styles.note}>
-            Demo code: {DEMO_AUTH.code}. No email is sent or account verified. Reloading resets the demo.
+            {realAuth ? 'Verifies your development account. Kitchen data remains a demo.' : `Demo code: ${DEMO_AUTH.code}. No email is sent or account verified. Reloading resets the demo.`}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

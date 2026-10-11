@@ -17,6 +17,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { validateCredentials, validateProfile, validEmail } from '@/lib/auth';
 import { useMockPreferences } from '@/context/MockPreferencesContext';
 import useDemoRequest from '@/features/auth/useDemoRequest';
+import useAuthRequest from '@/features/auth/useAuthRequest';
+import { nativeAuthProbe as auth } from '@/features/auth/nativeProbe';
+import { NeonAuthError } from '@/lib/neonAuth';
+import { useAuth } from '@/context/AuthContext';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
@@ -24,6 +28,7 @@ import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme
 type Tab = 'sign-up' | 'sign-in';
 
 export default function SignUpScreen() {
+  const { session } = useAuth();
   const preferences = useMockPreferences();
   const [activeTab, setActiveTab] = useState<Tab>('sign-up');
   const [name, setName] = useState('');
@@ -31,12 +36,16 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [digestOptIn, setDigestOptIn] = useState(preferences.digest);
-  const { loading, run } = useDemoRequest();
-  const { preview } = useLocalSearchParams<{ preview?: string }>();
+  const demoRequest = useDemoRequest();
+  const { preview, mode } = useLocalSearchParams<{ preview?: string; mode?: string }>();
+  const realAuth = Platform.OS !== 'web' && mode !== 'demo';
   const [notice, setNotice] = useState('');
+  const realRequest = useAuthRequest(setNotice);
+  const loading = demoRequest.loading || realRequest.loading;
+  const run = demoRequest.run;
   const [simulateFailure, setSimulateFailure] = useState(preview === 'error');
   const [providerNotice, setProviderNotice] = useState('');
-  const explainProvider = (provider: string) => setProviderNotice(`${provider} is unavailable in this demo. Use the email form to continue.`);
+  const explainProvider = (provider: string) => setProviderNotice(`${provider} is not connected yet. Use the email form to continue.`);
 
   const passwordStrength =
     password.length === 0
@@ -50,21 +59,34 @@ export default function SignUpScreen() {
   const strengthColor = [Colors.outlineVariant, Colors.criticalRose, Colors.cautionAmber, Colors.freshGreen][passwordStrength];
 
   const handleSubmit = () => {
+    if (loading) return;
     const error = validateProfile({ name, email }) || validateCredentials(email, password);
     if (error) { setNotice(error); return; }
+    if (realAuth && (password.length < 8 || password.length > 128)) { setNotice('Use a password with 8–128 characters.'); return; }
     setNotice('');
+    if (realAuth) {
+      void realRequest.run(async (isMounted) => {
+        if (!auth) throw new NeonAuthError('CONFIG', 'The development Auth URL or app origin is missing or invalid.');
+        await auth.signUp(name.trim(), email.trim().toLowerCase(), password);
+        if (!isMounted()) return;
+        setPassword('');
+        preferences.setDigest(digestOptIn); // Local UI preference only; server preferences come later.
+        router.push({ pathname: '/(auth)/verify-otp', params: { mode: 'real', email: email.trim().toLowerCase() } });
+      });
+      return;
+    }
     // Phase 1: simulate navigation to OTP verification; no password is retained.
     run(() => {
       if (simulateFailure) { setSimulateFailure(false); setNotice('Unable to create the demo profile. Try again.'); return; }
       preferences.setProfile({ name: name.trim(), email: email.trim().toLowerCase() });
       preferences.setDigest(digestOptIn);
-      router.push('/(auth)/verify-otp');
+      router.push({ pathname: '/(auth)/verify-otp', params: { mode: 'demo' } });
     });
   };
 
   const handleTabSwitch = (tab: Tab) => {
     if (tab === 'sign-in') {
-      router.replace('/(auth)/sign-in' as any);
+      router.replace({ pathname: '/(auth)/sign-in', params: { mode: realAuth ? 'real' : 'demo' } });
     }
   };
 
@@ -123,7 +145,7 @@ export default function SignUpScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.subtext}>Demo only. Use sample details; no account is created.</Text>
+          <Text style={styles.subtext}>{realAuth ? 'Development account: real authentication. Kitchen data remains a demo.' : 'Demo only. Use sample details; no account is created.'}</Text>
           {/* Form card */}
           <View style={styles.formCard}>
             <FormInput
@@ -232,7 +254,7 @@ export default function SignUpScreen() {
             Already have an account?{' '}
             <Text
               style={styles.footerLink}
-              onPress={() => router.replace('/(auth)/sign-in' as any)}
+              onPress={() => router.replace({ pathname: '/(auth)/sign-in', params: { mode: realAuth ? 'real' : 'demo' } })}
             >
               Log In
             </Text>
