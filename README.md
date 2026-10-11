@@ -206,8 +206,8 @@ atomically creates one household/membership/preferences; reads are scoped to ver
 The mobile kitchen still uses mock data and does not call household setup. Shared response types,
 bounded pagination and exact money/quantity/date/expiry/status helpers are ready. Item 5’s
 Preview is deployed to Vercel and publicly reachable after the user-approved hosting change.
-Neon authentication still protects account/household routes. Hosted signed-identity/DB verification
-and final Phase 3 review remain.
+Neon authentication still protects account/household routes. Hosted signed identity passes the
+user's iPhone check. Hosted database verification and final Phase 3 review remain.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
@@ -227,16 +227,17 @@ uploads compile independently. No dependency version, Prisma schema/migration or
 is READY. Through authenticated Vercel CLI, health returns 200 and household access without a Neon
 token returns 401. After user-approved removal of Vercel Authentication, public health returns 200;
 tokenless identity/household and invalid-token identity requests return 401. Ignored mobile `.env.local`
-points to the HTTPS Preview; both TypeScript checks pass again. Hosted signed-identity/DB checks
-are pending. GitHub auto-link failed;
+points to the HTTPS Preview; both TypeScript checks pass again. User confirmed Settings → Check
+Backend Identity passes on iPhone against the hosted API. Hosted database checks remain pending.
+GitHub auto-link failed;
 CLI deployment works. The first production-labelled attempt failed safely; no working production
 API or production DB/auth change. A Preview retry needed explicit NODE_ENV before the final success.
 
 Both TypeScript checks/build and local preview build pass; backend 29/29, final deployment 4/4,
 root 70/70, health 1/1 and guards 4/4 pass. Existing ESLint gap remains. Runtime audit reports zero;
 cloud full audit reports 36 development-tool findings. See [configuration, commands and limits](docs/Phase_3_Deployment.md).
-Next: open `exp://192.168.1.248:8085` in Expo Go and verify Settings → Check Backend Identity,
-then finish hosted database verification and Phase 3 final review.
+Next: verify an authenticated household read through the hosted API's Prisma/Neon connection,
+then complete Phase 3 final review. Identity verification alone does not query the database.
 
 ### Phase 3 item 4 — API contracts and helpers (11 October 2026)
 
