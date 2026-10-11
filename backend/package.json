@@ -21,6 +21,8 @@
     "test:database": "node --test tests/database-guard.test.cjs",
     "test:database:integration": "node --env-file=.env --test tests/database.integration.test.cjs",
     "test:seed:integration": "node --env-file=.env --test tests/seed.integration.test.cjs",
+    "test:households": "npm run build && node --test tests/households.test.mjs",
+    "test:households:integration": "npm run build && node --env-file=.env --test tests/households.integration.test.cjs",
     "db:studio": "prisma studio",
     "test:auth": "npm run build && node --test tests/auth.test.mjs"
   },

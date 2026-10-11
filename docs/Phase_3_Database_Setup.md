@@ -1,7 +1,8 @@
 # Phase 3 item 2 — Development migrations, client and seed
 
 11 October 2026. Completed on FreshTrack's existing Neon **development** branch, not production.
-The mobile kitchen remains a mock prototype. Household bootstrap/API authorization is the next slice.
+The mobile kitchen remains a mock prototype. Household bootstrap/API authorization was subsequently
+completed in [item 3](Phase_3_Household_Access.md).
 
 ## Target verification and migration
 
@@ -106,9 +107,9 @@ HTTP API or production readiness.
 
 ## Next step
 
-Phase 3 item 3: atomically establish household membership/preferences from verified provider identity
-and test isolation/race handling. Then complete protected read-only database API, request/response
-contracts and deployment configuration. Pantry CRUD/UI persistence belongs to Phase 4; receipt/AI
+Item 3 household bootstrap and protected read-only access/isolation tests are now complete.
+Next: Phase 3 item 4 shared API contracts/helpers, then deployment configuration and final review.
+Pantry CRUD/UI persistence belongs to Phase 4; receipt/AI
 providers and deletion/retention workers remain later work.
 
 References: [Prisma migration SQL customization](https://www.prisma.io/docs/orm/v6/prisma-migrate/getting-started),

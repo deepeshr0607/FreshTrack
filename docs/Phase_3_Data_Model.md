@@ -83,10 +83,10 @@ Composite foreign keys ensure events and receipt-linked items cannot reference a
 item/scan, and receipt creators must belong to the scan's household. Duplicate item names/barcodes
 are deliberately allowed for separate purchases; lookup indexes do not make them unique.
 
-Foreign keys are **not authorization**. The future service must resolve membership from verified
-identity and include household ID in every owned query. Do not accept body userId as authority.
-MVP bootstrap must atomically create household/member/preferences and handle the unique-account
-race; no signup hook or database endpoint is added here.
+Foreign keys are **not authorization**. Item 3 now scopes household reads to verified membership
+and atomically bootstraps household/member/preferences with unique-account race handling.
+See [household access](Phase_3_Household_Access.md). Future Pantry services must scope every query
+in the same way; body userId is never authority. No mobile signup hook is connected yet.
 
 The initial migration now adds SQL CHECK constraints, because these rules are not enforced by the
 Prisma schema alone: positive quantity; nonnegative nullable costs; cost-source/null consistency;
@@ -114,8 +114,8 @@ not establish that migrations apply, connection credentials work, cross-househol
 or runtime events are atomic. No migration/seed/generated client/API integration was performed
 at the item 1 checkpoint; item 2's actual live migration/readiness/seed results are recorded separately.
 
-Item 2 is now complete on verified development. Next: Phase 3 item 3 — authenticated household
-bootstrap and isolation/race testing. Do not alter managed auth tables or seed production.
+Items 2–3 are now complete on verified development, including household isolation/race tests.
+Next: Phase 3 item 4 shared API contracts/helpers. Do not alter managed auth tables or seed production.
 
 References: [PostgreSQL native-type mapping](https://docs.prisma.io/docs/orm/v6/overview/databases/postgresql),
 [Prisma compound constraints](https://docs.prisma.io/docs/orm/v6/prisma-client/special-fields-and-types/working-with-composite-ids-and-constraints).

@@ -539,7 +539,22 @@ release/Android deferrals, then checkpoint before Phase 3. Phase 2 remains open;
 
 **Goal:** Establish a stable database contract before connecting screens.
 
-### Current slice — items 1–2 complete (11 October 2026)
+### Current slice — items 1–3 complete (11 October 2026)
+
+User authorized item 3. Explicit authenticated household setup creates household/member/preferences
+atomically, with serializable transaction retries for concurrent startup. Repeated setup preserves
+choices. Current/by-ID reads filter membership using verified JWT subject; foreign/unknown IDs both
+return 404. Request identity/settings/query fields are rejected. No mobile bootstrap integration,
+Pantry API, schema/migration/dependency or production change.
+
+Household HTTP/service tests 6/6 and guarded live development tests 5/5 pass (race, rollback,
+preferences, isolation and cleanup). Root 70/70, backend auth 9/9, health 1/1, guards 4/4, both
+TypeScript checks and backend build pass. Initial health eager-JWT-import failure fixed; reruns pass.
+Existing lint gaps remain; Expo/device checks not repeated. See [household access](Phase_3_Household_Access.md).
+Next: item 4, shared protected API foundation/contracts, pagination, date/money serialization and
+expiry/status helper tests. Deployment and final acceptance follow; Phase 4 is not authorized.
+
+### Earlier checkpoint — items 1–2 complete (11 October 2026)
 
 User approved item 2. Console-verified development endpoint/branch matches the ignored environment.
 Initial transactional migration is applied to the previously empty public application schema;

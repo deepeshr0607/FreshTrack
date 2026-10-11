@@ -194,9 +194,9 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 3 — ITEMS 1–2 COMPLETE; HOUSEHOLD/API FOUNDATION PENDING
+### Current phase: Phase 3 — ITEMS 1–3 COMPLETE; API CONTRACTS/DEPLOYMENT PENDING
 
-- User authorized Phase 3 items 1–2 and selected INR (integer paise), Asia/Kolkata.
+- User authorized Phase 3 items 1–3 and selected INR (integer paise), Asia/Kolkata.
 - Initial transactional application migration applied only to Console-verified development branch
   br-long-glade-b3ovlfn0 / endpoint ep-dry-paper-b3ftfkqd. Auth structure unchanged before/after.
 - Household membership, compound item/event/receipt references, immutable event snapshots,
@@ -208,8 +208,15 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - Both TypeScript checks, root 70/70, backend auth 9/9, health 1/1, guards 4/4, live database tests
   14/14 and seed replay 1/1 pass. Existing lint gaps remain. No mobile source/config/dependency change;
   Expo Doctor/exports not repeated. See docs/Phase_3_Database_Setup.md for commands and limits.
-- Next: item 3, authenticated household bootstrap/isolation. No real kitchen API/mobile persistence
-  yet. Phase 4 and production writes are not authorized.
+- Item 3 adds explicit authenticated household bootstrap and membership-scoped current/by-ID reads.
+  Serializable transactions/retries preserve one household and preferences; foreign/unknown IDs both
+  return 404. No client-supplied identity/settings accepted. Mobile remains mock, setup not wired yet.
+- Household HTTP/service 6/6 and live development 5/5 pass, including concurrent setup, rollback,
+  cross-account isolation and temporary-record cleanup. Auth 9/9, health 1/1, root 70/70, guards 4/4
+  and both TypeScript checks pass. Eager JWT loading health regression fixed with lazy import.
+  No schema/migration/dependency change; existing lint gaps remain. See docs/Phase_3_Household_Access.md.
+- Next: item 4, shared protected API contracts/pagination/date-money/expiry helpers, then deployment
+  and final Phase 3 review. Phase 4 and production writes are not authorized.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
 
