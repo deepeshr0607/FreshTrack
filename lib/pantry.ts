@@ -65,12 +65,22 @@ export function validatePantryEdit(edit: PantryEdit): string | null {
 }
 
 export type PantryAction =
+  | { type: 'receipt'; items: PantryItem[] }
+  | { type: 'barcode'; items: PantryItem[] }
   | { type: 'add'; id: string; draft: PantryDraft }
   | { type: 'edit'; id: string; edit: PantryEdit }
   | { type: 'status'; id: string; status: 'CONSUMED' | 'WASTED' };
 
 /** In-memory Phase 1 actions; resolved items cannot be edited or resolved twice. */
 export function pantryReducer(items: PantryItem[], action: PantryAction): PantryItem[] {
+  if (action.type === 'receipt' || action.type === 'barcode') {
+    // Atomic import and replay protection: never insert a partial or repeated haul.
+    if (!action.items.length || new Set(action.items.map((item) => item.id)).size !== action.items.length ||
+        action.items.some((item) => items.some((existing) => existing.id === item.id) ||
+          item.source !== (action.type === 'receipt' ? 'RECEIPT' : 'BARCODE') || item.status !== 'ACTIVE' || !item.id.trim() ||
+          validatePantryDraft({ ...item, quantity: String(item.quantity), price: String(item.price) }))) return items;
+    return [...action.items, ...items];
+  }
   if (action.type === 'add') {
     if (items.some((item) => item.id === action.id)) return items;
     const item = createPantryItem(action.id, action.draft);

@@ -4,17 +4,19 @@
  */
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { validateCredentials, validateProfile, validEmail } from '@/lib/auth';
+import { useMockPreferences } from '@/context/MockPreferencesContext';
+import useDemoRequest from '@/features/auth/useDemoRequest';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
@@ -22,13 +24,19 @@ import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme
 type Tab = 'sign-up' | 'sign-in';
 
 export default function SignUpScreen() {
+  const preferences = useMockPreferences();
   const [activeTab, setActiveTab] = useState<Tab>('sign-up');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [digestOptIn, setDigestOptIn] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [digestOptIn, setDigestOptIn] = useState(preferences.digest);
+  const { loading, run } = useDemoRequest();
+  const { preview } = useLocalSearchParams<{ preview?: string }>();
+  const [notice, setNotice] = useState('');
+  const [simulateFailure, setSimulateFailure] = useState(preview === 'error');
+  const [providerNotice, setProviderNotice] = useState('');
+  const explainProvider = (provider: string) => setProviderNotice(`${provider} is unavailable in this demo. Use the email form to continue.`);
 
   const passwordStrength =
     password.length === 0
@@ -42,24 +50,16 @@ export default function SignUpScreen() {
   const strengthColor = [Colors.outlineVariant, Colors.criticalRose, Colors.cautionAmber, Colors.freshGreen][passwordStrength];
 
   const handleSubmit = () => {
-    if (!name.trim() || !email.trim() || !password) {
-      Alert.alert('Missing fields', 'Please fill in all required fields.');
-      return;
-    }
-    if (!email.includes('@')) {
-      Alert.alert('Invalid email', 'Please enter a valid email address.');
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert('Weak password', 'Password must be at least 6 characters.');
-      return;
-    }
-    setLoading(true);
-    // Phase 1: simulate navigation to OTP verification
-    setTimeout(() => {
-      setLoading(false);
-      router.push('/(auth)/verify-otp' as any);
-    }, 800);
+    const error = validateProfile({ name, email }) || validateCredentials(email, password);
+    if (error) { setNotice(error); return; }
+    setNotice('');
+    // Phase 1: simulate navigation to OTP verification; no password is retained.
+    run(() => {
+      if (simulateFailure) { setSimulateFailure(false); setNotice('Unable to create the demo profile. Try again.'); return; }
+      preferences.setProfile({ name: name.trim(), email: email.trim().toLowerCase() });
+      preferences.setDigest(digestOptIn);
+      router.push('/(auth)/verify-otp');
+    });
   };
 
   const handleTabSwitch = (tab: Tab) => {
@@ -81,7 +81,7 @@ export default function SignUpScreen() {
         >
           {/* Header nav */}
           <View style={styles.navRow}>
-            <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)')} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back to welcome">
               <Text style={styles.backText}>← </Text>
             </Pressable>
             <Text style={styles.navTitle}>🌿  Sign Up</Text>
@@ -123,10 +123,11 @@ export default function SignUpScreen() {
             </Pressable>
           </View>
 
+          <Text style={styles.subtext}>Demo only. Use sample details; no account is created.</Text>
           {/* Form card */}
           <View style={styles.formCard}>
             <FormInput
-              label="Full Name"
+              label="Full Name" accessibilityLabel="Full Name" editable={!loading}
               icon="👤"
               placeholder="Maya Lin"
               value={name}
@@ -136,7 +137,7 @@ export default function SignUpScreen() {
               textContentType="name"
             />
             <FormInput
-              label="Email Address"
+              label="Email Address" accessibilityLabel="Email Address" editable={!loading}
               icon="✉️"
               placeholder="maya.kitchen@freshtrack.io"
               value={email}
@@ -145,10 +146,10 @@ export default function SignUpScreen() {
               autoCapitalize="none"
               autoComplete="email"
               textContentType="emailAddress"
-              rightIcon={email.includes('@') ? '✅' : undefined}
+              rightIcon={validEmail(email) ? '✅' : undefined}
             />
             <FormInput
-              label="Password"
+              label="Password" accessibilityLabel="Password" editable={!loading}
               icon="🔒"
               placeholder="••••••••••••"
               value={password}
@@ -200,6 +201,7 @@ export default function SignUpScreen() {
               </View>
             </Pressable>
 
+            {!!notice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{notice}</Text>}
             <PrimaryButton
               label="Create Account →"
               onPress={handleSubmit}
@@ -214,14 +216,15 @@ export default function SignUpScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Google">
+            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Google" onPress={() => explainProvider('Google')}>
               <Text style={styles.socialIcon}>🇬</Text>
               <Text style={styles.socialText}>Continue with Google</Text>
             </Pressable>
-            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Apple">
+            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Apple" onPress={() => explainProvider('Apple')}>
               <Text style={styles.socialIcon}>🍎</Text>
               <Text style={styles.socialText}>Continue with Apple</Text>
             </Pressable>
+            {!!providerNotice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{providerNotice}</Text>}
           </View>
 
           {/* Footer */}
@@ -236,8 +239,8 @@ export default function SignUpScreen() {
           </Text>
           <Text style={styles.legal}>
             By continuing, you agree to FreshTrack's{' '}
-            <Text style={styles.legalLink}>Terms of Service</Text> and{' '}
-            <Text style={styles.legalLink}>Privacy Policy</Text>.
+            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Terms of Service</Text> and{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Privacy Policy</Text>.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

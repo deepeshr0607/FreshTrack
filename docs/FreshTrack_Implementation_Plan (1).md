@@ -195,10 +195,93 @@ pass; Expo Doctor 21/21 pass; Expo install check exit 0 (offline dependency-map 
 exports pass; diff whitespace check passes. Existing backend lint fails because ESLint is absent;
 mobile has no lint configuration. See README for exact commands and verification limits.
 
-Remaining after the 11 October slice: Home swipes; Pantry batch/category/currency; scanner permission/receipt edit/queue/
-failure states/duplicate detection/receipt and barcode insertion; auth OTP failure/paste/autofill/timer cleanup;
-profile/privacy/settings state coverage; final native and design QA. Some supplied decorative counts,
+Remaining after the 11 October slices: Pantry batch/category/currency; Scanner native/visual QA; native auth autofill/keyboard/timer lifecycle QA;
+account-deletion/currency UI scope; final native and design QA. Some supplied decorative counts,
 audit snapshots and source weekly totals disagree; their treatment is documented in the inventory.
+
+### Auth and Settings prototype slice — 11 October 2026
+
+Supplied forms preserved; validated inline errors, loading/retry and cancellable local delays added.
+Typed demo profile/OTP configuration and pure validation in `lib/auth.ts`; public code `123456`,
+two-minute expiry, full-code paste, invalid/expired/simulated failure/retry and 30-second resend
+cooldown. Timers clean up on unmount. Added mock email recovery and provider fallback feedback;
+no email, credential storage, external auth, session infrastructure or password changes.
+Settings profile save/cancel, demo privacy information, shared remember-device and cancellable demo
+exit added using existing tokens/wrapper (no additional design supplied). Digest choices/profile share
+in-memory preferences. Terms/Privacy links open prototype information; production policies are pending.
+Browser verification covers sign-up/login failures and retry, OTP validation/paste/expiry/resend and
+failure recovery, recovery preview, provider feedback, profile/preferences/privacy and exit flows at
+375 × 812. Native autofill/keyboard/screen-reader/timer lifecycle and final visual comparison pending.
+Root/backend TypeScript, 28/28 unit tests, health test, web/iOS/Android exports and diff check pass.
+Existing lint gaps remain; exact commands and limits in README. No SDK/dependency changes.
+Next: Pantry category filtering composed with search/freshness and no-match/reset states.
+Phase 1 remains in progress; Phase 2 requires explicit approval after review.
+
+### Home Recent Additions swipe slice — 11 October 2026
+
+Existing compact Home cards extracted into a typed reusable component. Right/left swipes request
+Used/Wasted via the shared cancellable sheet; confirmation updates shared inventory, cancellation
+preserves it. Added accessible 44-point fallback buttons and an empty Add entry to the existing form.
+No new dependency, fixture or real integration. Supporting buttons extend the reference compact card.
+Browser checks at 375 × 812: short-swipe/details recovery, both directions/cancel/repeat, confirmed
+outcomes/Home-to-Pantry propagation (8 → 6), vertical drag without navigation, keyboard Wasted,
+Used button, all-resolved empty state and Add navigation. Native gestures/accessibility/design QA pending.
+Root/backend TypeScript, 25/25 unit tests, 1/1 backend health test and web/iOS/Android exports pass;
+diff whitespace check passes. Existing mobile/backend lint gaps remain; exact commands in README.
+Next: Pantry category filtering composed with search/freshness, including no-match/reset behavior.
+Phase 1 remains in progress and requires review; Phase 2 requires explicit approval.
+
+### Scanner permission slice — 11 October 2026
+
+Shared typed mock gate added for Receipt and Barcode. Initial explanation/Allow/Deny, retryable denial,
+blocked-access local Demo Camera Settings, save/cancel and manual fallback are implemented with
+existing safe-area/keyboard-aware Scanner wrapper and shared theme controls. Review components only
+mount after demo grant; permission state carries across modes and resets on reload. No camera module,
+permission request, OS settings link, backend or new dependency. No dedicated permission reference exists.
+Browser verified denied controls hidden/manual cancel/retry/allow/receipt scan, shared barcode access,
+blocked controls hidden/settings checkbox/cancel/save-off/save-on and barcode scan. Blocked/settings
+cards visually checked at 375 × 812. Device/accessibility QA remains pending. Preview on fresh load:
+`/scanner?permission=denied|blocked|granted`; failure previews require demo grant or `&permission=granted`.
+Root/backend TypeScript, 25/25 unit tests, 1/1 health test and web/iOS/Android export pass. Existing
+mobile/backend lint gaps remain; exact commands in README. Next: Home Recent Additions gestures with
+shared Used/Wasted confirmation and accessible fallbacks. Phase 1 remains in progress, pending native
+and full design review; Phase 2 requires explicit approval.
+
+### Barcode/package queue slice — 11 October 2026
+
+Implemented in the existing Scanner mode: typed synthetic catalog for the three reference packages,
+lookup/loading/error/not-found/retry/manual fallback; queue progress and remaining-item controls;
+validated date/quantity/value, simulated stamp, manual date and preset options; Confirm Date & Next
+and pending-only bulk estimates; revisit/removal, duplicate Skip/Add separately, final confirmation
+and atomic shared insertion. Barcode identity persists through edits for duplicate detection.
+No API, OCR, camera, dependency, config or later-phase work. Mode-change/unmount cleans scan timers.
+Manual fallback uses the existing form; cancelling returns to the unchanged pending queue.
+Browser verified invalid dates, manual fractional entry/value, confirmed dates retained across bulk
+estimates, three products, duplicate gate, confirmation back, 8 → 11 shared Pantry items/$51.01,
+lookup error/retry/unknown/malformed code/manual cancel, removal and mode reset. Phone form reviewed
+at 375 × 812. Native touch/keyboard/accessibility and full reference visual match remain pending.
+Root/backend TypeScript, 25/25 unit tests and 1/1 backend health test pass; three-platform final
+export and diff check pass. Lint remains unavailable; exact commands in README. Synthetic stamp
+provenance is explicitly labeled; no real package was verified. Reference photo/overlay/auto-saved
+produce/confidence decorations remain documented approximations. Next: mock Scanner permission
+recovery UI. Phase 1 remains in progress; Phase 2 requires review and explicit approval.
+
+### Receipt review slice — 11 October 2026
+
+Implemented within the existing Scanner route: typed reference fixtures, scan/loading, editable
+selection/name/category/quantity/unit/value/date review, Add Missing pending candidates, normalized-name
+possible duplicates with explicit Skip/Add separately, final confirmation/back and atomic shared import.
+Estimated/user-entered dates and receipt origin are preserved; existing purchases remain untouched.
+Resubmission/replayed batches are blocked; timers clean up on mode-change/unmount. Error/empty/retry
+previews use `/scanner?preview=error` or `empty`. No native camera, OCR, backend or persistence added.
+The four shown groceries total $16.16; reference eight-item/$28.16 decorations are inconsistent and
+are replaced with derived review totals. Emoji/viewfinder/overlay differences and native QA remain pending.
+Browser verifies edits/cancel/validation/duplicate gate/skip/exclusion/confirmation back, 8 → 10 shared
+Pantry entries with preserved edited data, separate purchase success, error/empty/retry and Add Missing.
+Root/backend TypeScript pass; 20/20 unit tests and 1/1 backend health test pass (approved rerun after
+sandbox EPERM). Root/backend lint unavailable as before; all three exports and diff check pass.
+Exact commands/limits in README. Next: barcode/package-date queue, failed lookup, duplicate review
+and confirmed mock insertion. Phase 1 remains in progress; Phase 2 requires review and approval.
 
 ### Pantry swipe slice — 11 October 2026
 

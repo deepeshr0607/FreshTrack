@@ -4,39 +4,47 @@
  */
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { validateCredentials, validEmail } from '@/lib/auth';
+import { useMockPreferences } from '@/context/MockPreferencesContext';
+import useDemoRequest from '@/features/auth/useDemoRequest';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 
 export default function SignInScreen() {
+  const preferences = useMockPreferences();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberDevice, setRememberDevice] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [rememberDevice, setRememberDevice] = useState(preferences.rememberDevice);
+  const { loading, run } = useDemoRequest();
+  const { preview } = useLocalSearchParams<{ preview?: string }>();
+  const [notice, setNotice] = useState('');
+  const [simulateFailure, setSimulateFailure] = useState(preview === 'error');
+  const [providerNotice, setProviderNotice] = useState('');
+  const explainProvider = (provider: string) => setProviderNotice(`${provider} is unavailable in this demo. Use the email form to continue.`);
 
   const handleSubmit = () => {
-    if (!email.trim() || !password) {
-      Alert.alert('Missing fields', 'Please enter your email and password.');
-      return;
-    }
-    setLoading(true);
-    // Phase 1: simulate successful login → navigate to app
-    setTimeout(() => {
-      setLoading(false);
-      router.replace('/(tabs)/' as any);
-    }, 800);
+    const error = validateCredentials(email, password);
+    if (error) { setNotice(error); return; }
+    setNotice('');
+    // Phase 1: simulate successful login → navigate to app; no password is retained.
+    run(() => {
+      if (simulateFailure) { setSimulateFailure(false); setNotice('Unable to log in in this demo. Try again.'); return; }
+      preferences.setProfile({ ...preferences.profile, email: email.trim().toLowerCase() });
+      preferences.setRememberDevice(rememberDevice);
+      router.replace('/(tabs)');
+    });
   };
 
   return (
@@ -52,7 +60,7 @@ export default function SignInScreen() {
         >
           {/* Header nav */}
           <View style={styles.navRow}>
-            <Pressable onPress={() => router.back()} style={styles.backBtn}>
+            <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)')} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back to welcome">
               <Text style={styles.backText}>←</Text>
             </Pressable>
             <Text style={styles.navTitle}>🌿  Log In</Text>
@@ -89,10 +97,11 @@ export default function SignInScreen() {
             </Pressable>
           </View>
 
+          <Text style={styles.subtext}>Demo only. Use sample details; no account is created.</Text>
           {/* Form card */}
           <View style={styles.formCard}>
             <FormInput
-              label="Email Address"
+              label="Email Address" accessibilityLabel="Email Address" editable={!loading}
               icon="✉️"
               placeholder="maya.kitchen@freshtrack.io"
               value={email}
@@ -101,10 +110,10 @@ export default function SignInScreen() {
               autoCapitalize="none"
               autoComplete="email"
               textContentType="emailAddress"
-              rightIcon={email.includes('@') ? '✅' : undefined}
+              rightIcon={validEmail(email) ? '✅' : undefined}
             />
             <FormInput
-              label="Password"
+              label="Password" accessibilityLabel="Password" editable={!loading}
               icon="🔒"
               placeholder="••••••••••••"
               value={password}
@@ -129,11 +138,12 @@ export default function SignInScreen() {
                 </View>
                 <Text style={styles.rememberText}>Remember this device</Text>
               </Pressable>
-              <Pressable accessibilityRole="link">
+              <Pressable accessibilityRole="link" onPress={() => router.push('/(auth)/recover')}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </Pressable>
             </View>
 
+            {!!notice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{notice}</Text>}
             <PrimaryButton
               label="Log In to Kitchen →"
               onPress={handleSubmit}
@@ -147,18 +157,19 @@ export default function SignInScreen() {
               <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
               <View style={styles.dividerLine} />
             </View>
-            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Google">
+            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Google" onPress={() => explainProvider('Google')}>
               <Text style={styles.socialIcon}>🇬</Text>
               <Text style={styles.socialText}>Continue with Google</Text>
             </Pressable>
-            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Apple">
+            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Apple" onPress={() => explainProvider('Apple')}>
               <Text style={styles.socialIcon}>🍎</Text>
               <Text style={styles.socialText}>Continue with Apple</Text>
             </Pressable>
-            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Sign in with Biometrics">
+            <Pressable style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Sign in with Biometrics" onPress={() => explainProvider('Biometric sign-in')}>
               <Text style={styles.socialIcon}>🫆</Text>
               <Text style={styles.socialText}>Sign in with Biometrics</Text>
             </Pressable>
+            {!!providerNotice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{providerNotice}</Text>}
           </View>
 
           {/* Footer */}
@@ -173,8 +184,8 @@ export default function SignInScreen() {
           </Text>
           <Text style={styles.legal}>
             By continuing, you agree to FreshTrack's{' '}
-            <Text style={styles.legalLink}>Terms of Service</Text> and{' '}
-            <Text style={styles.legalLink}>Privacy Policy</Text>.
+            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Terms of Service</Text> and{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Privacy Policy</Text>.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
