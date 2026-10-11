@@ -8,17 +8,25 @@ import { useMockPantry } from '@/context/MockPantryContext';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import { Colors } from '@/constants/Theme';
 import { MOCK_CURRENCY } from '@/lib/mock';
+import { useRealPantry } from '@/context/RealPantryContext';
+import { manualPantryInput } from '@/lib/pantryApi';
+import useAuthRequest from '@/features/auth/useAuthRequest';
 
 /** Supporting form styled from the supplied design system; no separate add image exists. */
 export default function PantryAddScreen() {
   const { addItem } = useMockPantry();
+  const real = useRealPantry();
   const [draft, setDraft] = useState<PantryDraft>({ name: '', quantity: '1', unit: '',
     expiresOn: '', category: 'Produce', price: '' });
   const [error, setError] = useState<string | null>(null);
   const submitted = useRef(false);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const request = useAuthRequest(setError);
+  const retryKey = useRef(`entry-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`);
   const change = <K extends keyof PantryDraft>(field: K, value: PantryDraft[K]) => {
+    if (request.loading) return;
     setDraft((previous) => ({ ...previous, [field]: value })); setError(null);
+    retryKey.current = `entry-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
   };
   const cancel = () => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/pantry');
   return <PrototypeScreen back={savedId ? () => router.dismissTo({ pathname: '/(tabs)/pantry', params: { added: savedId } }) : cancel}>
@@ -43,18 +51,26 @@ export default function PantryAddScreen() {
       <FormInput label="Expiry date (YYYY-MM-DD)" accessibilityLabel="Expiry date" placeholder="YYYY-MM-DD"
         autoCapitalize="none" maxLength={10} value={draft.expiresOn} onChangeText={(value) => change('expiresOn', value)} />
       <Text style={ui.text}>Enter the date you want to track. Past dates are allowed for items needing reconciliation.</Text>
-      <FormInput label={`Purchase value (${MOCK_CURRENCY.symbol}, optional)`} accessibilityLabel="Purchase value" keyboardType="decimal-pad"
+      <FormInput label={`Purchase value (${real.enabled ? '₹' : MOCK_CURRENCY.symbol}, optional)`} accessibilityLabel="Purchase value" keyboardType="decimal-pad"
         value={draft.price} onChangeText={(value) => change('price', value)} placeholder="Unknown" />
-      <Text style={ui.text}>Value of this whole entry, not per unit. Unknown values count as $0 in this prototype.</Text>
+      <Text style={ui.text}>{real.enabled ? 'Value of this whole entry in rupees, not per unit. Leave blank for unknown; zero means free.' : 'Value of this whole entry, not per unit. Unknown values count as $0 in this prototype.'}</Text>
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
-      <PrimaryButton label="Add to Pantry" onPress={() => {
+      <PrimaryButton label="Add to Pantry" loading={request.loading} onPress={() => {
         if (submitted.current) return;
+        if (real.enabled) {
+          setError(null);
+          void request.run(async isMounted => {
+            const item = await real.add(manualPantryInput(draft), retryKey.current);
+            if (isMounted()) { submitted.current = true; setSavedId(item.id); }
+          });
+          return;
+        }
         const result = addItem(draft);
         if (result.error) { setError(result.error); return; }
         submitted.current = true; setSavedId(result.id);
       }} />
       <PrimaryButton label="Cancel" variant="ghost" onPress={cancel} />
-      <Text style={ui.text}>Saved for this demo session. Reloading resets the pantry.</Text>
+      <Text style={ui.text}>{real.enabled ? 'Saved to your household. Expiry days use Asia/Kolkata. If a save times out, retry the unchanged form.' : 'Saved for this demo session. Reloading resets the pantry.'}</Text>
     </View>}
   </PrototypeScreen>;
 }

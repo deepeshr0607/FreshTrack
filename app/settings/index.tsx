@@ -26,12 +26,12 @@ export default function Settings() {
   return <PrototypeScreen back={() => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/insights')}>
     <Text style={ui.title}>Kitchen Preferences</Text>
     <View style={ui.card}>
-      <Text style={ui.heading}>Demo currency: {MOCK_CURRENCY.code} ({MOCK_CURRENCY.symbol})</Text>
-      <Text style={ui.text}>Values use US dollars to match the supplied designs. Purchase values cover the whole entry. Currency is fixed for this prototype.</Text>
+      <Text style={ui.heading}>{state.user ? 'Household currency: INR (₹)' : `Demo currency: ${MOCK_CURRENCY.code} (${MOCK_CURRENCY.symbol})`}</Text>
+      <Text style={ui.text}>{state.user ? 'Your connected Pantry uses rupees and Asia/Kolkata. Home, Scanner, Recipes, Insights and these preferences remain USD prototypes for now.' : 'Values use US dollars to match the supplied designs. Purchase values cover the whole entry. Currency is fixed for this prototype.'}</Text>
     </View>
     <View style={ui.card}>
       <Text style={ui.heading}>{state.user?.name || preferences.profile.name}</Text><Text style={ui.text}>{state.user?.email || preferences.profile.email}</Text>
-      <Text style={ui.text}>{state.user ? 'Signed in with Neon. Kitchen data and preferences are still a prototype.' : 'Demo session. No authenticated account.'}</Text>
+      <Text style={ui.text}>{state.user ? 'Signed in with Neon. Pantry list and manual add are connected; other kitchen features remain prototypes.' : 'Demo session. No authenticated account.'}</Text>
       <PrimaryButton label={state.user ? "Account Details" : "Edit Profile"} variant="ghost" onPress={() => router.push('/settings/profile')} />
       <PrimaryButton label="Privacy & Demo Information" variant="ghost" onPress={() => router.push('/settings/privacy')} />
     </View>

@@ -19,6 +19,7 @@ import { MockPantryProvider } from '@/context/MockPantryContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MockRecipeProvider } from '@/context/MockRecipeContext';
 import { MockPreferencesProvider } from '@/context/MockPreferencesContext';
+import { RealPantryProvider } from '@/context/RealPantryContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -77,7 +78,7 @@ function SessionNavigation() {
   return <View style={{ flex: 1 }}>
     <View style={{ flex: 1 }} pointerEvents={state.checking ? 'none' : 'auto'}
       accessibilityElementsHidden={state.checking} importantForAccessibility={state.checking ? 'no-hide-descendants' : 'auto'}>
-    <MockPreferencesProvider><MockPantryProvider key={scope}><MockRecipeProvider>
+    <MockPreferencesProvider><MockPantryProvider key={scope}><RealPantryProvider key={scope}><MockRecipeProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={!access}>
@@ -97,7 +98,7 @@ function SessionNavigation() {
         <Stack.Screen name="settings/privacy" />
         <Stack.Screen name="+not-found" />
       </Stack>
-    </MockRecipeProvider></MockPantryProvider></MockPreferencesProvider>
+    </MockRecipeProvider></RealPantryProvider></MockPantryProvider></MockPreferencesProvider>
     </View>
     {state.checking && <View style={StyleSheet.absoluteFill}><SessionLoading /></View>}
   </View>;

@@ -706,6 +706,21 @@ SQL checks, target verification/live connectivity, Prisma singleton and guarded 
 
 **Goal:** Make the core app useful before adding OCR/AI.
 
+### Current slice — household/list/manual add implemented (12 October 2026)
+
+User approved Phase 4. Signed-in native Pantry sets up/restores household then reads active items;
+manual add persists validated exact quantities/INR paise/Kolkata dates with a CREATED event in one
+serializable transaction. Retry-key/hash handling protects unchanged retries. Read-only scoped detail
+route is connected; explicit demo retains working prototype interactions. Other tabs remain mock.
+No schema/migration/dependency/design/navigation change; new development Preview is READY.
+
+Both TypeScript/build, root76/76, backend33/33, live Pantry3/3 with cleanup, health1/1, Doctor21/21
+and all-platform exports pass. Public health200/tokenless Pantry401 pass; existing lint gaps remain.
+iPhone add/details/restart/sorting acceptance is pending. See [first-slice report](Phase_4_Pantry_First_Slice.md).
+Filters/alternate sort apply to loaded pages; real lifecycle/edit/presets/duplicates/offline persistence
+remain incomplete. Next: finish iPhone acceptance then persisted editing and confirmed Used/Wasted.
+Phase 5 has not started.
+
 ### Endpoints (suggested contract)
 
 - `GET /api/v1/pantry?status=ACTIVE&sort=expiresOn&page=...`

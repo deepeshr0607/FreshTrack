@@ -194,7 +194,22 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 3 — DEVELOPMENT ACCEPTANCE COMPLETE
+### Current phase: Phase 4 — FIRST PANTRY SLICE IMPLEMENTED; IPHONE ACCEPTANCE PENDING
+
+- User approved Phase 4 on 12 October. Signed-in native Pantry now sets up/restores its household,
+  lists active persisted items and manually adds groceries with INR/Asia/Kolkata/read-only details.
+  Demo remains mock; other tabs/preferences remain prototypes, not real Pantry data.
+- Backend pantry list/create/detail derives household from verified membership; validated exact
+  quantity/paise/calendar input, scoped queries, transactionally paired CREATED event, retry key/hash
+  replay/conflict handling and bounded transaction retries. No schema/migration/dependency change.
+- New Preview dpl_5Kq7Vy9mmjXV72xCwXHSZnYW7J4U READY; ignored mobile API URL updated, Auth preserved.
+  Public health200/tokenless pantry401 pass. Root76/76, backend33/33, live Pantry3/3 with cleanup,
+  health1/1, both TypeScript/build, Doctor21/21 and all-platform exports pass. Existing lint gaps remain.
+- iPhone add/details/restart/sort checks pending; see docs/Phase_4_Pantry_First_Slice.md. Real editing,
+  Used/Wasted/batch, presets, server-wide filters, duplicates/offline persistence and final review remain.
+  Next: finish native acceptance, then persisted edit/confirmed lifecycle transactions. No Phase 5.
+
+### Phase 3 — DEVELOPMENT ACCEPTANCE COMPLETE
 
 - User authorized item 6 final review. All five development acceptance criteria are supported by
   recorded evidence; see docs/Phase_3_Final_Review.md for commands and limits (12 October 2026).
@@ -202,7 +217,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   live database14/14, live household5/5 with cleanup, seed replay1/1, migration status/readiness,
   Prisma validation and Expo Doctor21/21 pass. Public health200/auth401/CORS403 pass.
   Existing lint setup gap remains. No code/schema/dependency/deploy change in final review.
-- Next, only after approval: Phase 4 household setup and persisted Pantry list/manual-add slice.
+- Phase 4 household setup and persisted Pantry list/manual-add slice is now authorized and implemented.
   Android/Phase 1 QA and production/release checks remain deferred. Kitchen remains mock.
 
 - User authorized Phase 3 items 1–5 and selected INR (integer paise), Asia/Kolkata.
@@ -254,7 +269,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   allowed localhost listener. Existing lint gaps remain. iPhone hosted DB no-household result passes
   by user report; this confirms the scoped Prisma query through Vercel, not populated-household CRUD.
   Web/iOS/Android exports pass; no backend deploy/schema/dependency change in this probe slice.
-- Item 6 final review is now complete; Phase 4 and production writes are not authorized.
+- Item 6 final review is complete; Phase 4 is now authorized. Production writes remain outside scope.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
 

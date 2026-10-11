@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,10 @@ import { useMockPantry } from '@/context/MockPantryContext';
 import { Colors, Elevation, FontSize, Radius, Spacing } from '@/constants/Theme';
 import { validatePantryEdit, type PantryEdit } from '@/lib/pantry';
 import type { PantryItem } from '@/lib/mock';
+import { useRealPantry } from '@/context/RealPantryContext';
+import type { PantryItemDto } from '@/types/api';
+import { rupeeValue } from '@/lib/pantryApi';
+import { NeonAuthError } from '@/lib/neonAuth';
 
 function backToPantry(added?: string) {
   router.dismissTo(added ? { pathname: '/(tabs)/pantry', params: { added } } : '/(tabs)/pantry');
@@ -18,6 +22,7 @@ function backToPantry(added?: string) {
 export default function PantryDetailScreen() {
   const { id, added } = useLocalSearchParams<{ id: string; added?: string }>();
   const { items } = useMockPantry();
+  const real = useRealPantry();
   const item = items.find((entry) => entry.id === id);
   return (
     <SafeAreaView style={styles.safe}>
@@ -26,7 +31,7 @@ export default function PantryDetailScreen() {
           <Pressable accessibilityRole="button" onPress={() => backToPantry(added)} style={styles.back}>
             <Text style={styles.link}>← Back to Pantry</Text>
           </Pressable>
-          {item ? <ItemEditor key={item.id} item={item} /> : (
+          {real.enabled ? <PersistedItem key={id} id={id} /> : item ? <ItemEditor key={item.id} item={item} /> : (
             <View style={styles.card}>
               <Text style={styles.title}>Item unavailable</Text>
               <Text style={styles.body}>This item is not in your demo inventory.</Text>
@@ -37,6 +42,30 @@ export default function PantryDetailScreen() {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
+}
+
+function PersistedItem({ id }: { id: string }) {
+  const { find } = useRealPantry();
+  const [item, setItem] = useState<PantryItemDto | null>(null);
+  const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let mounted = true; setError('');
+    void find(id).then(value => { if (mounted) setItem(value); }).catch(error => {
+      if (mounted) setError(error instanceof NeonAuthError ? error.message : 'Unable to load this item. Please retry.');
+    });
+    return () => { mounted = false; };
+  }, [id, find, attempt]);
+  return <View style={styles.card}>
+    {!item ? <Text style={styles.body}>{error || 'Loading item…'}</Text> : <>
+      <Text accessibilityRole="header" style={styles.title}>{item.name}</Text>
+      <Text style={styles.body}>{item.quantity} {item.unit} · {item.category}</Text>
+      <Text style={styles.body}>{rupeeValue(item.totalCostMinor)} · INR</Text>
+      <Text style={styles.body}>Expiry: {item.expiresOn} · Asia/Kolkata</Text>
+      <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} />
+      <Text style={styles.body}>Saved to your household. Editing and Used/Wasted are coming in the next Pantry slice.</Text>
+    </>}
+    {!!error && <PrimaryButton label="Retry Item" onPress={() => setAttempt(value => value + 1)} />}
+  </View>;
 }
 
 function ItemEditor({ item }: { item: PantryItem }) {
