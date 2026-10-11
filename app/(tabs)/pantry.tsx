@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMockPantry } from '@/context/MockPantryContext';
 import PantryConfirmation from '@/components/PantryConfirmation';
@@ -19,7 +20,8 @@ import ScreenHeader from '@/components/ScreenHeader';
 import PantryItemCard from '@/components/PantryItemCard';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
-import type { PantryItem } from '@/lib/mock';
+import type { ItemCategory, PantryItem } from '@/lib/mock';
+import { PANTRY_CATEGORIES } from '@/lib/pantry';
 
 type FilterChip = 'All' | 'Critical' | 'Caution' | 'Fresh';
 type SortMode = 'expiry' | 'name' | 'category';
@@ -34,17 +36,23 @@ const FILTER_CHIPS: { key: FilterChip; label: string; color: string }[] = [
 export default function PantryScreen() {
   const { items, dispatch } = useMockPantry();
   const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED' } | null>(null);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [batchConfirmation, setBatchConfirmation] = useState<{ items: PantryItem[]; action: 'CONSUMED' | 'WASTED' } | null>(null);
+  const [batchNotice, setBatchNotice] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterChip>('All');
+  const [category, setCategory] = useState<ItemCategory | 'All'>('All');
   const [sort, setSort] = useState<SortMode>('expiry');
   const { added } = useLocalSearchParams<{ added?: string }>();
   useEffect(() => {
-    if (added) { setSearch(''); setFilter('All'); }
+    if (added) { setSearch(''); setFilter('All'); setCategory('All'); }
   }, [added]);
 
   const filtered = items
     .filter((i) => i.status === 'ACTIVE')
-    .filter((i) => !search || i.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((i) => !search.trim() || i.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .filter((i) => category === 'All' || i.category === category)
     .filter((i) => {
       if (filter === 'All') return true;
       if (filter === 'Critical') return i.daysLeft <= 1;
@@ -59,8 +67,21 @@ export default function PantryScreen() {
       return 0;
     });
 
+  useEffect(() => { setSelectedIds([]); setBatchNotice(''); }, [search, filter, category]);
+  const selectedItems = filtered.filter((item) => selectedIds.includes(item.id));
+  const toggleSelection = (id: string) => {
+    setBatchNotice('');
+    setSelectedIds((current) => current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]);
+  };
+  const leaveBatch = () => { setBatchMode(false); setSelectedIds([]); setBatchNotice(''); };
+  const requestBatch = (action: 'CONSUMED' | 'WASTED') => {
+    if (selectedItems.length) setBatchConfirmation({ items: selectedItems, action });
+  };
+  const atRiskItems = filtered.filter((item) => item.daysLeft <= 1);
   const totalValue = filtered.reduce((sum, i) => sum + i.price, 0);
-  const criticalCount = items.filter((i) => i.daysLeft <= 1 && i.status === 'ACTIVE').length;
+  const filtersActive = !!search.trim() || filter !== 'All' || category !== 'All';
+  const resetFilters = () => { setSearch(''); setFilter('All'); setCategory('All'); };
+  const activeCount = items.filter((item) => item.status === 'ACTIVE').length;
   const hasActiveItems = items.some((item) => item.status === 'ACTIVE');
 
   const requestStatus = (id: string, action: 'CONSUMED' | 'WASTED') => {
@@ -76,7 +97,18 @@ export default function PantryScreen() {
           dispatch({ type: 'status', id: confirmation.item.id, status: confirmation.action });
           setConfirmation(null);
         }} />
-      <ScreenHeader title="FreshTrack" subtitle="Pantry" />
+      {batchConfirmation && <PantryConfirmation item={null} items={batchConfirmation.items} action={batchConfirmation.action}
+        onCancel={() => setBatchConfirmation(null)} onConfirm={() => {
+          if (!batchConfirmation) return;
+          const ids = batchConfirmation.items.map((item) => item.id);
+          if (ids.some((id) => !items.some((item) => item.id === id && item.status === 'ACTIVE'))) {
+            setBatchConfirmation(null); setBatchNotice('Selection changed. Review the active items and try again.'); return;
+          }
+          dispatch({ type: 'batch-status', ids, status: batchConfirmation.action });
+          setBatchNotice(`${ids.length} ${ids.length === 1 ? 'item' : 'items'} marked as ${batchConfirmation.action === 'CONSUMED' ? 'Used' : 'Wasted'}.`);
+          setSelectedIds([]); setBatchMode(false); setBatchConfirmation(null);
+        }} />}
+      <ScreenHeader title="FreshTrack" subtitle="Inventory" />
 
       <ScrollView
         style={styles.scroll}
@@ -84,36 +116,12 @@ export default function PantryScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Section title */}
-        <View style={styles.titleRow}>
-          <Text style={styles.screenTitle}>Kitchen Inventory</Text>
-          <Text style={styles.itemCount}>{filtered.length} items</Text>
-        </View>
-        <PrimaryButton label="Add Item Manually" variant="ghost" onPress={() => router.push('/pantry/add')} />
-
-        {/* Dual-Tier Freshness Engine banner */}
-        <View style={styles.freshnessEngineBanner}>
-          <View style={styles.bannerLeft}>
-            <Text style={styles.bannerTitle}>⚙️ Dual-Tier Freshness Engine™</Text>
-            <Text style={styles.bannerSub}>
-              AI tracking with{' '}
-              <Text style={{ color: Colors.smartAzure }}>✦ adaptive estimates</Text> +{' '}
-              <Text style={{ color: Colors.freshGreen }}>✓ package dates</Text>
-            </Text>
-          </View>
-          <View style={styles.bannerAlertPill}>
-            <Text style={styles.bannerAlertText}>
-              {criticalCount > 0 ? `⚠️ ${criticalCount} critical` : '✓ All tracked'}
-            </Text>
-          </View>
-        </View>
-
         {/* Search */}
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <MaterialCommunityIcons name="magnify" size={24} color={Colors.outline} accessible={false} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search pantry items..."
+            placeholder={`Search ${activeCount} pantry & fridge items...`}
             placeholderTextColor={Colors.onSurfaceVariant}
             value={search}
             onChangeText={setSearch}
@@ -121,6 +129,10 @@ export default function PantryScreen() {
             clearButtonMode="while-editing"
             accessibilityLabel="Search pantry items"
           />
+          <Pressable style={styles.scanButton} onPress={() => router.push('/(tabs)/scanner')}
+            accessibilityRole="button" accessibilityLabel="Scan receipt or barcode to add items">
+            <MaterialCommunityIcons name="barcode-scan" size={22} color={Colors.primary} accessible={false} />
+          </Pressable>
         </View>
 
         {/* Filter chips */}
@@ -136,7 +148,8 @@ export default function PantryScreen() {
               style={[styles.chip, filter === chip.key && { backgroundColor: chip.color }]}
               onPress={() => setFilter(chip.key)}
               accessibilityRole="radio"
-              accessibilityState={{ selected: filter === chip.key }}
+              accessibilityState={{ checked: filter === chip.key }}
+              aria-checked={filter === chip.key}
             >
               <Text
                 style={[
@@ -165,15 +178,57 @@ export default function PantryScreen() {
           </Pressable>
         </ScrollView>
 
+        {/* Category pills reuse the supplied inventory carousel styling. Counts refer to active inventory. */}
+        <View style={styles.categoryHeader}>
+          <Text style={styles.categoryLabel}>Categories</Text>
+          {filtersActive && <Pressable onPress={resetFilters} style={styles.clearFilters}
+            accessibilityRole="button" accessibilityLabel="Clear pantry filters">
+            <Text style={styles.clearFiltersText}>Clear Filters</Text>
+          </Pressable>}
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}
+          contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
+          <Pressable style={[styles.chip, category === 'All' && styles.categoryActive]}
+            onPress={() => setCategory('All')} accessibilityRole="radio"
+            accessibilityLabel={`All categories, ${activeCount} active items`}
+            accessibilityState={{ checked: category === 'All' }} aria-checked={category === 'All'}>
+            <Text style={[styles.chipText, category === 'All' && styles.chipTextActive]}>All Categories ({activeCount})</Text>
+          </Pressable>
+          {PANTRY_CATEGORIES.map((entry) => {
+            const count = items.filter((item) => item.status === 'ACTIVE' && item.category === entry.name).length;
+            return <Pressable key={entry.name} style={[styles.chip, category === entry.name && styles.categoryActive]}
+              onPress={() => setCategory(entry.name)} accessibilityRole="radio"
+              accessibilityLabel={`${entry.name}, ${count} active items`}
+              accessibilityState={{ checked: category === entry.name }} aria-checked={category === entry.name}>
+              <Text style={[styles.chipText, category === entry.name && styles.chipTextActive]}>{entry.name} ({count})</Text>
+            </Pressable>;
+          })}
+        </ScrollView>
+
+        {/* Dual-Tier Freshness Engine banner follows the reference search/filter hierarchy. */}
+        <View style={styles.freshnessEngineBanner}>
+          <View style={styles.bannerIcon}>
+            <MaterialCommunityIcons name="shield-check-outline" size={20} color={Colors.primary} accessible={false} />
+          </View>
+          <View style={styles.bannerLeft}>
+            <View style={styles.bannerHeading}>
+              <Text style={styles.bannerTitle}>Dual-Tier Freshness Engine</Text>
+              <Text style={styles.bannerStatus}>Active</Text>
+            </View>
+            <Text style={styles.bannerSub}><Text style={styles.confirmedLabel}>● Confirmed: </Text>Package date in demo fixture.</Text>
+            <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>Suggested shelf life for loose produce.</Text>
+            <Text style={styles.bannerNote}>Demo sources; no AI or package verification.</Text>
+          </View>
+        </View>
+
         {/* Value at stake */}
         <View style={styles.valueRow}>
           <Text style={styles.valueLabel}>📊 Value tracked:</Text>
           <Text style={styles.valueAmount}>${totalValue.toFixed(2)}</Text>
-          {criticalCount > 0 && (
+          {atRiskItems.length > 0 && (
             <Text style={styles.atRisk}>
               · <Text style={{ color: Colors.criticalRose }}>${
-                items
-                  .filter((i) => i.daysLeft <= 1 && i.status === 'ACTIVE')
+                atRiskItems
                   .reduce((s, i) => s + i.price, 0)
                   .toFixed(2)
               } at risk</Text>
@@ -181,19 +236,42 @@ export default function PantryScreen() {
           )}
         </View>
 
+        {/* Reference Batch Select pill; selecting is explicit and never resolves items directly. */}
+        <View style={styles.batchControls}>
+          <Pressable style={styles.chip} accessibilityRole="button" accessibilityLabel="Add Item Manually"
+            onPress={() => router.push('/pantry/add')}>
+            <Text style={styles.chipText}>＋ Add Item Manually</Text>
+          </Pressable>
+          <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
+            onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems}
+            accessibilityRole="button" accessibilityLabel={batchMode ? 'Cancel batch selection' : 'Batch Select'}
+            accessibilityState={{ expanded: batchMode }} aria-expanded={batchMode}>
+            <Text style={[styles.chipText, batchMode && styles.chipTextActive]}>{batchMode ? 'Cancel Selection' : '☑ Batch Select'} ({selectedItems.length})</Text>
+          </Pressable>
+          {batchMode && <Pressable style={styles.chip} disabled={!filtered.length}
+            onPress={() => setSelectedIds(selectedItems.length === filtered.length ? [] : filtered.map((item) => item.id))}
+            accessibilityRole="button" accessibilityLabel={selectedItems.length === filtered.length && filtered.length > 0 ? 'Deselect visible items' : 'Select visible items'}>
+            <Text style={styles.chipText}>{selectedItems.length === filtered.length && filtered.length > 0 ? 'Deselect Visible' : 'Select Visible'}</Text>
+          </Pressable>}
+        </View>
+        {batchMode && <View style={styles.batchPanel}>
+          <Text style={styles.swipeHint}>{selectedItems.length} selected · ${selectedItems.reduce((total, item) => total + item.price, 0).toFixed(2)}. Changing filters clears selection.</Text>
+          <PrimaryButton label="Mark Selected Used" disabled={!selectedItems.length} onPress={() => requestBatch('CONSUMED')} />
+          <PrimaryButton label="Mark Selected Wasted" variant="ghost" disabled={!selectedItems.length} onPress={() => requestBatch('WASTED')} />
+        </View>}
+        {!!batchNotice && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{batchNotice}</Text>}
         {/* Items list */}
-        {!!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
+        {!batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
         {filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🥦</Text>
             <Text style={styles.emptyTitle}>
-              {!hasActiveItems ? 'Your pantry is empty' : search ? `No items matching "${search}"` : 'No items in this category'}
+              {!hasActiveItems ? 'Your pantry is empty' : search.trim() ? `No items matching "${search.trim()}" with these filters` : category !== 'All' ? `No ${category.toLowerCase()} items match these filters` : 'No items match this freshness filter'}
             </Text>
             <Text style={styles.emptySub}>
-              {search
-                ? 'Try a different search term'
-                : 'Scan a receipt or add an item manually'}
+              {hasActiveItems ? 'Clear the filters or try a different search or category.' : 'Scan a receipt or add an item manually.'}
             </Text>
+            {filtersActive && <PrimaryButton label="Show All Items" variant="ghost" onPress={resetFilters} />}
             <PrimaryButton label={hasActiveItems ? 'Add Item Manually' : 'Add Your First Item'} onPress={() => router.push('/pantry/add')} />
           </View>
         ) : (
@@ -202,6 +280,8 @@ export default function PantryScreen() {
               key={item.id}
               item={item}
               onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
+              onSelect={batchMode ? () => toggleSelection(item.id) : undefined}
+              selected={batchMode && selectedIds.includes(item.id)}
               onConsume={(id) => requestStatus(id, 'CONSUMED')}
               onWaste={(id) => requestStatus(id, 'WASTED')}
             />
@@ -228,78 +308,65 @@ export default function PantryScreen() {
 }
 
 const styles = StyleSheet.create({
+  batchControls: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.sm },
+  batchPanel: { padding: Spacing.md, gap: Spacing.sm, marginBottom: Spacing.sm, backgroundColor: Colors.surfaceContainerLow, borderRadius: Radius.lg },
+  categoryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 },
+  categoryLabel: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: FontSize.labelMd, color: Colors.onSurfaceVariant },
+  clearFilters: { minHeight: 44, paddingHorizontal: Spacing.sm, justifyContent: 'center' },
+  clearFiltersText: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: FontSize.labelMd, color: Colors.primary },
+  categoryActive: { backgroundColor: Colors.primary },
   swipeHint: { fontFamily: 'PlusJakartaSans_400Regular', color: Colors.onSurfaceVariant,
     fontSize: FontSize.bodySm, marginBottom: Spacing.sm },
   safe: { flex: 1, backgroundColor: Colors.surface },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.screenGutter },
-
-  titleRow: {
-    flexWrap: 'wrap',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: Spacing.base,
-  },
-  screenTitle: {
-    fontSize: FontSize.headlineLg,
-    fontWeight: FontWeight.extrabold,
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    color: Colors.onSurface,
-    letterSpacing: -0.5,
-  },
-  itemCount: {
-    fontSize: FontSize.bodyMd,
-    color: Colors.onSurfaceVariant,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
+  content: { paddingHorizontal: Spacing.screenGutter, paddingTop: Spacing.base },
 
   freshnessEngineBanner: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surfaceContainerHigh,
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    backgroundColor: Colors.surfaceContainerLow,
     borderRadius: Radius.lg,
-    padding: Spacing.md,
+    padding: Spacing.base,
     marginBottom: Spacing.base,
-    borderWidth: 1,
-    borderColor: Colors.outlineVariant,
   },
-  bannerLeft: { flex: 1, marginRight: Spacing.sm },
+  bannerIcon: { width: 32, height: 32, borderRadius: Radius.full, backgroundColor: Colors.white,
+    alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs2 },
+  bannerLeft: { flex: 1, minWidth: 0 },
+  bannerHeading: { flexDirection: 'row', alignItems: 'flex-start', flexWrap: 'wrap', gap: Spacing.sm },
+  bannerStatus: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: FontSize.labelSm, color: Colors.primary, lineHeight: 24 },
+  confirmedLabel: { fontFamily: 'PlusJakartaSans_600SemiBold', color: Colors.primary },
+  estimatedLabel: { fontFamily: 'PlusJakartaSans_600SemiBold', color: Colors.secondary },
+  bannerNote: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: FontSize.labelSm, lineHeight: 16,
+    color: Colors.onSurfaceVariant, marginTop: Spacing.xs },
   bannerTitle: {
-    fontSize: FontSize.bodyMd,
-    fontWeight: FontWeight.bold,
+    flex: 1,
+    minWidth: 120,
+    fontSize: FontSize.headlineSm,
+    lineHeight: 24,
+    fontWeight: FontWeight.semibold,
     color: Colors.onSurface,
-    fontFamily: 'PlusJakartaSans_700Bold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
   },
-  bannerSub: { fontSize: FontSize.bodySm, color: Colors.onSurfaceVariant, marginTop: 2 },
-  bannerAlertPill: {
-    backgroundColor: Colors.cautionAmberBg,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-  },
-  bannerAlertText: {
-    fontSize: FontSize.labelSm,
-    fontWeight: FontWeight.bold,
-    color: Colors.cautionAmber,
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
+  bannerSub: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: FontSize.bodySm,
+    lineHeight: 18, color: Colors.onSurfaceVariant, marginTop: Spacing.xs2 },
 
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceContainerLow,
+    backgroundColor: Colors.surfaceContainerLowest,
     borderRadius: Radius.full,
-    paddingHorizontal: Spacing.base,
+    paddingLeft: Spacing.base,
+    paddingRight: Spacing.sm,
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.outlineVariant,
+    marginBottom: Spacing.base,
+    minHeight: 52,
   },
-  searchIcon: { fontSize: 16 },
+  scanButton: { width: 44, height: 44, borderRadius: Radius.full, backgroundColor: Colors.inversePrimary,
+    alignItems: 'center', justifyContent: 'center' },
   searchInput: {
     flex: 1,
+    minWidth: 0,
     height: 44,
     fontSize: FontSize.bodyMd,
     color: Colors.onSurface,
@@ -317,6 +384,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.outlineVariant,
   },
@@ -335,6 +404,7 @@ const styles = StyleSheet.create({
   },
 
   valueRow: {
+    flexWrap: 'wrap',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

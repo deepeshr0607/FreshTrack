@@ -7,26 +7,30 @@ import PrimaryButton from './PrimaryButton';
 
 interface Props {
   item: PantryItem | null;
+  items?: PantryItem[];
   action: 'CONSUMED' | 'WASTED';
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export default function PantryConfirmation({ item, action, onCancel, onConfirm }: Props) {
+export default function PantryConfirmation({ item, items, action, onCancel, onConfirm }: Props) {
+  const batch = items !== undefined;
+  const entries = items ?? (item ? [item] : []);
   const wasted = action === 'WASTED';
   return (
-    <Modal visible={!!item} transparent animationType="slide" onRequestClose={onCancel}>
+    <Modal visible={entries.length > 0} transparent animationType="slide" onRequestClose={onCancel}>
       <View style={styles.overlay}>
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <ScrollView contentContainerStyle={styles.content}>
             <Text accessibilityRole="header" style={styles.title}>
-              {wasted ? 'Mark as Wasted?' : 'Mark as Used?'}
+              {batch ? `Mark ${entries.length} ${entries.length === 1 ? 'Item' : 'Items'} as ${wasted ? 'Wasted' : 'Used'}?` : wasted ? 'Mark as Wasted?' : 'Mark as Used?'}
             </Text>
+            {entries.map((entry) => <Text key={entry.id} style={styles.body}>
+              {entry.name} · {entry.quantity} {entry.unit}{batch ? ` · $${entry.price.toFixed(2)}` : ''}
+            </Text>)}
+            {batch && <Text style={styles.body}>Total value: ${entries.reduce((total, entry) => total + entry.price, 0).toFixed(2)}. This applies to each whole entry.</Text>}
             <Text style={styles.body}>
-              {item?.name} · {item?.quantity} {item?.unit}
-            </Text>
-            <Text style={styles.body}>
-              {wasted ? 'Remove this item from your active inventory as food waste.' :
+              {batch ? `Remove these selected entries from active inventory as ${wasted ? 'food waste' : 'consumed'}.` : wasted ? 'Remove this item from your active inventory as food waste.' :
                 'Remove this item from your active inventory as consumed.'}
             </Text>
             <PrimaryButton label={wasted ? 'Confirm Waste' : 'Confirm Used'} onPress={onConfirm} />

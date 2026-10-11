@@ -9,6 +9,9 @@
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+/** Fixed Phase 1 display currency from the supplied designs; no conversion or preference. */
+export const MOCK_CURRENCY = { code: 'USD', symbol: '$' } as const;
+
 export type PantryItemStatus = 'ACTIVE' | 'CONSUMED' | 'WASTED' | 'ASSUMED_CONSUMED';
 export type ExpirySource = 'PACKAGE_DATE' | 'PRESET_ESTIMATE' | 'USER_ENTERED';
 export type ItemCategory = 'Produce' | 'Dairy' | 'Bakery' | 'Snacks' | 'Meat' | 'Frozen' | 'Other';
@@ -22,7 +25,7 @@ export interface PantryItem {
   expiresOn: string; // ISO date string YYYY-MM-DD
   daysLeft: number;
   expirySource: ExpirySource;
-  price: number; // in INR
+  price: number; // USD dollars for the whole entry, not per unit; unknown value is 0.
   status: PantryItemStatus;
   imageEmoji: string;
   note?: string;
@@ -50,8 +53,8 @@ export interface Recipe {
 
 export interface WasteEvent {
   month: string; // YYYY-MM
-  wastedCost: number;
-  savedCost: number;
+  wastedCost: number; // USD cents; divide by 100 before combining with pantry dollar values.
+  savedCost: number; // USD cents.
   wastedItems: number;
   savedItems: number;
 }
@@ -270,6 +273,7 @@ export const MOCK_WASTE_EVENTS: WasteEvent[] = [
   { month: '2025-06', wastedCost: 1240, savedCost: 6480, wastedItems: 3, savedItems: 24 },
 ];
 
+/** Financial chart fixture amounts are USD cents; weekly snapshots are independent of monthly totals. */
 export const MOCK_WEEKLY_WASTE = [
   { week: 'W1', amount: 1800 },
   { week: 'W2', amount: 900 },
@@ -277,12 +281,14 @@ export const MOCK_WEEKLY_WASTE = [
   { week: 'W4', amount: 200 },
 ];
 
+/** Financial category amounts are USD cents. */
 export const MOCK_CATEGORY_BREAKDOWN = [
   { category: 'Dairy Products', amount: 620, percent: 50, color: '#F59E0B' },
   { category: 'Fresh Produce', amount: 380, percent: 31, color: '#059669' },
   { category: 'Bakery & Grains', amount: 240, percent: 19, color: '#E11D48' },
 ];
 
+/** Hero saved values are USD dollars, matching whole-entry pantry values. */
 export const MOCK_HERO_RESCUES = [
   {
     id: 'h1',
@@ -309,6 +315,7 @@ export const MOCK_HERO_RESCUES = [
 
 // ── Analytics Summary ─────────────────────────────────────────────────────────
 
+/** Monetary summary fields are USD dollars; nested chart/category fixtures retain cents. */
 export const MOCK_ANALYTICS_SUMMARY = {
   month: 'June 2025',
   wastePrevScore: 88,
@@ -324,6 +331,7 @@ export const MOCK_ANALYTICS_SUMMARY = {
 
 export type InsightPeriod = 'This Month' | 'Weekly' | 'All Time';
 export interface InsightSummary {
+  /** saved is USD dollars; mass/carbon fields are illustrative kilograms. */
   saved: number; meals: number; rescuedKg: number; co2Kg: number; wasteKg: number;
   wasteFree: number; rescues: number; goal: number; growth: string;
 }
@@ -337,6 +345,7 @@ export const MOCK_EFFICIENCY: { label: string; rescued: number; wasted: number }
   { label: 'W1', rescued: 3.8, wasted: 0.7 }, { label: 'W2', rescued: 4.5, wasted: 0.5 },
   { label: 'W3', rescued: 5.1, wasted: 0.3 }, { label: 'W4', rescued: 5.8, wasted: 0.1 },
 ];
+/** Sustainability category values are USD dollars. */
 export const MOCK_SAVED_CATEGORIES: { name: string; kg: number; value: number; rate: number; icon: string }[] = [
   { name: 'Produce & Greens', kg: 8.4, value: 38.20, rate: 96, icon: 'leaf' },
   { name: 'Dairy & Plant Milk', kg: 5.1, value: 24.80, rate: 91, icon: 'cup-outline' },

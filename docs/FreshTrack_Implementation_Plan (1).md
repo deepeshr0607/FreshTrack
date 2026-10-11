@@ -195,9 +195,69 @@ pass; Expo Doctor 21/21 pass; Expo install check exit 0 (offline dependency-map 
 exports pass; diff whitespace check passes. Existing backend lint fails because ESLint is absent;
 mobile has no lint configuration. See README for exact commands and verification limits.
 
-Remaining after the 11 October slices: Pantry batch/category/currency; Scanner native/visual QA; native auth autofill/keyboard/timer lifecycle QA;
-account-deletion/currency UI scope; final native and design QA. Some supplied decorative counts,
+Remaining after the 11 October slices: Scanner native/visual QA; native auth autofill/keyboard/timer lifecycle QA;
+account-deletion UI scope; final native and design QA. Some supplied decorative counts,
 audit snapshots and source weekly totals disagree; their treatment is documented in the inventory.
+
+### Pantry top-section visual slice — 11 October 2026
+
+Reference PNG/HTML comparison identified unsupported large title/add block and banner-first hierarchy.
+Pantry route now starts with white pill search/functional barcode entry, followed by existing filters
+and light freshness banner with shield, Active label and separate expiry-source explanations. Manual
+add is a compact accessible button beside Batch Select; existing empty entry remains. Demo wording
+does not imply real AI/package verification. All existing reducers, swipe cards and fixtures preserved.
+Browser inspected 320/375/430 px: wrapping/no clipping; search empty/reset, add/cancel, scan navigation
+and batch $4.29 review/cancellation/exit preserving eight items verified. TypeScript (mobile/backend),
+30 tests, health test and all-platform/32-route exports pass; existing lint gaps remain. README has
+commands/results. Full visual parity and native testing are still pending.
+Next: Pantry card expiry-source pills/row spacing while preserving swipe/batch actions.
+Phase 1 remains in progress; Phase 2 requires review and explicit approval.
+
+### Currency consistency slice — 11 October 2026
+
+Fixed typed USD ($) mock metadata supplies Pantry/receipt/barcode input labels and a read-only
+Settings explanation. Incorrect INR mock comment corrected; whole-entry dollar prices and financial
+chart/month/category cents explicitly documented. Preserved reference values and formatting; no
+exchange rates or configurable currency. Later production currency/schema decisions remain unchanged.
+Browser verified at 375 × 812: Settings layout, two-bag/$4.50 whole-entry detail, June financial
+$64.80/$12.40, weekly $18/$9/$4/$2 and category $6.20/$3.80/$2.40. Root/backend TypeScript,
+30 tests, backend health test (after sandbox-port retry), and web/iOS/Android exports pass.
+Pre-existing lint gaps remain; exact commands in README. Native QA remains pending.
+Next: phone-width Pantry comparison with the supplied design and its first documented visual mismatch.
+Phase 1 remains in progress; Phase 2 requires review and explicit approval.
+
+### Pantry Batch Select slice — 11 October 2026
+
+Reference Batch Select pill implemented with whole-entry checkboxes, select/deselect-visible,
+disabled empty actions, selected count/value and exit/cancel. Filter/search changes clear selection;
+sorting preserves it. Shared confirmation lists every entry/quantity/value and total before action.
+Cancel preserves selection/inventory. Confirm uses one atomic in-memory transition; missing/stale/
+duplicate/empty selections reject entirely, and replay cannot change resolved entries. No integrations.
+Batch cards use regular press targets outside the swipe wrapper; normal cards preserve their gestures.
+Browser verified at 375 × 812: keyboard/tap, disabled actions, cancel, filter/sort selection behavior,
+visible-only toggle, Used 2/$8.28 and Wasted 3/$16.27 outcomes, Home 8 → 3, Insights $92.78/session
+2 used/3 wasted, both single-item swipe confirmations/cancellation and exit-selection preservation.
+Root/backend TypeScript, 30 tests, backend health test, all-platform exports and diff check pass;
+existing lint gaps remain. Exact commands in README. Native gesture/accessibility/dynamic-text,
+large selection sheets and complete side-by-side visual review remain pending.
+Next: currency-label/fixture consistency audit against supplied dollar references.
+Phase 1 remains in progress; Phase 2 requires review and explicit approval.
+
+### Pantry category filter slice — 11 October 2026
+
+Typed existing categories now filter active inventory alongside search/freshness and sorting.
+Active category counts are inventory-wide; visible count/value/at-risk total follow combined filters.
+Search trims whitespace. Clear Filters/empty Show All resets the three filters while retaining sort;
+manual add returns with filters cleared, cancellation preserves them. No fixtures/dependencies added.
+The second category carousel reuses reference pills while preserving the existing freshness row;
+this is a documented extension to the supplied mixed carousel. Checked states/touch targets included.
+Browser at 375 × 812 verified Dairy/combined search/freshness values, no-match/reset, keyboard
+selection/name sort, Used outcome/count updates, zero-count category, successful add revealing an
+otherwise excluded item and add cancellation. Native accessibility/dynamic text/design QA pending.
+Root/backend TypeScript, 28 tests, backend health test, three-platform exports and diff check pass;
+existing lint gaps remain. Exact commands and verification limits in README.
+Next: reference Pantry Batch Select with explicit selection/cancellable Used/Wasted/shared updates.
+Phase 1 remains in progress; Phase 2 still requires review and explicit approval.
 
 ### Auth and Settings prototype slice — 11 October 2026
 

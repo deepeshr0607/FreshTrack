@@ -65,6 +65,7 @@ export function validatePantryEdit(edit: PantryEdit): string | null {
 }
 
 export type PantryAction =
+  | { type: 'batch-status'; ids: string[]; status: 'CONSUMED' | 'WASTED' }
   | { type: 'receipt'; items: PantryItem[] }
   | { type: 'barcode'; items: PantryItem[] }
   | { type: 'add'; id: string; draft: PantryDraft }
@@ -73,6 +74,13 @@ export type PantryAction =
 
 /** In-memory Phase 1 actions; resolved items cannot be edited or resolved twice. */
 export function pantryReducer(items: PantryItem[], action: PantryAction): PantryItem[] {
+  if (action.type === 'batch-status') {
+    const ids = new Set(action.ids);
+    // Reject stale, empty or repeated selections atomically; never resolve an unreviewed subset.
+    if (!ids.size || ids.size !== action.ids.length || action.ids.some((id) =>
+      !items.some((item) => item.id === id && item.status === 'ACTIVE'))) return items;
+    return items.map((item) => ids.has(item.id) ? { ...item, status: action.status } : item);
+  }
   if (action.type === 'receipt' || action.type === 'barcode') {
     // Atomic import and replay protection: never insert a partial or repeated haul.
     if (!action.items.length || new Set(action.items.map((item) => item.id)).size !== action.items.length ||

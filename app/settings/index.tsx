@@ -6,6 +6,7 @@ import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { useMockPreferences } from '@/context/MockPreferencesContext';
 import { Colors } from '@/constants/Theme';
+import { MOCK_CURRENCY } from '@/lib/mock';
 
 /** Supporting prototype preference screen; no separate Settings reference was supplied. */
 export default function Settings() {
@@ -16,6 +17,10 @@ export default function Settings() {
   const [confirmExit, setConfirmExit] = useState(false);
   return <PrototypeScreen back={() => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/insights')}>
     <Text style={ui.title}>Kitchen Preferences</Text>
+    <View style={ui.card}>
+      <Text style={ui.heading}>Demo currency: {MOCK_CURRENCY.code} ({MOCK_CURRENCY.symbol})</Text>
+      <Text style={ui.text}>Values use US dollars to match the supplied designs. Purchase values cover the whole entry. Currency is fixed for this prototype.</Text>
+    </View>
     <View style={ui.card}>
       <Text style={ui.heading}>{preferences.profile.name}</Text><Text style={ui.text}>{preferences.profile.email}</Text>
       <PrimaryButton label="Edit Profile" variant="ghost" onPress={() => router.push('/settings/profile')} />
