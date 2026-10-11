@@ -199,6 +199,19 @@ Remaining after the 11 October slices: Scanner native/visual QA; native auth aut
 account-deletion UI scope; final native and design QA. Some supplied decorative counts,
 audit snapshots and source weekly totals disagree; their treatment is documented in the inventory.
 
+### End-to-end verification slice — 11 October 2026
+
+User requested remaining-work item 4 only, deferring visual/general native/auth QA items 1–3.
+Added connected regression for Scanner import/duplicates, shopping, cooking, reconciliation and
+analytics/report with replay/immutable-fixture assertions. 31/31 tests and both TypeScript checks pass.
+No application/dependency changes. Browser flows directly verified; download-event confirmation timed
+out and is not claimed passed in this run. iPhone Expo Go launch and recipe/shopping/preferences/share
+sheet confirmed by the user; Scanner/duplicate/reconciliation checks subsequently reported passing.
+Android/emulator unavailable. iPhone item 4 complete by user report, not direct agent observation.
+See [test sequence and platform evidence](Phase_1_End_to_End_Checks.md) and README for commands.
+Next: Android item-4 checks when a device/emulator is available. Items 1–3 remain deferred.
+Phase 1 remains in progress; Phase 2 requires review and explicit approval.
+
 ### Pantry top-section visual slice — 11 October 2026
 
 Reference PNG/HTML comparison identified unsupported large title/add block and banner-first hierarchy.

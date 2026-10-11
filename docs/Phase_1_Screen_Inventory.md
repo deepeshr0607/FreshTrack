@@ -159,3 +159,10 @@ empty-state entry retained. Demo wording avoids claiming AI/package verification
 30 tests, health and three-platform exports pass; lint gaps remain. Remaining differences include
 two filter rows/sort-chip placement, emoji thumbnails/card badges and gradients; full native/dynamic-text
 review pending. Next: Pantry card expiry-source pills and row spacing.
+
+End-to-end checkpoint (11 October): user selected remaining item 4; visual/general native/auth QA
+deferred. Connected domain regression passes (31 total tests) and browser recipe/shopping/cooking/
+preferences/receipt/barcode/reconciliation/report-preview checks pass. User reports iPhone Expo Go
+launch, recipe/shopping/preferences/share-sheet cancellation and Scanner/duplicate/reconciliation
+checks passing. Android unavailable. [Platform evidence and repeatable sequence](Phase_1_End_to_End_Checks.md)
+separates browser observations, user-reported iOS and unverified Android. Phase 1 remains in progress.
