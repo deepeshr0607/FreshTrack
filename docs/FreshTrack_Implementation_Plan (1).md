@@ -716,9 +716,10 @@ No schema/migration/dependency/design/navigation change; new development Preview
 
 Both TypeScript/build, root76/76, backend33/33, live Pantry3/3 with cleanup, health1/1, Doctor21/21
 and all-platform exports pass. Public health200/tokenless Pantry401 pass; existing lint gaps remain.
-iPhone add/details/restart/sorting acceptance is pending. See [first-slice report](Phase_4_Pantry_First_Slice.md).
+iPhone add/details/restart/refresh/sorting and unknown-price checks pass by user report.
+See [first-slice report](Phase_4_Pantry_First_Slice.md). Android/native failure paths remain unverified.
 Filters/alternate sort apply to loaded pages; real lifecycle/edit/presets/duplicates/offline persistence
-remain incomplete. Next: finish iPhone acceptance then persisted editing and confirmed Used/Wasted.
+remain incomplete. Next: persisted editing and confirmed Used/Wasted.
 Phase 5 has not started.
 
 ### Endpoints (suggested contract)

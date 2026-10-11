@@ -194,7 +194,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — FIRST PANTRY SLICE IMPLEMENTED; IPHONE ACCEPTANCE PENDING
+### Current phase: Phase 4 — FIRST PANTRY SLICE VERIFIED ON IPHONE
 
 - User approved Phase 4 on 12 October. Signed-in native Pantry now sets up/restores its household,
   lists active persisted items and manually adds groceries with INR/Asia/Kolkata/read-only details.
@@ -205,9 +205,11 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - New Preview dpl_5Kq7Vy9mmjXV72xCwXHSZnYW7J4U READY; ignored mobile API URL updated, Auth preserved.
   Public health200/tokenless pantry401 pass. Root76/76, backend33/33, live Pantry3/3 with cleanup,
   health1/1, both TypeScript/build, Doctor21/21 and all-platform exports pass. Existing lint gaps remain.
-- iPhone add/details/restart/sort checks pending; see docs/Phase_4_Pantry_First_Slice.md. Real editing,
+- User reports iPhone add/details/restart/refresh/expiry sorting and unknown-price checks pass;
+  see docs/Phase_4_Pantry_First_Slice.md. Real editing,
   Used/Wasted/batch, presets, server-wide filters, duplicates/offline persistence and final review remain.
-  Next: finish native acceptance, then persisted edit/confirmed lifecycle transactions. No Phase 5.
+  Next: persisted edit/confirmed lifecycle transactions. Android/native failure-path checks remain
+  unverified. No Phase 5.
 
 ### Phase 3 — DEVELOPMENT ACCEPTANCE COMPLETE
 
