@@ -194,7 +194,16 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 3 — ITEMS 1–5 VERIFIED; FINAL REVIEW PENDING
+### Current phase: Phase 3 — DEVELOPMENT ACCEPTANCE COMPLETE
+
+- User authorized item 6 final review. All five development acceptance criteria are supported by
+  recorded evidence; see docs/Phase_3_Final_Review.md for commands and limits (12 October 2026).
+- Final checks: both TypeScript checks/build, root73/73, backend29/29, health1/1, guards4/4,
+  live database14/14, live household5/5 with cleanup, seed replay1/1, migration status/readiness,
+  Prisma validation and Expo Doctor21/21 pass. Public health200/auth401/CORS403 pass.
+  Existing lint setup gap remains. No code/schema/dependency/deploy change in final review.
+- Next, only after approval: Phase 4 household setup and persisted Pantry list/manual-add slice.
+  Android/Phase 1 QA and production/release checks remain deferred. Kitchen remains mock.
 
 - User authorized Phase 3 items 1–5 and selected INR (integer paise), Asia/Kolkata.
 - Initial transactional application migration applied only to Console-verified development branch
@@ -245,8 +254,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   allowed localhost listener. Existing lint gaps remain. iPhone hosted DB no-household result passes
   by user report; this confirms the scoped Prisma query through Vercel, not populated-household CRUD.
   Web/iOS/Android exports pass; no backend deploy/schema/dependency change in this probe slice.
-- Next: Phase 3 item6 final
-  review. Phase 4 and production writes are not authorized.
+- Item 6 final review is now complete; Phase 4 and production writes are not authorized.
 
 ### Phase 2 — DEVELOPMENT ACCEPTANCE COMPLETE
 

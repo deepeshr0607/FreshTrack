@@ -187,7 +187,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | **0** | Scaffold, configure, health endpoint | ✅ **Complete** |
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
-| 3 | Prisma schema, migrations, API foundation | 🟡 Items 1–5 verified; final review pending |
+| 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ⬜ Not started |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
@@ -199,7 +199,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Phase 3 items 1–4 are complete: data model, development database, household access and API contracts/helpers.**
+**Phase 3 development acceptance is complete: data model, migrations, household access, API foundation and hosted Preview.**
 Phase 2 development acceptance is complete. The user selected INR (integer paise) and Asia/Kolkata.
 The initial migration is applied to verified Neon development. Explicit authenticated setup now
 atomically creates one household/membership/preferences; reads are scoped to verified membership.
@@ -208,13 +208,30 @@ bounded pagination and exact money/quantity/date/expiry/status helpers are ready
 Preview is deployed to Vercel and publicly reachable after the user-approved hosting change.
 Neon authentication still protects account/household routes. Hosted signed identity passes the
 user's iPhone check. The authenticated hosted database read also passes with the expected
-no-household result. Final Phase 3 review remains.
+no-household result. Final review is complete; Phase 4 has not started.
 Remaining Phase 1 QA, Android native tests and live production/signing checks are deferred by the user.
 Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final review is saved under
 `feat: validate native authentication and protected route flow`; see Git log for the checkpoint hash.
 
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
+
+### Phase 3 final review (12 October 2026)
+
+Development acceptance criteria pass. Both TypeScript checks/build, root tests 73/73, backend tests
+29/29, health 1/1, guards 4/4, live database 14/14, live household 5/5 with cleanup, seed replay 1/1,
+migration status/readiness, Prisma validation and Expo Doctor 21/21 pass. Public Preview health returns
+200; tokenless/invalid-token requests return 401 and untrusted browser origins return 403.
+User verified hosted identity and read-only database access on iPhone. Prior all-platform export passes.
+
+Only review/status documents changed in the final slice. Backend lint retains its existing exit 127
+(ESLint absent); mobile has no lint script. Hosted household writes/two-account tests, Android,
+production/signing checks and the earlier Phase 1 QA remain unverified/deferred. The kitchen remains
+mock; no Pantry persistence or later integration is implemented. See the
+[final acceptance report](docs/Phase_3_Final_Review.md) for exact commands, evidence and limits.
+
+Next, after user approval: Phase 4 household setup and real Pantry list/manual-add, with transactional
+CREATED events, persisted INR/Asia/Kolkata values and account-isolation checks.
 
 ### Phase 3 item 5 — Preview deployment (11 October 2026)
 
@@ -245,7 +262,7 @@ Hosted household creation/populated reads are not verified by this probe.
 Both TypeScript checks and root tests 73/73 pass; backend health 1/1 passes after the sandbox listener
 restriction was lifted. Backend lint remains unavailable (ESLint absent); mobile has no lint script.
 Expo all-platform export passes for web, iOS and Android; this is not native database verification.
-Next: Phase 3 item 6, final acceptance review and checkpoint. Phase 4 has not started.
+Item 6 final acceptance review is now complete; see the report above. Phase 4 has not started.
 
 ### Phase 3 item 4 — API contracts and helpers (11 October 2026)
 
