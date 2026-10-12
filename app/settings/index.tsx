@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Switch, Text, View } from 'react-native';
+import { Platform, Switch, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import PrototypeScreen, { ui } from '@/components/PrototypeScreen';
 import FormInput from '@/components/FormInput';
@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 import useAuthRequest from '@/features/auth/useAuthRequest';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
 import { checkBackendHousehold, checkBackendIdentity } from '@/lib/backendIdentity';
+import ReminderPreferencesCard from '@/components/ReminderPreferencesCard';
 
 /** Supporting prototype preference screen; no separate Settings reference was supplied. */
 export default function Settings() {
@@ -30,14 +31,15 @@ export default function Settings() {
     <Text style={ui.title}>Kitchen Preferences</Text>
     <View style={ui.card}>
       <Text style={ui.heading}>{state.user ? 'Household currency: INR (₹)' : `Demo currency: ${MOCK_CURRENCY.code} (${MOCK_CURRENCY.symbol})`}</Text>
-      <Text style={ui.text}>{state.user ? 'Your connected Pantry uses rupees and Asia/Kolkata. Home, Scanner, Recipes, Insights and these preferences remain USD prototypes for now.' : 'Values use US dollars to match the supplied designs. Purchase values cover the whole entry. Currency is fixed for this prototype.'}</Text>
+      <Text style={ui.text}>{state.user ? 'Your connected Pantry uses rupees and Asia/Kolkata. Home, Scanner, Recipes, Insights and the daily digest remain prototypes.' : 'Values use US dollars to match the supplied designs. Purchase values cover the whole entry. Currency is fixed for this prototype.'}</Text>
     </View>
     <View style={ui.card}>
       <Text style={ui.heading}>{state.user?.name || preferences.profile.name}</Text><Text style={ui.text}>{state.user?.email || preferences.profile.email}</Text>
-      <Text style={ui.text}>{state.user ? 'Signed in with Neon. Pantry list and manual add are connected; other kitchen features remain prototypes.' : 'Demo session. No authenticated account.'}</Text>
+      <Text style={ui.text}>{state.user ? 'Signed in with Neon. Your Pantry is connected to your development household; other kitchen tabs remain prototypes.' : 'Demo session. No authenticated account.'}</Text>
       <PrimaryButton label={state.user ? "Account Details" : "Edit Profile"} variant="ghost" onPress={() => router.push('/settings/profile')} />
       <PrimaryButton label="Privacy & Demo Information" variant="ghost" onPress={() => router.push('/settings/privacy')} />
     </View>
+    {state.user && Platform.OS !== 'web' && <ReminderPreferencesCard key={state.user.id} userId={state.user.id} />}
     <View style={ui.card}>
       <View style={ui.row}><Text style={[ui.heading, { flex: 1 }]}>Daily Kitchen Digest</Text><Switch value={digest} onValueChange={setDigest}
         accessibilityLabel="Daily kitchen digest" trackColor={{ true: Colors.primary }} /></View>
