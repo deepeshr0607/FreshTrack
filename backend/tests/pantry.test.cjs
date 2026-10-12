@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const { createApp } = require('../dist/app.js');
-const { pantryInput, pantryEditInput, pantryOutcomeInput, PantryFailure } = require('../dist/services/pantry.js');
+const { pantryInput, pantryEditInput, pantryOutcomeInput, pantryBatchInput, PantryFailure } = require('../dist/services/pantry.js');
 const { AuthFailure } = require('../dist/services/auth.js');
 const valid = { name: '  Milk  ', category: 'DAIRY', quantity: '0.500', unit: ' l ', expiresOn: '2026-10-20', totalCostMinor: 6050 };
 test('manual input keeps paise and exact quantities; rejects identity overrides and invalid domain fields', () => {
@@ -14,6 +14,35 @@ test('manual input keeps paise and exact quantities; rejects identity overrides 
   }
   assert.equal(pantryInput({ ...valid, totalCostMinor: null }).totalCostMinor, null);
   assert.equal(pantryInput({ ...valid, totalCostMinor: 0 }).totalCostMinor, 0);
+});
+test('batch validation requires confirmation, unique versioned items, bounded size and an allowed action', () => {
+  const item = { id: '11111111-1111-1111-1111-111111111111', expectedUpdatedAt: '2026-10-12T00:00:00.000Z' };
+  const valid = { confirmed: true, action: 'consume', items: [item] };
+  assert.equal(pantryBatchInput(valid).items.length, 1);
+  assert.deepEqual(pantryBatchInput({ confirmed: true, items: [item] }, false), { confirmed: true, items: [item] });
+  for (const changes of [{ confirmed: false }, { items: [] }, { items: [item, item] }, { items: Array(21).fill(item) },
+    { userId: 'victim' }, { action: 'delete' }, { items: [{ ...item, householdId: 'victim' }] }, { items: [{ ...item, expectedUpdatedAt: '' }] }]) {
+    assert.throws(() => pantryBatchInput({ ...valid, ...changes }));
+  }
+  assert.throws(() => pantryBatchInput(valid, false));
+});
+test('batch/undo HTTP boundaries authenticate and validate before service work', async () => {
+  let writes = 0;
+  const input = { confirmed: true, items: [{ id: '11111111-1111-1111-1111-111111111111', expectedUpdatedAt: '2026-10-12T00:00:00.000Z' }] };
+  const app = createApp({ verifyIdentity, pantryService: {
+    batch: async (user, body, action, key) => { writes++; assert.equal(user.id, identity.id); assert.equal(key, 'batch-retry-key-123'); return [{ id: body.items[0].id }]; },
+    undo: async (user, id, body) => { writes++; assert.equal(user.id, identity.id); assert.equal(body.confirmed, true); return { id }; },
+  } });
+  assert.equal((await request(app).post('/api/v1/pantry/batch-outcome').send({ ...input, action: 'waste' })).status, 401);
+  for (const [path, body] of [['/api/v1/pantry/batch-outcome', { ...input, action: 'waste' }], ['/api/v1/pantry/batch-undo', input],
+    [`/api/v1/pantry/${input.items[0].id}/undo-status`, { confirmed: true, expectedUpdatedAt: input.items[0].expectedUpdatedAt }]]) {
+    const response = await request(app).post(path).set('Authorization', 'Bearer a.b.c').set('Idempotency-Key', 'batch-retry-key-123').send(body);
+    assert.equal(response.status, 200);
+  }
+  assert.equal(writes, 3);
+  assert.equal((await request(app).post('/api/v1/pantry/batch-outcome').set('Authorization', 'Bearer a.b.c').set('Idempotency-Key', 'batch-retry-key-123')
+    .send({ ...input, items: [] })).status, 400);
+  assert.equal(writes, 3);
 });
 test('editing requires a valid version; outcome requires explicit confirmation and accepts no identity/status fields', () => {
   const expectedUpdatedAt = '2026-10-12T00:00:00.000Z';

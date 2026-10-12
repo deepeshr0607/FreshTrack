@@ -48,7 +48,10 @@ export default function PantryScreen() {
   const outcomeRequest = useAuthRequest(setOutcomeError);
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [batchConfirmation, setBatchConfirmation] = useState<{ items: PantryItem[]; action: 'CONSUMED' | 'WASTED' } | null>(null);
+  const [batchConfirmation, setBatchConfirmation] = useState<{ items: PantryItem[]; action: 'CONSUMED' | 'WASTED'; persisted?: PantryItemDto[]; key?: string } | null>(null);
+  const [batchError, setBatchError] = useState(''); const batchRequest = useAuthRequest(setBatchError);
+  const [undoConfirmation, setUndoConfirmation] = useState<{ items: PantryItemDto[]; key: string } | null>(null);
+  const [undoError, setUndoError] = useState(''); const undoRequest = useAuthRequest(setUndoError);
   const [batchNotice, setBatchNotice] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterChip>('All');
@@ -80,12 +83,19 @@ export default function PantryScreen() {
   useEffect(() => { setSelectedIds([]); setBatchNotice(''); }, [search, filter, category]);
   const selectedItems = filtered.filter((item) => selectedIds.includes(item.id));
   const toggleSelection = (id: string) => {
+    if (real.enabled && !selectedIds.includes(id) && selectedIds.length >= 20) { setBatchNotice('Select up to 20 items per batch.'); return; }
     setBatchNotice('');
     setSelectedIds((current) => current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]);
   };
   const leaveBatch = () => { setBatchMode(false); setSelectedIds([]); setBatchNotice(''); };
   const requestBatch = (action: 'CONSUMED' | 'WASTED') => {
-    if (selectedItems.length) setBatchConfirmation({ items: selectedItems, action });
+    if (!selectedItems.length) return;
+    setBatchError('');
+    if (real.enabled) {
+      if (selectedItems.length > 20) { setBatchNotice('Select up to 20 items per batch.'); return; }
+      const persisted = selectedItems.map(item => real.items.find(entry => entry.id === item.id)!);
+      setBatchConfirmation({ items: selectedItems, action, persisted, key: pantryRetryKey() });
+    } else setBatchConfirmation({ items: selectedItems, action });
   };
   const atRiskItems = filtered.filter((item) => item.daysLeft <= 1);
   const totalValue = filtered.reduce((sum, i) => sum + i.price, 0);
@@ -124,8 +134,22 @@ export default function PantryScreen() {
           setConfirmation(null);
         }} />
       {batchConfirmation && <PantryConfirmation item={null} items={batchConfirmation.items} action={batchConfirmation.action}
-        onCancel={() => setBatchConfirmation(null)} onConfirm={() => {
+        loading={batchRequest.loading} error={batchError} currencySymbol={real.enabled ? '₹' : '$'}
+        unknownIds={batchConfirmation.persisted?.filter(item => item.totalCostMinor === null).map(item => item.id)}
+        onCancel={() => { setBatchConfirmation(null); setBatchError(''); }} onConfirm={() => {
           if (!batchConfirmation) return;
+          if (real.enabled && batchConfirmation.persisted && batchConfirmation.key) {
+            const pending = batchConfirmation; setBatchError('');
+            void batchRequest.run(async isMounted => {
+              await real.batchOutcome({ confirmed: true, action: pending.action === 'CONSUMED' ? 'consume' : 'waste',
+                items: pending.persisted!.map(item => ({ id: item.id, expectedUpdatedAt: item.updatedAt })) }, pending.key!);
+              if (isMounted()) {
+                setSelectedIds([]); setBatchMode(false); setBatchConfirmation(null);
+                setBatchNotice(`${pending.items.length} items updated together and saved to your household.`);
+              }
+            });
+            return;
+          }
           const ids = batchConfirmation.items.map((item) => item.id);
           if (ids.some((id) => !items.some((item) => item.id === id && item.status === 'ACTIVE'))) {
             setBatchConfirmation(null); setBatchNotice('Selection changed. Review the active items and try again.'); return;
@@ -133,6 +157,15 @@ export default function PantryScreen() {
           dispatch({ type: 'batch-status', ids, status: batchConfirmation.action });
           setBatchNotice(`${ids.length} ${ids.length === 1 ? 'item' : 'items'} marked as ${batchConfirmation.action === 'CONSUMED' ? 'Used' : 'Wasted'}.`);
           setSelectedIds([]); setBatchMode(false); setBatchConfirmation(null);
+        }} />}
+      {undoConfirmation && <PantryConfirmation item={null} items={undoConfirmation.items.map(pantryCardItem)} action="CONSUMED" undo
+        currencySymbol="₹" unknownIds={undoConfirmation.items.filter(item => item.totalCostMinor === null).map(item => item.id)} loading={undoRequest.loading} error={undoError}
+        onCancel={() => { setUndoConfirmation(null); setUndoError(''); }} onConfirm={() => {
+          const pending = undoConfirmation; setUndoError('');
+          void undoRequest.run(async isMounted => {
+            await real.batchUndo({ confirmed: true, items: pending.items.map(item => ({ id: item.id, expectedUpdatedAt: item.updatedAt })) }, pending.key);
+            if (isMounted()) { setUndoConfirmation(null); setBatchNotice('Groceries restored to active Pantry.'); }
+          });
         }} />}
       <ScreenHeader title="FreshTrack" subtitle="Inventory" />
 
@@ -268,28 +301,36 @@ export default function PantryScreen() {
             onPress={() => router.push('/pantry/add')}>
             <Text style={styles.chipText}>＋ Add Item Manually</Text>
           </Pressable>
-          {!real.enabled && <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
+          <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
             onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems}
             accessibilityRole="button" accessibilityLabel={batchMode ? 'Cancel batch selection' : 'Batch Select'}
             accessibilityState={{ expanded: batchMode }} aria-expanded={batchMode}>
             <Text style={[styles.chipText, batchMode && styles.chipTextActive]}>{batchMode ? 'Cancel Selection' : '☑ Batch Select'} ({selectedItems.length})</Text>
-          </Pressable>}
+          </Pressable>
           {batchMode && <Pressable style={styles.chip} disabled={!filtered.length}
-            onPress={() => setSelectedIds(selectedItems.length === filtered.length ? [] : filtered.map((item) => item.id))}
+            onPress={() => {
+              if (real.enabled && filtered.length > 20 && selectedItems.length !== filtered.length) { setBatchNotice('More than 20 items are visible. Choose up to 20 individually.'); return; }
+              setSelectedIds(selectedItems.length === filtered.length ? [] : filtered.map(item => item.id));
+            }}
             accessibilityRole="button" accessibilityLabel={selectedItems.length === filtered.length && filtered.length > 0 ? 'Deselect visible items' : 'Select visible items'}>
             <Text style={styles.chipText}>{selectedItems.length === filtered.length && filtered.length > 0 ? 'Deselect Visible' : 'Select Visible'}</Text>
           </Pressable>}
         </View>
         {batchMode && <View style={styles.batchPanel}>
-          <Text style={styles.swipeHint}>{selectedItems.length} selected · ${selectedItems.reduce((total, item) => total + item.price, 0).toFixed(2)}. Changing filters clears selection.</Text>
+          <Text style={styles.swipeHint}>{selectedItems.length} selected · {real.enabled ? '₹' : '$'}{selectedItems.reduce((total, item) => total + item.price, 0).toFixed(2)} known value. Changing filters clears selection.{real.enabled ? ' Up to 20 per batch.' : ''}</Text>
           <PrimaryButton label="Mark Selected Used" disabled={!selectedItems.length} onPress={() => requestBatch('CONSUMED')} />
           <PrimaryButton label="Mark Selected Wasted" variant="ghost" disabled={!selectedItems.length} onPress={() => requestBatch('WASTED')} />
         </View>}
         {!!batchNotice && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{batchNotice}</Text>}
         {real.enabled && <>
+          {!!real.lastOutcome.length && <View style={styles.batchPanel}>
+            <Text style={styles.swipeHint}>{real.lastOutcome.length} groceries marked Used/Wasted in your last action.</Text>
+            <PrimaryButton label="Undo Last Outcome" variant="ghost" onPress={() => { setUndoError(''); setUndoConfirmation({ items: real.lastOutcome, key: pantryRetryKey() }); }} />
+            <PrimaryButton label="Dismiss Undo" variant="ghost" onPress={real.dismissUndo} />
+          </View>}
           <PrimaryButton label="Refresh Pantry" variant="ghost" loading={real.loading} onPress={() => void real.reload()} />
           {!!real.error && <Text style={[styles.swipeHint, { color: Colors.error }]} accessibilityRole="alert">{real.error} {items.length ? 'Showing previously loaded items.' : ''}</Text>}
-          <Text style={styles.swipeHint}>Pantry changes are saved to your household after confirmation. Batch actions and scanner imports are coming later; other tabs remain prototypes.</Text>
+          <Text style={styles.swipeHint}>Pantry changes and batch actions are saved after confirmation. Scanner imports and other tabs remain prototypes.</Text>
         </>}
         {/* Items list */}
         {!batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}

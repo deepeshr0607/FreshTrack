@@ -2,11 +2,19 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { InvalidApiInput, parsePagination, sendFailure, success } from '../lib/api';
 import { requireIdentity } from '../middleware/auth';
 import type { VerifiedIdentity, VerifyIdentity } from '../services/auth';
-import { createPantryService, pantryInput, pantryEditInput, pantryOutcomeInput, PantryFailure, type PantryService } from '../services/pantry';
+import { createPantryService, pantryInput, pantryEditInput, pantryOutcomeInput, pantryBatchInput, PantryFailure, type PantryService } from '../services/pantry';
 
 export function createPantryRouter(verify: VerifyIdentity, service: PantryService = createPantryService()) {
   const router = Router();
   router.use('/pantry', requireIdentity(verify));
+  for (const undo of [false, true]) router.post(undo ? '/pantry/batch-undo' : '/pantry/batch-outcome', async (req, res, next) => {
+    try {
+      const key = req.get('Idempotency-Key');
+      if (!key || !/^[A-Za-z0-9_-]{16,100}$/.test(key) || req.originalUrl.includes('?') || !req.is('application/json')) throw new InvalidApiInput('Invalid batch request.');
+      const input = pantryBatchInput(req.body, !undo);
+      res.json(success({ items: await service.batch(res.locals.identity as VerifiedIdentity, input, undo ? 'restore' : input.action!, key) }));
+    } catch (error) { next(error); }
+  });
   const mutationRequest = (req: Request) => {
     const id = req.params['itemId']; const key = req.get('Idempotency-Key');
     if (!id || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id) || !key ||
@@ -17,6 +25,12 @@ export function createPantryRouter(verify: VerifyIdentity, service: PantryServic
     try {
       const { id, key } = mutationRequest(req);
       res.json(success({ item: await service.edit(res.locals.identity as VerifiedIdentity, id, pantryEditInput(req.body), key) }));
+    } catch (error) { next(error); }
+  });
+  router.post('/pantry/:itemId/undo-status', async (req, res, next) => {
+    try {
+      const { id, key } = mutationRequest(req);
+      res.json(success({ item: await service.undo(res.locals.identity as VerifiedIdentity, id, pantryOutcomeInput(req.body), key) }));
     } catch (error) { next(error); }
   });
   for (const action of ['consume', 'waste'] as const) router.post(`/pantry/:itemId/${action}`, async (req, res, next) => {

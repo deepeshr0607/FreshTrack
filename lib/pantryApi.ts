@@ -1,4 +1,4 @@
-import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryItemDto, PantryItemResponse, PaginatedResponse } from '../types/api';
+import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryBatchResponse, PantryItemDto, PantryItemResponse, PaginatedResponse } from '../types/api';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { apiOrigin } from './backendIdentity.ts';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
@@ -9,6 +9,10 @@ import { PANTRY_CATEGORIES } from './pantry.ts';
 import type { PantryItem } from './mock';
 
 export function pantryRetryKey(): string { return `request-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`; }
+/** A replay returns current state; do not announce success if a subsequent action superseded it. */
+export function requirePantryStatus(items: PantryItemDto[], expected: PantryItemDto['status']): void {
+  if (!items.length || items.some(item => item.status !== expected)) throw new NeonAuthError('PANTRY_CHANGED', 'A newer action changed these groceries. Reload before trying again.');
+}
 /** Adapter only for existing card/confirmation visuals; wire quantities/costs remain exact. */
 export function pantryCardItem(item: PantryItemDto): PantryItem {
   const category = PANTRY_CATEGORIES.find(entry => entry.name.toUpperCase() === item.category)!;
@@ -60,5 +64,8 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
     edit: (id: string, input: PantryEditInput, key: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}`, 'PATCH', input, key),
     outcome: (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) =>
       request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}/${action}`, 'POST', input, key),
+    undo: (id: string, input: PantryOutcomeInput, key: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}/undo-status`, 'POST', input, key),
+    batchOutcome: (input: PantryBatchOutcomeInput, key: string) => request<PantryBatchResponse>('/api/v1/pantry/batch-outcome', 'POST', input, key),
+    batchUndo: (input: PantryBatchInput, key: string) => request<PantryBatchResponse>('/api/v1/pantry/batch-undo', 'POST', input, key),
   };
 }

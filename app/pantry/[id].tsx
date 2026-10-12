@@ -62,7 +62,7 @@ function PersistedItem({ id }: { id: string }) {
   return <>
     {!!notice && <Text style={styles.link} accessibilityLiveRegion="polite">{notice}</Text>}
     <PersistedEditor key={`${item.id}:${item.updatedAt}`} item={item} onSaved={saved => {
-      setItem(saved); setNotice(saved.status === 'ACTIVE' ? 'Changes saved to your household.' : 'Confirmed outcome saved to your household.');
+      setItem(saved); setNotice(saved.status === 'ACTIVE' ? item.status === 'ACTIVE' ? 'Changes saved to your household.' : 'Item restored to active Pantry.' : 'Confirmed outcome saved to your household.');
     }} onReload={() => { setItem(null); setNotice(''); setAttempt(value => value + 1); }} />
   </>;
 }
@@ -72,7 +72,7 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
   const initial: PantryDraft = { name: item.name, category: pantryCardItem(item).category, quantity: item.quantity,
     unit: item.unit, expiresOn: item.expiresOn, price: item.totalCostMinor === null ? '' : (item.totalCostMinor / 100).toFixed(2) };
   const [draft, setDraft] = useState(initial); const [error, setError] = useState('');
-  const [message, setMessage] = useState(''); const [confirmation, setConfirmation] = useState<'CONSUMED' | 'WASTED' | null>(null);
+  const [message, setMessage] = useState(''); const [confirmation, setConfirmation] = useState<'CONSUMED' | 'WASTED' | 'RESTORE' | null>(null);
   const [outcomeError, setOutcomeError] = useState('');
   const saveRequest = useAuthRequest(setError); const outcomeRequest = useAuthRequest(setOutcomeError);
   const editKey = useRef(pantryRetryKey()); const outcomeKey = useRef(pantryRetryKey());
@@ -120,15 +120,18 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
         <PrimaryButton label="Mark as Used" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('CONSUMED'); }} />
         <PrimaryButton label="Mark as Wasted" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('WASTED'); }} />
       </>}
+      {['CONSUMED', 'WASTED'].includes(item.status) && <PrimaryButton label="Undo Outcome" variant="ghost" disabled={busy}
+        onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('RESTORE'); }} />}
       <PrimaryButton label="Reload Item" variant="ghost" disabled={busy} onPress={onReload} />
       <Text style={styles.body}>Reload discards unsaved changes and fetches the latest item.</Text>
     </View>
-    <PantryConfirmation item={confirmation ? pantryCardItem(item) : null} action={confirmation ?? 'CONSUMED'} loading={outcomeRequest.loading} error={outcomeError}
+    <PantryConfirmation item={confirmation ? pantryCardItem(item) : null} action={confirmation === 'WASTED' ? 'WASTED' : 'CONSUMED'} undo={confirmation === 'RESTORE'} loading={outcomeRequest.loading} error={outcomeError}
       onCancel={() => { setConfirmation(null); setOutcomeError(''); }} onConfirm={() => {
         if (!confirmation) return; setOutcomeError('');
         void outcomeRequest.run(async isMounted => {
-          const saved = await real.outcome(item.id, confirmation === 'CONSUMED' ? 'consume' : 'waste',
-            { confirmed: true, expectedUpdatedAt: item.updatedAt }, outcomeKey.current);
+          const input = { confirmed: true as const, expectedUpdatedAt: item.updatedAt };
+          const saved = confirmation === 'RESTORE' ? await real.undo(item.id, input, outcomeKey.current)
+            : await real.outcome(item.id, confirmation === 'CONSUMED' ? 'consume' : 'waste', input, outcomeKey.current);
           if (isMounted()) { setConfirmation(null); onSaved(saved); }
         });
       }} />

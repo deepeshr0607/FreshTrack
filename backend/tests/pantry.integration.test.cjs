@@ -18,7 +18,76 @@ after(async () => {
     await db.household.deleteMany({ where: { id: { in: ids }, members: { some: { authSubject: { in: subjects } } } } });
     assert.equal(await db.household.count({ where: { id: { in: ids } } }), 0);
     assert.equal(await db.householdMember.count({ where: { authSubject: { in: subjects } } }), 0);
+  } catch (error) {
+    if (error.name === 'AssertionError') throw error;
+    throw Error('PANTRY_FIXTURE_CLEANUP_FAILED');
   } finally { await db.$disconnect(); }
+});
+test('batch outcome and undo are atomic, replay-safe and preserve original history', async () => {
+  try {
+    const user = await account(); const service = createPantryService(db);
+    const items = await Promise.all([service.create(user, input, randomUUID()), service.create(user, { ...input, totalCostMinor: null }, randomUUID())]);
+    const selected = { confirmed: true, items: items.map(item => ({ id: item.id, expectedUpdatedAt: item.updatedAt })) };
+    const key = randomUUID();
+    const changed = await service.batch(user, selected, 'waste', key);
+    assert.ok(changed.every(item => item.status === 'WASTED'));
+    assert.equal((await service.list(user, { page: 1, pageSize: 50 })).pagination.total, 0);
+    await service.batch(user, { ...selected, items: [...selected.items].reverse() }, 'waste', key);
+    await assert.rejects(service.batch(user, selected, 'consume', key), error => error.code === 'IDEMPOTENCY_CONFLICT');
+    const undoInput = { confirmed: true, items: changed.map(item => ({ id: item.id, expectedUpdatedAt: item.updatedAt })) };
+    const undoKey = randomUUID(); const restored = await service.batch(user, undoInput, 'restore', undoKey);
+    await service.batch(user, undoInput, 'restore', undoKey);
+    assert.ok(restored.every(item => item.status === 'ACTIVE'));
+    assert.equal((await service.list(user, { page: 1, pageSize: 50 })).pagination.total, 2);
+    for (const original of items) {
+      const events = await db.pantryItemEvent.findMany({ where: { pantryItemId: original.id }, orderBy: { occurredAt: 'asc' } });
+      assert.equal(events.length, 3); assert.equal(events[1].newStatus, 'WASTED'); assert.equal(events[2].previousStatus, 'WASTED'); assert.equal(events[2].newStatus, 'ACTIVE');
+      const row = await db.pantryItem.findUniqueOrThrow({ where: { id: original.id } }); assert.equal(row.wastedAt, null); assert.equal(row.consumedAt, null);
+    }
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_BATCH_CHECK_FAILED'); }
+});
+test('foreign, stale or already-resolved batch entry rejects the whole batch', async () => {
+  try {
+    const a = await account(), b = await account(); const service = createPantryService(db);
+    const first = await service.create(a, input, randomUUID()), second = await service.create(a, input, randomUUID()), foreign = await service.create(b, input, randomUUID());
+    const ref = item => ({ id: item.id, expectedUpdatedAt: item.updatedAt });
+    await assert.rejects(service.batch(a, { confirmed: true, items: [ref(first), ref(foreign)] }, 'consume', randomUUID()), error => error.code === 'ITEM_NOT_FOUND');
+    await service.edit(a, second.id, { ...input, name: 'Changed item', expectedUpdatedAt: second.updatedAt }, randomUUID());
+    await assert.rejects(service.batch(a, { confirmed: true, items: [ref(first), ref(second)] }, 'consume', randomUUID()), error => error.code === 'ITEM_CHANGED');
+    assert.equal((await service.find(a, first.id)).status, 'ACTIVE');
+    const latest = await service.find(a, second.id); await service.outcome(a, second.id, 'waste', { confirmed: true, expectedUpdatedAt: latest.updatedAt }, randomUUID());
+    await assert.rejects(service.batch(a, { confirmed: true, items: [ref(first), ref(latest)] }, 'consume', randomUUID()), error => error.code === 'ITEM_RESOLVED');
+    assert.equal(await db.pantryItemEvent.count({ where: { pantryItemId: first.id } }), 1);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_BATCH_ISOLATION_CHECK_FAILED'); }
+});
+test('failure on the second batch event rolls back every item and event', async () => {
+  try {
+    const user = await account(); const service = createPantryService(db);
+    const items = [await service.create(user, input, randomUUID()), await service.create(user, input, randomUUID())];
+    const failing = { $transaction: (run, options) => db.$transaction(async tx => {
+      let count = 0; return run({ ...tx, householdMember: tx.householdMember, pantryItem: tx.pantryItem,
+        pantryItemEvent: { findMany: tx.pantryItemEvent.findMany, create: args => ++count === 2 ? Promise.reject(Error('private-fixture-error')) : tx.pantryItemEvent.create(args) } });
+    }, options) };
+    await assert.rejects(createPantryService(failing).batch(user, { confirmed: true, items: items.map(item => ({ id: item.id, expectedUpdatedAt: item.updatedAt })) },
+      'consume', randomUUID()), error => error.code === 'PANTRY_UNAVAILABLE');
+    for (const item of items) { assert.equal((await service.find(user, item.id)).status, 'ACTIVE'); assert.equal(await db.pantryItemEvent.count({ where: { pantryItemId: item.id } }), 1); }
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_BATCH_ROLLBACK_CHECK_FAILED'); }
+});
+test('single undo is scoped, replay-safe, and cannot reverse a newer outcome', async () => {
+  try {
+    const user = await account(), other = await account(); const service = createPantryService(db); const original = await service.create(user, input, randomUUID());
+    const consumed = await service.outcome(user, original.id, 'consume', { confirmed: true, expectedUpdatedAt: original.updatedAt }, randomUUID());
+    const undoInput = { confirmed: true, expectedUpdatedAt: consumed.updatedAt }; const key = randomUUID();
+    await assert.rejects(service.undo(other, original.id, undoInput, randomUUID()), error => error.code === 'ITEM_NOT_FOUND');
+    const restored = await service.undo(user, original.id, undoInput, key); await service.undo(user, original.id, undoInput, key);
+    assert.equal(restored.status, 'ACTIVE');
+    const wasted = await service.outcome(user, original.id, 'waste', { confirmed: true, expectedUpdatedAt: restored.updatedAt }, randomUUID());
+    await assert.rejects(service.undo(user, original.id, undoInput, randomUUID()), error => error.code === 'ITEM_CHANGED');
+    // Replaying an older undo key returns current state rather than reversing the subsequent waste.
+    assert.equal((await service.undo(user, original.id, undoInput, key)).status, 'WASTED');
+    assert.equal((await service.find(user, original.id)).updatedAt, wasted.updatedAt);
+    assert.equal(await db.pantryItemEvent.count({ where: { pantryItemId: original.id } }), 4);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_UNDO_CHECK_FAILED'); }
 });
 test('edit persists new exact fields with immutable history; stale edits and foreign writes fail', async () => {
   try {
