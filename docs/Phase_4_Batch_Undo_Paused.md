@@ -1,7 +1,7 @@
 # Phase 4 batch/undo — paused handoff
 
 **Resumed on 12 October at the user's request.** Recovery cleanup and final live suite now pass;
-batch/undo is deployed to development with iPhone acceptance pending. See the
+batch/undo is deployed to development and requested iPhone checks pass by user report. See the
 [current report](Phase_4_Batch_Undo.md). The notes below preserve the earlier paused state.
 
 ## Historical state at pause

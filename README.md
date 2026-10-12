@@ -188,7 +188,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
-| 4 | Pantry CRUD end-to-end | 🟡 Batch/undo deployed; iPhone acceptance pending |
+| 4 | Pantry CRUD end-to-end | 🟡 Batch/undo verified on iPhone; remaining inventory work follows |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
@@ -199,9 +199,12 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Work resumed on 12 October. Batch/undo is deployed to development; iPhone acceptance is pending.**
+**Batch/undo is deployed to development and its requested iPhone checks pass by user report.**
+These include batch Used cancellation/confirmation, undo cancellation/restore/restart, batch Waste/restore
+and single-detail undo. Native failure paths, full-cap batches and Android remain unverified.
 Neon readiness and synthetic cleanup recovered. Final sequential live Pantry tests11/11 pass and
 zero reserved test memberships remain. See [batch/undo report](docs/Phase_4_Batch_Undo.md).
+Next: expiry presets and precedence, then server-wide filters, duplicate/offline handling and final review.
 
 **Phase 4 is in progress: persisted Pantry add/list/edit and confirmed Used/Wasted are deployed to development.**
 Demo mode is preserved. User reports iPhone add/details/restart/refresh/sorting checks pass;
