@@ -1,6 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createPantryApi, manualPantryInput, requirePantryStatus, rupeeValue } from '../lib/pantryApi.ts';
+test('reminder inventory reads live unfiltered pages and rejects changed or oversized inventories', async () => {
+  const calls = [];
+  const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async url => {
+    calls.push(url); const page = Number(new URL(url).searchParams.get('page'));
+    return Response.json({ data: { items: [{ id: `item-${page}` }], pagination: { total: 2, hasNextPage: page === 1 } } });
+  });
+  assert.equal((await api.reminderItems()).length, 2); assert.equal(calls.length, 2);
+  assert.ok(calls.every(url => !url.includes('freshness=') && !url.includes('q=')));
+  const changed = createPantryApi('https://api.example.com', async () => 'jwt', false, async url => {
+    const page = Number(new URL(url).searchParams.get('page'));
+    return Response.json({ data: { items: [{ id: `item-${page}` }], pagination: { total: page, hasNextPage: true } } });
+  });
+  await assert.rejects(changed.reminderItems(), error => error.code === 'PANTRY_CHANGED');
+  const oversized = createPantryApi('https://api.example.com', async () => 'jwt', false, async url => Response.json({
+    data: { items: [{ id: url }], pagination: { total: 1001, hasNextPage: true } } }));
+  await assert.rejects(oversized.reminderItems(), error => error.code === 'PANTRY_LIMIT');
+});
 test('manual entry represents paise exactly and preserves unknown/free prices and decimal quantity text', () => {
   const draft = { name: 'Milk', category: 'Dairy', unit: 'l', quantity: '0.5', expiresOn: '2026-10-20', price: '60.50' };
   assert.equal(manualPantryInput(draft).totalCostMinor, 6050); assert.equal(manualPantryInput(draft).quantity, '0.5');

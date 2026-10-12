@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useAuth } from './AuthContext';
 import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
+import { nativeExpiryScheduler } from '@/features/notifications/nativeScheduler';
 import { createPantryApi, requirePantryStatus, pantryFilterKey } from '@/lib/pantryApi';
 import { createPantryReadCache, cacheablePantryFailure } from '@/lib/pantryReadCache';
 import { NeonAuthError } from '@/lib/neonAuth';
@@ -12,6 +13,7 @@ type Value = { enabled: boolean; items: PantryItemDto[]; loading: boolean; error
   readOnly: boolean; cachedAt: number | null; cachePreview: boolean; previewCache: () => void; endCachePreview: () => void;
   filters: PantryListFilters; inventory: PantryInventoryCounts; setFilters: (filters: PantryListFilters) => void;
   reload: () => Promise<void>; loadMore: () => Promise<void>;
+  reminderItems: () => Promise<PantryItemDto[]>;
   duplicates: (input: PantryCreateInput) => Promise<{ matches: PantryItemDto[]; total: number }>;
   add: (input: PantryCreateInput, key: string) => Promise<PantryItemDto>;
   edit: (id: string, input: PantryEditInput, key: string) => Promise<PantryItemDto>;
@@ -173,6 +175,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     return item;
   };
   const reconcileMany = async (changed: PantryItemDto[], rememberOutcome = false) => {
+    await nativeExpiryScheduler?.cancel(null, changed.map(item => item.id));
     if (mounted.current) {
       cache.remove(scope, changed.map(item => item.id)); cache.remember(scope, changed.filter(item => item.status === 'ACTIVE')); persistDisk();
       generation.current++; // In-flight list reads cannot restore a pre-mutation row.
@@ -212,6 +215,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     }, readOnly, cachedAt, cachePreview,
     previewCache: () => { if (__DEV__ && enabled) { previewRef.current = true; setCachePreview(true); void reload(); } },
     endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, add, edit, outcome, undo,
+    reminderItems: async () => { requireLive(); await api.setup(); requireLive(); const rows = await api.reminderItems(); requireLive(); return rows; },
     batchOutcome, batchUndo, lastOutcome, dismissUndo: () => setLastOutcome([]),
     find }}>{children}</Context.Provider>;
 }

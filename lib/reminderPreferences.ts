@@ -39,7 +39,7 @@ export function createReminderPreferences(scope: string, io: {
   const save = async (choice: ReminderChoice) => {
     if (!current()) return;
     await io.write(JSON.stringify({ version: 1, scope, ...choice }));
-    publish({ ...choice, message: 'Reminder preference saved on this device. Alerts are not scheduled yet.' });
+    publish({ ...choice, message: 'Reminder preference saved on this device. Sync expiry reminders to apply it.' });
   };
   return {
     getSnapshot: () => state,

@@ -67,6 +67,24 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
     } finally { clearTimeout(timeout); }
   }
   return {
+    reminderItems: async () => {
+      const items: PantryItemDto[] = [];
+      let total: number | undefined;
+      for (let page = 1; page <= 20; page++) {
+        const response = await request<PantryListResponse>(`/api/v1/pantry?page=${page}&pageSize=50&sort=expiry`);
+        const data = response.data;
+        if (data.pagination.total > 1000) throw new NeonAuthError('PANTRY_LIMIT', 'This household exceeds the 1,000-item reminder sync limit. Existing reminders were not replaced.');
+        if (total !== undefined && total !== data.pagination.total) throw new NeonAuthError('PANTRY_CHANGED', 'Pantry changed while loading reminders. Retry Sync.');
+        total = data.pagination.total;
+        if (data.items.some(item => items.some(existing => existing.id === item.id))) throw new NeonAuthError('PANTRY_CHANGED', 'Pantry changed while loading reminders. Retry Sync.');
+        items.push(...data.items);
+        if (!data.pagination.hasNextPage) {
+          if (items.length !== total) throw new NeonAuthError('PANTRY_CHANGED', 'Pantry changed while loading reminders. Retry Sync.');
+          return items;
+        }
+      }
+      throw new NeonAuthError('PANTRY_LIMIT', 'This household exceeds the 1,000-item reminder sync limit. Existing reminders were not replaced.');
+    },
     setup: () => request<HouseholdResponse>('/api/v1/households/current', 'POST', {}),
     list: (page = 1, filters: PantryListFilters = {}) => {
       const query = new URLSearchParams({ page: String(page), pageSize: '50' });
