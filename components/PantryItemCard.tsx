@@ -135,7 +135,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
       friction={1} leftThreshold={72} rightThreshold={72}
       dragOffsetFromLeftEdge={20} dragOffsetFromRightEdge={20}
       overshootLeft={false} overshootRight={false} enableTrackpadTwoFingerGesture
-      enabled={!onSelect && item.status === 'ACTIVE' && !!(onConsume || onWaste)}
+      enabled={!hideActions && !onSelect && item.status === 'ACTIVE' && !!(onConsume || onWaste)}
       renderLeftActions={onConsume ? () => actionPanel(true) : undefined}
       renderRightActions={onWaste ? () => actionPanel(false) : undefined}
       onSwipeableOpenStartDrag={() => { swiping.current = true; }}
