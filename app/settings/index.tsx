@@ -7,6 +7,7 @@ import PrimaryButton from '@/components/PrimaryButton';
 import { useMockPreferences } from '@/context/MockPreferencesContext';
 import { Colors } from '@/constants/Theme';
 import { MOCK_CURRENCY } from '@/lib/mock';
+import { useRealPantry } from '@/context/RealPantryContext';
 import { useAuth } from '@/context/AuthContext';
 import useAuthRequest from '@/features/auth/useAuthRequest';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
@@ -14,11 +15,13 @@ import { checkBackendHousehold, checkBackendIdentity } from '@/lib/backendIdenti
 
 /** Supporting prototype preference screen; no separate Settings reference was supplied. */
 export default function Settings() {
+  const real = useRealPantry();
   const preferences = useMockPreferences();
   const { session, state } = useAuth();
   const [hour, setHour] = useState(preferences.hour);
   const [digest, setDigest] = useState(preferences.digest);
   const [notice, setNotice] = useState('');
+  const savedCopyRequest = useAuthRequest(setNotice);
   const signOutRequest = useAuthRequest(setNotice);
   const backendRequest = useAuthRequest(setNotice);
   const householdRequest = useAuthRequest(setNotice);
@@ -61,6 +64,11 @@ export default function Settings() {
               ? 'Backend database verified. Your household is available (INR, Asia/Kolkata).'
               : 'Backend database verified. No household is set up for this account yet.');
           }); }} />}
+        {__DEV__ && real.enabled && <PrimaryButton label="Test Saved Pantry Restore" variant="ghost" loading={savedCopyRequest.loading}
+          onPress={() => void savedCopyRequest.run(async isMounted => {
+            await real.restoreSavedPreview();
+            if (isMounted()) router.push('/(tabs)/pantry');
+          })} />}
         <Text style={ui.text}>Your remember-device choice is set when you log in. Sign out revokes this session and returns to Welcome.</Text>
         <PrimaryButton label="Sign Out" variant="ghost" loading={signOutRequest.loading}
           onPress={() => { setNotice(''); void signOutRequest.run(async () => { await session.signOut(); }); }} />

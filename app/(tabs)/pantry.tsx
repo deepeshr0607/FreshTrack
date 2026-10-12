@@ -343,6 +343,7 @@ export default function PantryScreen() {
           {real.readOnly && <Text style={[styles.swipeHint, { color: Colors.cautionAmber }]} accessibilityLiveRegion="polite">
             Cached Pantry · read-only · {real.cachedAt ? `Last updated ${new Date(real.cachedAt).toLocaleString()}. This subset may be incomplete.` : 'Nothing cached in this session.'} Refresh online to make changes.
           </Text>}
+          {!!real.diskStatus && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{real.diskStatus}</Text>}
           {real.cachePreview && <Text style={styles.swipeHint}>Development cached-view test: Pantry requests are paused; authentication remains active.</Text>}
           <PrimaryButton label={real.cachePreview ? 'End Test & Refresh' : 'Refresh Pantry'} variant="ghost" loading={real.loading}
             onPress={() => real.cachePreview ? real.endCachePreview() : void real.reload()} />
