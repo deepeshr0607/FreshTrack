@@ -8,6 +8,7 @@ import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatc
 type Value = { enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
   filters: PantryListFilters; inventory: PantryInventoryCounts; setFilters: (filters: PantryListFilters) => void;
   reload: () => Promise<void>; loadMore: () => Promise<void>;
+  duplicates: (input: PantryCreateInput) => Promise<{ matches: PantryItemDto[]; total: number }>;
   add: (input: PantryCreateInput, key: string) => Promise<PantryItemDto>;
   edit: (id: string, input: PantryEditInput, key: string) => Promise<PantryItemDto>;
   outcome: (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => Promise<PantryItemDto>;
@@ -67,6 +68,10 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const reload = useCallback(() => load(false), [load]);
   const loadMore = useCallback(() => load(true), [load]);
   const find = useCallback(async (id: string) => (await api.find(id)).data.item, [api]);
+  const duplicates = async (input: PantryCreateInput) => {
+    await api.setup();
+    return (await api.duplicates(input)).data;
+  };
   const add = async (input: PantryCreateInput, key: string) => {
     await api.setup();
     if (!mounted.current) throw new NeonAuthError('PANTRY_CANCELLED', 'The pantry session changed.');
@@ -100,7 +105,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const batchUndo = async (input: PantryBatchInput, key: string) => {
     const changed = (await api.batchUndo(input, key)).data.items; requirePantryStatus(changed, 'ACTIVE'); return reconcileMany(changed);
   };
-  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, filters, inventory, setFilters, reload, loadMore, add, edit, outcome, undo,
+  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, filters, inventory, setFilters, reload, loadMore, duplicates, add, edit, outcome, undo,
     batchOutcome, batchUndo, lastOutcome, dismissUndo: () => setLastOutcome([]),
     find }}>{children}</Context.Provider>;
 }

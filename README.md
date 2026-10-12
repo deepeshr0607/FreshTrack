@@ -199,6 +199,15 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
+**Manual duplicate review implemented (12 October):** authenticated household-scoped exact
+name/category/date checks, cancellable previews and explicit Add Separately are connected to Add.
+Create rechecks transactionally and preserves existing purchases; exact payload/key retries avoid
+duplicating an uncertain save. Both TypeScript/build, root88/88, backend44/44, live Pantry17/17 with
+cleanup, health1/1, Doctor21/21 and final all-platform exports pass. Existing lint gaps remain.
+Development Preview READY; public health200/tokenless duplicate-check/create401 pass. iPhone acceptance pending; see [duplicate report](docs/Phase_4_Pantry_Duplicates.md).
+Next after acceptance: Phase4 offline support and final review. Scanner imports remain Phase6; no Phase5.
+
+
 **Server-wide Pantry filters verified on iPhone (12 October):** search/category/freshness matching and
 expiry/name/alphabetic-category sorting now run before API pagination. Full-household category
 counts, criteria-preserving refresh/Load More, debouncing and stale-response guards are connected

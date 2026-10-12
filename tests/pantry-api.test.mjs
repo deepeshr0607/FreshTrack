@@ -67,3 +67,24 @@ test('server list client preserves full criteria on subsequent pages and safely 
   assert.equal(urls[1].searchParams.get('page'), '2');
   await api.list(1, {}); assert.equal(urls[2].searchParams.has('q'), false); assert.equal(urls[2].searchParams.has('category'), false);
 });
+
+test('duplicate-check is read-only JSON; explicit separate save preserves the same confirmed payload and replay key', async () => {
+  const calls = []; const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async (url, options) => {
+    calls.push([url, options]); return Response.json({ data: {} });
+  });
+  const input = { name: 'Milk', duplicateConfirmation: { confirmed: true, action: 'add_separately' } };
+  await api.duplicates({ name: 'Milk' }); await api.add(input, 'separate-retry-123'); await api.add(input, 'separate-retry-123');
+  assert.equal(calls[0][0], 'https://api.example.com/api/v1/pantry/duplicate-check'); assert.equal(calls[0][1].method, 'POST');
+  assert.equal(calls[0][1].headers['Idempotency-Key'], undefined); assert.equal(calls[1][1].body, calls[2][1].body);
+  assert.equal(calls[1][1].headers['Idempotency-Key'], calls[2][1].headers['Idempotency-Key']);
+});
+test('only the whitelisted duplicate conflict code is relayed; response messages stay private', async () => {
+  const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async () => Response.json({ error: { code: 'PANTRY_DUPLICATE', message: 'private-driver-details' } }, { status: 409 }));
+  await assert.rejects(api.add({}, 'retry-key-12345678'), error => error.code === 'PANTRY_DUPLICATE' && !error.message.includes('private-driver'));
+});
+
+test('failed duplicate previews do not imply a save; failed writes preserve uncertainty without exposing transport details', async () => {
+  const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async () => { throw Error('private-network-details'); });
+  await assert.rejects(api.duplicates({}), error => error.code === 'PANTRY_NETWORK' && !error.message.includes('A save') && !error.message.includes('private-network'));
+  await assert.rejects(api.add({}, 'retry-key-12345678'), error => error.code === 'PANTRY_NETWORK' && error.message.includes('A save may have completed') && !error.message.includes('private-network'));
+});

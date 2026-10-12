@@ -8,6 +8,13 @@ const { requireDevelopmentDatabase } = require('../scripts/development-database.
 requireDevelopmentDatabase();
 if (process.env.ALLOW_DEVELOPMENT_DATABASE_TESTS !== 'true') throw Error('DEVELOPMENT_TEST_OPT_IN_REQUIRED');
 const db = new PrismaClient({ log: [], errorFormat: 'minimal' });
+// Existing lifecycle fixtures intentionally represent separate purchases, even with identical labels.
+function createFixturePantryService(db) {
+  const service = createPantryService(db);
+  return { ...service, create: (user, fields, key) => service.create(user, {
+    ...fields, duplicateConfirmation: { confirmed: true, action: 'add_separately' },
+  }, key) };
+}
 const subjects = []; const ids = [];
 async function account() {
   const user = { id: `freshtrack-dev-test:pantry:${randomUUID()}`, email: 'fixture@example.test', name: 'Fixture' };
@@ -25,7 +32,7 @@ after(async () => {
 });
 test('batch outcome and undo are atomic, replay-safe and preserve original history', async () => {
   try {
-    const user = await account(); const service = createPantryService(db);
+    const user = await account(); const service = createFixturePantryService(db);
     const items = await Promise.all([service.create(user, input, randomUUID()), service.create(user, { ...input, totalCostMinor: null }, randomUUID())]);
     const selected = { confirmed: true, items: items.map(item => ({ id: item.id, expectedUpdatedAt: item.updatedAt })) };
     const key = randomUUID();
@@ -48,7 +55,7 @@ test('batch outcome and undo are atomic, replay-safe and preserve original histo
 });
 test('foreign, stale or already-resolved batch entry rejects the whole batch', async () => {
   try {
-    const a = await account(), b = await account(); const service = createPantryService(db);
+    const a = await account(), b = await account(); const service = createFixturePantryService(db);
     const first = await service.create(a, input, randomUUID()), second = await service.create(a, input, randomUUID()), foreign = await service.create(b, input, randomUUID());
     const ref = item => ({ id: item.id, expectedUpdatedAt: item.updatedAt });
     await assert.rejects(service.batch(a, { confirmed: true, items: [ref(first), ref(foreign)] }, 'consume', randomUUID()), error => error.code === 'ITEM_NOT_FOUND');
@@ -62,7 +69,7 @@ test('foreign, stale or already-resolved batch entry rejects the whole batch', a
 });
 test('failure on the second batch event rolls back every item and event', async () => {
   try {
-    const user = await account(); const service = createPantryService(db);
+    const user = await account(); const service = createFixturePantryService(db);
     const items = [await service.create(user, input, randomUUID()), await service.create(user, input, randomUUID())];
     const failing = { $transaction: (run, options) => db.$transaction(async tx => {
       let count = 0; return run({ ...tx, householdMember: tx.householdMember, pantryItem: tx.pantryItem,
@@ -75,7 +82,7 @@ test('failure on the second batch event rolls back every item and event', async 
 });
 test('single undo is scoped, replay-safe, and cannot reverse a newer outcome', async () => {
   try {
-    const user = await account(), other = await account(); const service = createPantryService(db); const original = await service.create(user, input, randomUUID());
+    const user = await account(), other = await account(); const service = createFixturePantryService(db); const original = await service.create(user, input, randomUUID());
     const consumed = await service.outcome(user, original.id, 'consume', { confirmed: true, expectedUpdatedAt: original.updatedAt }, randomUUID());
     const undoInput = { confirmed: true, expectedUpdatedAt: consumed.updatedAt }; const key = randomUUID();
     await assert.rejects(service.undo(other, original.id, undoInput, randomUUID()), error => error.code === 'ITEM_NOT_FOUND');
@@ -91,7 +98,7 @@ test('single undo is scoped, replay-safe, and cannot reverse a newer outcome', a
 });
 test('edit persists new exact fields with immutable history; stale edits and foreign writes fail', async () => {
   try {
-    const a = await account(), b = await account(); const service = createPantryService(db);
+    const a = await account(), b = await account(); const service = createFixturePantryService(db);
     const original = await service.create(a, input, randomUUID());
     const editedInput = { ...input, name: 'Edited milk', quantity: '0.75', totalCostMinor: 7200, expiresOn: '2026-10-18', expectedUpdatedAt: original.updatedAt };
     const key = randomUUID(); const edited = await service.edit(a, original.id, editedInput, key);
@@ -108,7 +115,7 @@ test('edit persists new exact fields with immutable history; stale edits and for
 });
 test('editing another field preserves expiry/cost provenance; explicit date change records user-entered expiry', async () => {
   try {
-    const user = await account(); const service = createPantryService(db); const original = await service.create(user, input, randomUUID());
+    const user = await account(); const service = createFixturePantryService(db); const original = await service.create(user, input, randomUUID());
     const row = await db.pantryItem.update({ where: { id: original.id }, data: { expirySource: 'PACKAGE_DATE', freshnessPresetDays: 5, costSource: 'ESTIMATE' } });
     const changedName = await service.edit(user, row.id, { ...input, name: 'New label', expectedUpdatedAt: row.updatedAt.toISOString() }, randomUUID());
     assert.equal(changedName.expirySource, 'PACKAGE_DATE');
@@ -120,7 +127,7 @@ test('editing another field preserves expiry/cost provenance; explicit date chan
 });
 test('Used/Wasted outcomes persist timestamps and snapshots; replay and conflicting confirmations add no duplicate events', async () => {
   try {
-    const a = await account(), b = await account(); const service = createPantryService(db);
+    const a = await account(), b = await account(); const service = createFixturePantryService(db);
     for (const action of ['consume', 'waste']) {
       const original = await service.create(a, input, randomUUID());
       const confirmed = { confirmed: true, expectedUpdatedAt: original.updatedAt }; const key = randomUUID();
@@ -140,7 +147,7 @@ test('Used/Wasted outcomes persist timestamps and snapshots; replay and conflict
 });
 test('failed mutation event rolls back edits and status; stale confirmation cannot resolve a changed entry', async () => {
   try {
-    const user = await account(); const service = createPantryService(db); const original = await service.create(user, input, randomUUID());
+    const user = await account(); const service = createFixturePantryService(db); const original = await service.create(user, input, randomUUID());
     const failing = { $transaction: (run, options) => db.$transaction(tx => run({ ...tx, householdMember: tx.householdMember,
       pantryItem: tx.pantryItem, pantryItemEvent: { findUnique: tx.pantryItemEvent.findUnique, create: async () => { throw Error('private-fixture-error'); } } }), options) };
     const broken = createPantryService(failing);
@@ -156,7 +163,7 @@ test('failed mutation event rolls back edits and status; stale confirmation cann
 const input = pantryInput({ name: 'Acceptance milk', category: 'DAIRY', quantity: '0.5', unit: 'l', expiresOn: '2026-10-20', totalCostMinor: 6050 });
 test('create persists exact data and one snapshot event; retry/concurrent replay cannot duplicate the entry', async () => {
   try {
-    const user = await account(); const service = createPantryService(db); const key = randomUUID();
+    const user = await account(); const service = createFixturePantryService(db); const key = randomUUID();
     const saved = await service.create(user, input, key);
     const results = await Promise.all([service.create(user, input, key), service.create(user, input, key)]);
     assert.ok(results.every(item => item.id === saved.id));
@@ -171,7 +178,7 @@ test('create persists exact data and one snapshot event; retry/concurrent replay
 });
 test('list sorts nearest expiry, paginates, and foreign-account reads are scoped; unknown and free prices stay distinct', async () => {
   try {
-    const a = await account(), b = await account(); const service = createPantryService(db);
+    const a = await account(), b = await account(); const service = createFixturePantryService(db);
     const later = await service.create(a, { ...input, expiresOn: '2026-10-25', totalCostMinor: null }, randomUUID());
     const sooner = await service.create(a, { ...input, expiresOn: '2026-10-15', totalCostMinor: 0 }, randomUUID());
     const first = await service.list(a, { page: 1, pageSize: 1 });
@@ -190,15 +197,15 @@ test('event failure rolls back the item; an account without membership cannot cr
       pantryItem: tx.pantryItem, pantryItemEvent: { findUnique: tx.pantryItemEvent.findUnique,
         create: async () => { throw Error('private-fixture-error'); } } }), options) };
     await assert.rejects(createPantryService(failing).create(user, input, randomUUID()), error => error instanceof PantryFailure && error.code === 'PANTRY_UNAVAILABLE');
-    assert.equal((await createPantryService(db).list(user, { page: 1, pageSize: 50 })).pagination.total, 0);
-    await assert.rejects(createPantryService(db).create({ ...user, id: 'freshtrack-dev-test:no-membership' }, input, randomUUID()),
+    assert.equal((await createFixturePantryService(db).list(user, { page: 1, pageSize: 50 })).pagination.total, 0);
+    await assert.rejects(createFixturePantryService(db).create({ ...user, id: 'freshtrack-dev-test:no-membership' }, input, randomUUID()),
       error => error instanceof PantryFailure && error.code === 'HOUSEHOLD_REQUIRED');
   } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_ROLLBACK_CHECK_FAILED'); }
 });
 
 test('estimated expiry persists through replay and edits; package/manual priority and event snapshots remain consistent', async () => {
   try {
-    const user = await account(), foreign = await account(), service = createPantryService(db);
+    const user = await account(), foreign = await account(), service = createFixturePantryService(db);
     const estimate = { packageDate: null, userDate: null, preset: { baseDate: '2026-10-12', days: 7 } };
     const fields = pantryInput({ ...input, expiresOn: '2026-10-19', expirySelection: estimate });
     const key = randomUUID(); const item = await service.create(user, fields, key);
@@ -226,7 +233,7 @@ test('estimated expiry persists through replay and edits; package/manual priorit
 
 test('server filters find entries outside the loaded page, compose literal search/category and keep household-global counts', async () => {
   try {
-    const user = await account(), foreign = await account(), service = createPantryService(db);
+    const user = await account(), foreign = await account(), service = createFixturePantryService(db);
     const first = await service.create(user, { ...input, name: 'A bread', category: 'BAKERY', expiresOn: '2026-10-12' }, randomUUID());
     const target = await service.create(user, { ...input, name: 'Z 100%_\\ Milk', expiresOn: '2026-11-25' }, randomUUID());
     const next = await service.create(user, { ...input, name: 'Z 100%_\\ Milk', expiresOn: '2026-11-26' }, randomUUID());
@@ -253,7 +260,7 @@ test('server filters find entries outside the loaded page, compose literal searc
 test('critical includes overdue; caution/fresh ranges match Kolkata days and compose category filters', async () => {
   try {
     const { householdDate } = require('../dist/lib/inventoryRules.js');
-    const user = await account(), service = createPantryService(db);
+    const user = await account(), service = createFixturePantryService(db);
     const today = new Date(householdDate(new Date(), 'Asia/Kolkata') + 'T00:00:00Z');
     for (const offset of [-1, 0, 1, 2, 6, 7]) {
       const expiresOn = new Date(today.getTime() + offset * 86400000).toISOString().slice(0, 10);
@@ -265,4 +272,50 @@ test('critical includes overdue; caution/fresh ranges match Kolkata days and com
       assert.equal((await service.list(user, { page: 1, pageSize: 50 }, { freshness, category: 'PRODUCE' })).pagination.total, 0);
     }
   } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_FRESHNESS_FILTER_CHECK_FAILED'); }
+});
+
+test('duplicate preview/cancel writes no groceries; explicit separate purchase preserves original and replay is idempotent', async () => {
+  try {
+    const user = await account(), service = createPantryService(db);
+    const original = await service.create(user, input, randomUUID());
+    const candidate = pantryInput({ ...input, name: '  ACCEPTANCE   milk ', quantity: '1', totalCostMinor: 9000 });
+    const review = await service.duplicates(user, candidate);
+    assert.equal(review.total, 1); assert.equal(review.matches[0].id, original.id);
+    await assert.rejects(service.create(user, candidate, randomUUID()), error => error.code === 'PANTRY_DUPLICATE');
+    assert.equal((await service.list(user, { page: 1, pageSize: 50 })).pagination.total, 1);
+    assert.equal(await db.pantryItemEvent.count({ where: { pantryItemId: original.id } }), 1);
+    const confirmed = { ...candidate, duplicateConfirmation: { confirmed: true, action: 'add_separately' } }, key = randomUUID();
+    const separate = await service.create(user, confirmed, key);
+    await service.create(user, confirmed, key);
+    await assert.rejects(service.create(user, { ...confirmed, quantity: '2' }, key), error => error.code === 'IDEMPOTENCY_CONFLICT');
+    assert.notEqual(separate.id, original.id); assert.equal((await service.list(user, { page: 1, pageSize: 50 })).pagination.total, 2);
+    const untouched = await service.find(user, original.id); assert.equal(untouched.updatedAt, original.updatedAt);
+    assert.equal(untouched.quantity, original.quantity); assert.equal(untouched.totalCostMinor, original.totalCostMinor); assert.equal(untouched.status, 'ACTIVE');
+    assert.equal(await db.pantryItemEvent.count({ where: { pantryItemId: separate.id } }), 1);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_DUPLICATE_CONFIRMATION_CHECK_FAILED'); }
+});
+test('duplicate matching is household scoped and exact; date/category/similar names and resolved entries are distinct', async () => {
+  try {
+    const user = await account(), other = await account(), service = createPantryService(db);
+    const original = await service.create(user, input, randomUUID());
+    assert.equal((await service.duplicates(other, input)).total, 0);
+    await service.create(other, input, randomUUID());
+    for (const fields of [{ expiresOn: '2026-11-01' }, { category: 'OTHER' }, { name: 'Acceptance milkshake' }]) {
+      assert.equal((await service.duplicates(user, { ...input, ...fields })).total, 0);
+    }
+    await service.outcome(user, original.id, 'consume', { confirmed: true, expectedUpdatedAt: original.updatedAt }, randomUUID());
+    assert.equal((await service.duplicates(user, input)).total, 0);
+    await service.create(user, input, randomUUID());
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_DUPLICATE_SCOPE_CHECK_FAILED'); }
+});
+test('concurrent first additions require confirmation for the second matching purchase even after an empty preflight', async () => {
+  try {
+    const user = await account(), service = createPantryService(db);
+    assert.equal((await service.duplicates(user, input)).total, 0);
+    const results = await Promise.allSettled([service.create(user, input, randomUUID()), service.create(user, input, randomUUID())]);
+    assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+    assert.equal(results.find(result => result.status === 'rejected').reason.code, 'PANTRY_DUPLICATE');
+    assert.equal((await service.duplicates(user, input)).total, 1);
+    assert.equal((await service.list(user, { page: 1, pageSize: 50 })).pagination.total, 1);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_DUPLICATE_RACE_CHECK_FAILED'); }
 });

@@ -10,7 +10,7 @@ import { prisma } from '../lib/prisma';
 import type { VerifiedIdentity } from './auth';
 
 export class PantryFailure extends Error {
-  constructor(readonly code: 'HOUSEHOLD_REQUIRED' | 'PANTRY_UNAVAILABLE' | 'IDEMPOTENCY_CONFLICT' | 'ITEM_NOT_FOUND' | 'ITEM_CHANGED' | 'ITEM_RESOLVED') { super(code); }
+  constructor(readonly code: 'HOUSEHOLD_REQUIRED' | 'PANTRY_UNAVAILABLE' | 'IDEMPOTENCY_CONFLICT' | 'ITEM_NOT_FOUND' | 'ITEM_CHANGED' | 'ITEM_RESOLVED' | 'PANTRY_DUPLICATE') { super(code); }
 }
 function expectedVersion(value: unknown): string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) ||
@@ -20,6 +20,7 @@ function expectedVersion(value: unknown): string {
 export function pantryEditInput(value: unknown): PantryEditInput {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid edit.');
   const { expectedUpdatedAt, ...fields } = value as Record<string, unknown>;
+  if ('duplicateConfirmation' in fields) throw new InvalidApiInput('Duplicate confirmation is only for new purchases.');
   return { ...pantryInput(fields), expectedUpdatedAt: expectedVersion(expectedUpdatedAt) };
 }
 export function pantryOutcomeInput(value: unknown): PantryOutcomeInput {
@@ -45,7 +46,7 @@ const categories = ['PRODUCE', 'DAIRY', 'BAKERY', 'SNACKS', 'MEAT', 'FROZEN', 'O
 export function pantryInput(value: unknown): PantryCreateInput {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid pantry entry.');
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'expirySelection'].includes(key))) throw new InvalidApiInput('Unexpected request field.');
+  if (Object.keys(body).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'expirySelection', 'duplicateConfirmation'].includes(key))) throw new InvalidApiInput('Unexpected request field.');
   const text = (key: string, max: number) => {
     const value = body[key];
     if (typeof value !== 'string' || /[\u0000-\u001f\u007f]/.test(value)) throw new InvalidApiInput('Invalid text field.');
@@ -54,12 +55,20 @@ export function pantryInput(value: unknown): PantryCreateInput {
     return result;
   };
   if (typeof body['category'] !== 'string' || !categories.includes(body['category'])) throw new InvalidApiInput('Invalid category.');
+  let duplicateConfirmation;
+  if (body['duplicateConfirmation'] !== undefined) {
+    const decision = body['duplicateConfirmation'];
+    if (!decision || typeof decision !== 'object' || Array.isArray(decision) ||
+        Object.keys(decision).some(key => !['confirmed', 'action'].includes(key)) ||
+        (decision as Record<string, unknown>)['confirmed'] !== true || (decision as Record<string, unknown>)['action'] !== 'add_separately') throw new InvalidApiInput('Confirm adding a separate purchase.');
+    duplicateConfirmation = { confirmed: true as const, action: 'add_separately' as const };
+  }
   let expiry;
   if (body['expirySelection'] !== undefined) {
     try { expiry = resolveExpiry(body['expirySelection']); } catch { throw new InvalidApiInput('Invalid expiry choice.'); }
     if (calendarDate(body['expiresOn'] as string) !== expiry.expiresOn) throw new InvalidApiInput('Expiry does not match its source.');
   }
-  return { ...(expiry ? { expirySelection: expiry.selection } : {}), name: text('name', 120), category: body['category'] as PantryCreateInput['category'],
+  return { ...(duplicateConfirmation ? { duplicateConfirmation } : {}), ...(expiry ? { expirySelection: expiry.selection } : {}), name: text('name', 120), category: body['category'] as PantryCreateInput['category'],
     quantity: quantityString(body['quantity'] as string), unit: text('unit', 32),
     expiresOn: calendarDate(body['expiresOn'] as string), totalCostMinor: minorAmount(body['totalCostMinor']) };
 }
@@ -168,7 +177,19 @@ export function createPantryService(db: PrismaClient = prisma) {
     }
     return result;
   }, true);
+  const duplicateWhere = (identity: VerifiedIdentity, householdId: string, input: PantryCreateInput): Prisma.PantryItemWhereInput => ({
+    householdId, household: { members: { some: { authSubject: identity.id } } }, status: 'ACTIVE', archivedAt: null,
+    normalizedName: input.name.toLowerCase(), category: input.category,
+    expiresOn: new Date(`${input.expiresOn}T00:00:00Z`),
+  });
   return {
+    duplicates: (identity: VerifiedIdentity, input: PantryCreateInput) => run(async tx => {
+      const membership = await member(tx, identity);
+      const where = duplicateWhere(identity, membership.householdId, input);
+      const total = await tx.pantryItem.count({ where });
+      const matches = await tx.pantryItem.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: 5 });
+      return { total, matches: matches.map(item => view(item, membership.household.timezone)) };
+    }),
     undo: (identity: VerifiedIdentity, id: string, input: PantryOutcomeInput, key: string) => mutate(identity, id, key, { action: 'restore', input }),
     batch,
     edit: (identity: VerifiedIdentity, id: string, input: PantryEditInput, key: string) => mutate(identity, id, key, { action: 'edit', input }),
@@ -211,7 +232,9 @@ export function createPantryService(db: PrismaClient = prisma) {
         if ((prior.metadata as { requestHash?: string } | null)?.requestHash !== fingerprint) throw new PantryFailure('IDEMPOTENCY_CONFLICT');
         return view(prior.pantryItem, membership.household.timezone);
       }
-      const { expirySelection, ...fields } = input;
+      const existing = await tx.pantryItem.findFirst({ where: duplicateWhere(identity, membership.householdId, input), select: { id: true } });
+      if (existing && !input.duplicateConfirmation) throw new PantryFailure('PANTRY_DUPLICATE');
+      const { expirySelection, duplicateConfirmation, ...fields } = input;
       const expiry = expirySelection ? resolveExpiry(expirySelection) : null;
       const item = await tx.pantryItem.create({ data: { ...fields,
         freshnessPresetDays: expiry?.freshnessPresetDays ?? null, purchaseDate: expiry?.purchaseDate ? new Date(`${expiry.purchaseDate}T00:00:00Z`) : null, expiresOn: new Date(`${expiry?.expiresOn ?? input.expiresOn}T00:00:00Z`),
@@ -221,7 +244,7 @@ export function createPantryService(db: PrismaClient = prisma) {
         eventType: 'CREATED', previousStatus: null, newStatus: 'ACTIVE', quantity: item.quantity,
         totalCostMinor: item.totalCostMinor, costSource: item.costSource, currencyCode: item.currencyCode,
         category: item.category, expiresOn: item.expiresOn, timezone: membership.household.timezone,
-        source: 'APP', idempotencyKey, metadata: { requestHash: fingerprint, expirySource: item.expirySource,
+        source: 'APP', idempotencyKey, metadata: { requestHash: fingerprint, duplicateConfirmed: !!duplicateConfirmation, duplicateMatched: !!existing, expirySource: item.expirySource,
           freshnessPresetDays: item.freshnessPresetDays, purchaseDate: item.purchaseDate ? serializeCalendarDate(item.purchaseDate) : null } } });
       return view(item, membership.household.timezone);
     }, true),

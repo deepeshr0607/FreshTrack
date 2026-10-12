@@ -1,4 +1,4 @@
-import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryBatchResponse, PantryItemDto, PantryItemResponse, PantryListFilters, PantryListResponse } from '../types/api';
+import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryBatchResponse, PantryItemDto, PantryItemResponse, PantryListFilters, PantryListResponse, PantryDuplicateResponse } from '../types/api';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { apiOrigin } from './backendIdentity.ts';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
@@ -48,6 +48,11 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(key ? { 'Idempotency-Key': key } : {}) },
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}), credentials: 'omit', redirect: 'error', signal: controller.signal });
       if (!response.ok) {
+        if (response.status === 409) {
+          let code: unknown;
+          try { code = (await response.json())?.error?.code; } catch { /* Keep malformed responses private. */ }
+          if (code === 'PANTRY_DUPLICATE') throw new NeonAuthError('PANTRY_DUPLICATE', 'A matching purchase was found. Review it before adding separately.');
+        }
         const message = response.status === 401 ? 'Your session was rejected. Sign in again.'
           : response.status === 400 ? 'Check the item fields: name, unit, quantity, date and purchase value.'
           : response.status === 404 ? 'This item is unavailable in your household.'
@@ -58,7 +63,7 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
       return await response.json() as T;
     } catch (error) {
       if (error instanceof NeonAuthError) throw error;
-      throw new NeonAuthError('PANTRY_NETWORK', 'Unable to reach your pantry. Check your connection and retry. A save may have completed; retry the unchanged entry to avoid duplicates.');
+      throw new NeonAuthError('PANTRY_NETWORK', 'Unable to reach your pantry. Check your connection and retry.' + (key ? ' A save may have completed; retry the unchanged entry to avoid duplicates.' : ''));
     } finally { clearTimeout(timeout); }
   }
   return {
@@ -69,6 +74,7 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
       return request<PantryListResponse>(`/api/v1/pantry?${query}`);
     },
     find: (id: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}`),
+    duplicates: (input: PantryCreateInput) => request<PantryDuplicateResponse>('/api/v1/pantry/duplicate-check', 'POST', input),
     add: (input: PantryCreateInput, key: string) => request<PantryItemResponse>('/api/v1/pantry', 'POST', input, key),
     edit: (id: string, input: PantryEditInput, key: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}`, 'PATCH', input, key),
     outcome: (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) =>

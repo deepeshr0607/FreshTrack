@@ -32,11 +32,14 @@ export interface ExpirySelection {
   packageDate: string | null; userDate: string | null;
   preset: { baseDate: string; days: number } | null;
 }
+export interface PantryDuplicateConfirmation { confirmed: true; action: 'add_separately' }
+export type PantryDuplicateResponse = ApiSuccess<{ matches: PantryItemDto[]; total: number }>;
 export interface PantryCreateInput {
   name: string; category: PantryCategory; quantity: string; unit: string;
   expiresOn: string; totalCostMinor: number | null;
   /** Explicit choices; precedence is package > user > estimate. Omitted by legacy clients. */
   expirySelection?: ExpirySelection;
+  duplicateConfirmation?: PantryDuplicateConfirmation;
 }
 export interface PantryItemDto extends PantryCreateInput {
   id: string; currencyCode: 'INR'; status: PantryStatus; source: 'MANUAL' | 'BARCODE' | 'RECEIPT';
@@ -46,7 +49,7 @@ export interface PantryItemDto extends PantryCreateInput {
   createdAt: string; updatedAt: string;
 }
 export type PantryItemResponse = ApiSuccess<{ item: PantryItemDto }>;
-export interface PantryEditInput extends PantryCreateInput { expectedUpdatedAt: string }
+export interface PantryEditInput extends Omit<PantryCreateInput, 'duplicateConfirmation'> { expectedUpdatedAt: string }
 export interface PantryOutcomeInput { confirmed: true; expectedUpdatedAt: string }
 export interface PantryBatchInput {
   confirmed: true;
