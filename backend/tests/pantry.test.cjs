@@ -164,3 +164,27 @@ test('alphabetic category paging spans group boundaries and preserves offsets de
   assert.deepEqual(categoryPageWindows(groups, 3, 2), [{ category: 'DAIRY', skip: 2, take: 1 }, { category: 'PRODUCE', skip: 0, take: 1 }]);
   assert.deepEqual(categoryPageWindows(groups, 6, 2), []);
 });
+
+test('separate-purchase confirmation is explicit, bounded and only valid for creation', () => {
+  const duplicateConfirmation = { confirmed: true, action: 'add_separately' };
+  assert.deepEqual(pantryInput({ ...valid, duplicateConfirmation }).duplicateConfirmation, duplicateConfirmation);
+  for (const decision of [null, true, {}, { confirmed: false, action: 'add_separately' }, { confirmed: true, action: 'replace' }, { ...duplicateConfirmation, householdId: 'foreign' }]) {
+    assert.throws(() => pantryInput({ ...valid, duplicateConfirmation: decision }));
+  }
+  assert.throws(() => pantryEditInput({ ...valid, duplicateConfirmation, expectedUpdatedAt: '2026-10-12T00:00:00.000Z' }));
+});
+test('duplicate-check is authenticated, validated and scoped; duplicate save failures remain safe envelopes', async () => {
+  let calls = 0;
+  const app = createApp({ verifyIdentity, pantryService: {
+    duplicates: async (user, input) => { calls++; assert.equal(user.id, identity.id); assert.equal(input.name, 'Milk'); return { total: 1, matches: [{ id: 'safe-match' }] }; },
+    create: async () => { throw new PantryFailure('PANTRY_DUPLICATE'); },
+  } });
+  assert.equal((await request(app).post('/api/v1/pantry/duplicate-check').send(valid)).status, 401);
+  for (const body of [{ ...valid, householdId: 'foreign' }, { ...valid, duplicateConfirmation: { confirmed: true, action: 'add_separately' } }]) {
+    assert.equal((await request(app).post('/api/v1/pantry/duplicate-check').set('Authorization', 'Bearer a.b.c').send(body)).status, 400);
+  }
+  const result = await request(app).post('/api/v1/pantry/duplicate-check').set('Authorization', 'Bearer a.b.c').send(valid);
+  assert.equal(result.status, 200); assert.equal(result.body.data.total, 1); assert.equal(calls, 1);
+  const conflict = await request(app).post('/api/v1/pantry').set('Authorization', 'Bearer a.b.c').set('Idempotency-Key', 'duplicate-retry-123').send(valid);
+  assert.equal(conflict.status, 409); assert.equal(conflict.body.error.code, 'PANTRY_DUPLICATE'); assert.ok(conflict.body.error.requestId);
+});

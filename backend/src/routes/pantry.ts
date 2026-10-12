@@ -22,6 +22,14 @@ export function createPantryRouter(verify: VerifyIdentity, service: PantryServic
         !/^[A-Za-z0-9_-]{16,100}$/.test(key) || req.originalUrl.includes('?') || !req.is('application/json')) throw new InvalidApiInput('Invalid item mutation request.');
     return { id: id.toLowerCase(), key };
   };
+  router.post('/pantry/duplicate-check', async (req, res, next) => {
+    try {
+      if (req.originalUrl.includes('?') || !req.is('application/json')) throw new InvalidApiInput('Use a JSON entry without query fields.');
+      const input = pantryInput(req.body);
+      if (input.duplicateConfirmation) throw new InvalidApiInput('No confirmation accepted for a read-only check.');
+      res.json(success(await service.duplicates(res.locals.identity as VerifiedIdentity, input)));
+    } catch (error) { next(error); }
+  });
   router.patch('/pantry/:itemId', async (req, res, next) => {
     try {
       const { id, key } = mutationRequest(req);
@@ -72,6 +80,7 @@ export function createPantryRouter(verify: VerifyIdentity, service: PantryServic
       : error.code === 'IDEMPOTENCY_CONFLICT' ? 'This retry key was already used for a different entry.'
       : error.code === 'ITEM_CHANGED' ? 'This item changed. Reload it before saving or confirming an outcome.'
       : error.code === 'ITEM_RESOLVED' ? 'This item already has a confirmed outcome.'
+      : error.code === 'PANTRY_DUPLICATE' ? 'A matching active purchase exists. Review matches and confirm adding separately.'
       : 'Pantry services are temporarily unavailable. Please retry.';
     sendFailure(req, res, status, error.code, message);
   });
