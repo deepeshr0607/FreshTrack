@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -8,12 +8,13 @@ import ExpiryBadge from '@/components/ExpiryBadge';
 import PantryConfirmation from '@/components/PantryConfirmation';
 import { useMockPantry } from '@/context/MockPantryContext';
 import { Colors, Elevation, FontSize, Radius, Spacing } from '@/constants/Theme';
-import { validatePantryEdit, type PantryEdit } from '@/lib/pantry';
+import { PANTRY_CATEGORIES, validatePantryEdit, type PantryEdit, type PantryDraft } from '@/lib/pantry';
 import type { PantryItem } from '@/lib/mock';
 import { useRealPantry } from '@/context/RealPantryContext';
 import type { PantryItemDto } from '@/types/api';
-import { rupeeValue } from '@/lib/pantryApi';
+import { manualPantryInput, pantryCardItem, pantryRetryKey, rupeeValue } from '@/lib/pantryApi';
 import { NeonAuthError } from '@/lib/neonAuth';
+import useAuthRequest from '@/features/auth/useAuthRequest';
 
 function backToPantry(added?: string) {
   router.dismissTo(added ? { pathname: '/(tabs)/pantry', params: { added } } : '/(tabs)/pantry');
@@ -48,6 +49,7 @@ function PersistedItem({ id }: { id: string }) {
   const { find } = useRealPantry();
   const [item, setItem] = useState<PantryItemDto | null>(null);
   const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
+  const [notice, setNotice] = useState('');
   useEffect(() => {
     let mounted = true; setError('');
     void find(id).then(value => { if (mounted) setItem(value); }).catch(error => {
@@ -55,17 +57,82 @@ function PersistedItem({ id }: { id: string }) {
     });
     return () => { mounted = false; };
   }, [id, find, attempt]);
-  return <View style={styles.card}>
-    {!item ? <Text style={styles.body}>{error || 'Loading item…'}</Text> : <>
-      <Text accessibilityRole="header" style={styles.title}>{item.name}</Text>
-      <Text style={styles.body}>{item.quantity} {item.unit} · {item.category}</Text>
-      <Text style={styles.body}>{rupeeValue(item.totalCostMinor)} · INR</Text>
-      <Text style={styles.body}>Expiry: {item.expiresOn} · Asia/Kolkata</Text>
+  if (!item) return <View style={styles.card}><Text style={styles.body}>{error || 'Loading item…'}</Text>
+    {!!error && <PrimaryButton label="Retry Item" onPress={() => setAttempt(value => value + 1)} />}</View>;
+  return <>
+    {!!notice && <Text style={styles.link} accessibilityLiveRegion="polite">{notice}</Text>}
+    <PersistedEditor key={`${item.id}:${item.updatedAt}`} item={item} onSaved={saved => {
+      setItem(saved); setNotice(saved.status === 'ACTIVE' ? 'Changes saved to your household.' : 'Confirmed outcome saved to your household.');
+    }} onReload={() => { setItem(null); setNotice(''); setAttempt(value => value + 1); }} />
+  </>;
+}
+
+function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onSaved: (item: PantryItemDto) => void; onReload: () => void }) {
+  const real = useRealPantry();
+  const initial: PantryDraft = { name: item.name, category: pantryCardItem(item).category, quantity: item.quantity,
+    unit: item.unit, expiresOn: item.expiresOn, price: item.totalCostMinor === null ? '' : (item.totalCostMinor / 100).toFixed(2) };
+  const [draft, setDraft] = useState(initial); const [error, setError] = useState('');
+  const [message, setMessage] = useState(''); const [confirmation, setConfirmation] = useState<'CONSUMED' | 'WASTED' | null>(null);
+  const [outcomeError, setOutcomeError] = useState('');
+  const saveRequest = useAuthRequest(setError); const outcomeRequest = useAuthRequest(setOutcomeError);
+  const editKey = useRef(pantryRetryKey()); const outcomeKey = useRef(pantryRetryKey());
+  const busy = saveRequest.loading || outcomeRequest.loading;
+  const active = item.status === 'ACTIVE';
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
+    if (busy) return;
+    setDraft(current => ({ ...current, [key]: value })); setError(''); setMessage(''); editKey.current = pantryRetryKey();
+  };
+  return <>
+    <View style={styles.card}>
+      <Text style={styles.emoji}>{pantryCardItem(item).imageEmoji}</Text>
+      <Text style={styles.title}>{item.name}</Text><Text style={styles.body}>{rupeeValue(item.totalCostMinor)} · INR · Asia/Kolkata</Text>
       <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} />
-      <Text style={styles.body}>Saved to your household. Editing and Used/Wasted are coming in the next Pantry slice.</Text>
-    </>}
-    {!!error && <PrimaryButton label="Retry Item" onPress={() => setAttempt(value => value + 1)} />}
-  </View>;
+      {!active && <Text style={styles.body}>Marked as {item.status === 'WASTED' ? 'wasted' : 'used'}. This outcome is saved to your household.</Text>}
+    </View>
+    <View style={styles.card}>
+      <Text style={styles.title}>Item Details</Text>
+      <FormInput label="Item name" value={draft.name} editable={active && !busy} maxLength={120} onChangeText={value => change('name', value)} />
+      <Text style={styles.body}>Category</Text><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {PANTRY_CATEGORIES.map(category => <Pressable key={category.name} accessibilityRole="radio" accessibilityState={{ checked: draft.category === category.name }}
+          disabled={!active || busy} onPress={() => change('category', category.name)} style={{ padding: Spacing.sm, minHeight: 44, justifyContent: 'center', borderRadius: Radius.full,
+            backgroundColor: draft.category === category.name ? Colors.primary : Colors.surfaceContainerLow }}>
+          <Text style={[styles.body, draft.category === category.name && { color: Colors.white }]}>{category.emoji} {category.name}</Text>
+        </Pressable>)}
+      </View>
+      <FormInput label="Quantity" value={draft.quantity} keyboardType="decimal-pad" editable={active && !busy} onChangeText={value => change('quantity', value)} />
+      <FormInput label="Unit" value={draft.unit} maxLength={32} editable={active && !busy} onChangeText={value => change('unit', value)} />
+      <FormInput label="Expiry date (YYYY-MM-DD)" value={draft.expiresOn} maxLength={10} autoCapitalize="none" editable={active && !busy} onChangeText={value => change('expiresOn', value)} />
+      <Text style={styles.body}>Changing expiry marks the date as user entered. Days remaining use Asia/Kolkata.</Text>
+      <FormInput label="Purchase value (₹, optional)" value={draft.price} keyboardType="decimal-pad" editable={active && !busy} onChangeText={value => change('price', value)} />
+      <Text style={styles.body}>Value of this whole entry. Blank is unknown; zero means free.</Text>
+      {!!error && <Text style={styles.error} accessibilityRole="alert">{error}</Text>}
+      {!!message && <Text style={styles.link} accessibilityLiveRegion="polite">{message}</Text>}
+      {active && <>
+        <PrimaryButton label="Save Changes" loading={saveRequest.loading} disabled={!dirty || busy} onPress={() => {
+          setError(''); void saveRequest.run(async isMounted => {
+            const validation = validatePantryEdit(draft); if (validation) throw new NeonAuthError('INVALID_REQUEST', validation);
+            const saved = await real.edit(item.id, { ...manualPantryInput(draft), expectedUpdatedAt: item.updatedAt }, editKey.current);
+            if (isMounted()) { setMessage('Changes saved to your household.'); onSaved(saved); }
+          });
+        }} />
+        {dirty && <Text style={styles.body}>Save your changes before confirming Used or Wasted.</Text>}
+        <PrimaryButton label="Mark as Used" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('CONSUMED'); }} />
+        <PrimaryButton label="Mark as Wasted" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('WASTED'); }} />
+      </>}
+      <PrimaryButton label="Reload Item" variant="ghost" disabled={busy} onPress={onReload} />
+      <Text style={styles.body}>Reload discards unsaved changes and fetches the latest item.</Text>
+    </View>
+    <PantryConfirmation item={confirmation ? pantryCardItem(item) : null} action={confirmation ?? 'CONSUMED'} loading={outcomeRequest.loading} error={outcomeError}
+      onCancel={() => { setConfirmation(null); setOutcomeError(''); }} onConfirm={() => {
+        if (!confirmation) return; setOutcomeError('');
+        void outcomeRequest.run(async isMounted => {
+          const saved = await real.outcome(item.id, confirmation === 'CONSUMED' ? 'consume' : 'waste',
+            { confirmed: true, expectedUpdatedAt: item.updatedAt }, outcomeKey.current);
+          if (isMounted()) { setConfirmation(null); onSaved(saved); }
+        });
+      }} />
+  </>;
 }
 
 function ItemEditor({ item }: { item: PantryItem }) {

@@ -11,14 +11,16 @@ interface Props {
   action: 'CONSUMED' | 'WASTED';
   onCancel: () => void;
   onConfirm: () => void;
+  loading?: boolean;
+  error?: string;
 }
 
-export default function PantryConfirmation({ item, items, action, onCancel, onConfirm }: Props) {
+export default function PantryConfirmation({ item, items, action, onCancel, onConfirm, loading = false, error }: Props) {
   const batch = items !== undefined;
   const entries = items ?? (item ? [item] : []);
   const wasted = action === 'WASTED';
   return (
-    <Modal visible={entries.length > 0} transparent animationType="slide" onRequestClose={onCancel}>
+    <Modal visible={entries.length > 0} transparent animationType="slide" onRequestClose={() => { if (!loading) onCancel(); }}>
       <View style={styles.overlay}>
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <ScrollView contentContainerStyle={styles.content}>
@@ -33,8 +35,9 @@ export default function PantryConfirmation({ item, items, action, onCancel, onCo
               {batch ? `Remove these selected entries from active inventory as ${wasted ? 'food waste' : 'consumed'}.` : wasted ? 'Remove this item from your active inventory as food waste.' :
                 'Remove this item from your active inventory as consumed.'}
             </Text>
-            <PrimaryButton label={wasted ? 'Confirm Waste' : 'Confirm Used'} onPress={onConfirm} />
-            <PrimaryButton label="Cancel" variant="ghost" onPress={onCancel} />
+            {!!error && <Text style={[styles.body, { color: Colors.error }]} accessibilityRole="alert">{error}</Text>}
+            <PrimaryButton label={wasted ? 'Confirm Waste' : 'Confirm Used'} loading={loading} onPress={onConfirm} />
+            <PrimaryButton label="Cancel" variant="ghost" disabled={loading} onPress={onCancel} />
           </ScrollView>
         </SafeAreaView>
       </View>

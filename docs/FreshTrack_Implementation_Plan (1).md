@@ -706,7 +706,22 @@ SQL checks, target verification/live connectivity, Prisma singleton and guarded 
 
 **Goal:** Make the core app useful before adding OCR/AI.
 
-### Current slice — household/list/manual add implemented (12 October 2026)
+### Current slice — persisted editing and outcomes verified on iPhone (12 October 2026)
+
+User approved this continuation. Validated membership-scoped PATCH and confirmed consume/waste
+endpoints use loaded-version checks, household retry keys/hashes, serializable item/event transactions
+and consistent status timestamps. Historical snapshots stay unchanged; replay adds no event. Real
+detail form, card swipes/accessibility buttons and busy/error/cancel/retry sheets are connected; demo
+is preserved. No schema/migration/dependency change. New development Preview is READY.
+
+Root77/77, backend35/35, live Pantry7/7 with cleanup, health1/1, both TypeScript/build, Doctor21/21,
+all-platform exports and public health200/tokenless mutations401 pass. Existing lint gaps remain.
+User reports iPhone edit/restart and cancel/confirm Used/Wasted/restart checks pass.
+See [mutation report](Phase_4_Pantry_Mutations.md). Native failure paths remain unverified.
+Next: remaining Phase 4 batch/undo, presets, server-wide filters,
+duplicates/offline persistence and final review. Android/release QA remains deferred; no Phase 5.
+
+### Earlier slice — household/list/manual add verified (12 October 2026)
 
 User approved Phase 4. Signed-in native Pantry sets up/restores household then reads active items;
 manual add persists validated exact quantities/INR paise/Kolkata dates with a CREATED event in one
@@ -718,8 +733,8 @@ Both TypeScript/build, root76/76, backend33/33, live Pantry3/3 with cleanup, hea
 and all-platform exports pass. Public health200/tokenless Pantry401 pass; existing lint gaps remain.
 iPhone add/details/restart/refresh/sorting and unknown-price checks pass by user report.
 See [first-slice report](Phase_4_Pantry_First_Slice.md). Android/native failure paths remain unverified.
-Filters/alternate sort apply to loaded pages; real lifecycle/edit/presets/duplicates/offline persistence
-remain incomplete. Next: persisted editing and confirmed Used/Wasted.
+Filters/alternate sort apply to loaded pages. Editing/Used/Wasted are implemented in the next slice;
+presets/duplicates/offline persistence and final review remain incomplete.
 Phase 5 has not started.
 
 ### Endpoints (suggested contract)

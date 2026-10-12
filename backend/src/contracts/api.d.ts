@@ -34,3 +34,5 @@ export interface PantryItemDto extends PantryCreateInput {
   createdAt: string; updatedAt: string;
 }
 export type PantryItemResponse = ApiSuccess<{ item: PantryItemDto }>;
+export interface PantryEditInput extends PantryCreateInput { expectedUpdatedAt: string }
+export interface PantryOutcomeInput { confirmed: true; expectedUpdatedAt: string }

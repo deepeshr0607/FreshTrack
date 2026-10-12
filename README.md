@@ -188,7 +188,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
-| 4 | Pantry CRUD end-to-end | 🟡 Household/list/manual add verified on iPhone; editing/lifecycle next |
+| 4 | Pantry CRUD end-to-end | 🟡 Add/list/edit/Used/Wasted verified on iPhone; remaining inventory work follows |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
@@ -199,9 +199,10 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Phase 4 is in progress: household setup, persisted Pantry list/manual add and read-only details are deployed to development.**
+**Phase 4 is in progress: persisted Pantry add/list/edit and confirmed Used/Wasted are deployed to development.**
 Demo mode is preserved. User reports iPhone add/details/restart/refresh/sorting checks pass;
-edit/lifecycle and remaining Pantry work follow.
+user also reports edit/restart and Used/Wasted cancellation/confirmation/restart pass.
+Remaining Pantry work follows.
 See [first-slice implementation, checks and limits](docs/Phase_4_Pantry_First_Slice.md).
 
 Phase 3 development acceptance is complete: data model, migrations, household access, API foundation and hosted Preview.
@@ -221,6 +222,18 @@ Previous checkpoint: `2b04009` contains the earlier Phase 2 work. The final revi
 The implementation plan is currently stored at
 [`docs/FreshTrack_Implementation_Plan (1).md`](<docs/FreshTrack_Implementation_Plan (1).md>).
 
+### Phase 4 editing and outcomes (12 October 2026)
+
+Connected real detail editing and right-Used/left-Wasted swipes plus confirmation buttons. Version
+checks protect newer data; edits/outcomes and their history events commit together. Cancel sends no
+request, repeated outcomes add no duplicate event, and failures show retry feedback. Demo is preserved.
+Root77/77, backend35/35, live Pantry7/7 with cleanup, health1/1, both TypeScript/build, Doctor21/21 and
+all-platform exports pass. New development Preview is READY; health200/tokenless mutations401 pass.
+Existing lint gap remains. No schema/migration/dependency change. User reports iPhone edit/restart
+and Used/Wasted cancellation/confirmation/restart pass. Native failure paths/Android remain unverified.
+See [commands, evidence and limits](docs/Phase_4_Pantry_Mutations.md). Next: remaining Phase 4 inventory
+slices (batch/undo, presets, server-wide filters, duplicates/offline work), then final review. No Phase 5.
+
 ### Phase 4 first slice (12 October 2026)
 
 Preserved the existing Pantry designs and demo interactions. Signed-in native Pantry uses real
@@ -233,7 +246,7 @@ Both TypeScript/build checks, root76/76, backend33/33, live Pantry3/3 with fixtu
 Doctor21/21 and web/iOS/Android exports pass. The new Vercel Preview is READY; public health200 and
 tokenless Pantry401 pass. Existing lint gaps remain. User reports iPhone write/details/restart/refresh,
 expiry sorting and unknown-price checks pass. Android/native failure-path tests remain unverified.
-Next: persisted editing and confirmed lifecycle actions.
+Editing and confirmed lifecycle actions are now implemented in the next slice above.
 No new dependency/schema/migration or Phase 5 work. Exact commands/limits are in the first-slice report.
 
 ### Phase 3 final review (12 October 2026)

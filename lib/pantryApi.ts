@@ -1,9 +1,19 @@
-import type { HouseholdResponse, PantryCreateInput, PantryItemDto, PantryItemResponse, PaginatedResponse } from '../types/api';
+import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryItemDto, PantryItemResponse, PaginatedResponse } from '../types/api';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { apiOrigin } from './backendIdentity.ts';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { NeonAuthError } from './neonAuth.ts';
 import type { PantryDraft } from './pantry.ts';
+// @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
+import { PANTRY_CATEGORIES } from './pantry.ts';
+import type { PantryItem } from './mock';
+
+export function pantryRetryKey(): string { return `request-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`; }
+/** Adapter only for existing card/confirmation visuals; wire quantities/costs remain exact. */
+export function pantryCardItem(item: PantryItemDto): PantryItem {
+  const category = PANTRY_CATEGORIES.find(entry => entry.name.toUpperCase() === item.category)!;
+  return { ...item, category: category.name, quantity: Number(item.quantity), price: (item.totalCostMinor ?? 0) / 100, imageEmoji: category.emoji };
+}
 
 export function manualPantryInput(draft: PantryDraft): PantryCreateInput {
   const quantity = draft.quantity.trim().replace(',', '.');
@@ -32,7 +42,7 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
         const message = response.status === 401 ? 'Your session was rejected. Sign in again.'
           : response.status === 400 ? 'Check the item fields: name, unit, quantity, date and purchase value.'
           : response.status === 404 ? 'This item is unavailable in your household.'
-          : response.status === 409 ? 'The save conflicted with an earlier request. Refresh your pantry before trying again.'
+          : response.status === 409 ? 'This item or request changed. Reload the item before saving or confirming again.'
           : 'The pantry service is unavailable. Please retry.';
         throw new NeonAuthError(`PANTRY_HTTP_${response.status}`, message);
       }
@@ -47,5 +57,8 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
     list: (page = 1) => request<PaginatedResponse<PantryItemDto>>(`/api/v1/pantry?page=${page}&pageSize=50`),
     find: (id: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}`),
     add: (input: PantryCreateInput, key: string) => request<PantryItemResponse>('/api/v1/pantry', 'POST', input, key),
+    edit: (id: string, input: PantryEditInput, key: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}`, 'PATCH', input, key),
+    outcome: (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) =>
+      request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}/${action}`, 'POST', input, key),
   };
 }

@@ -44,7 +44,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
     style={[styles.swipePanel, { backgroundColor: used ? Colors.primaryContainer : Colors.criticalRose }]}>
     <MaterialCommunityIcons name={used ? 'check-circle-outline' : 'trash-can-outline'} size={30} color={Colors.white} />
     <Text style={styles.swipeLabel}>{used ? 'USED' : 'WASTED'}</Text>
-    <Text style={styles.swipeValue}>${item.price.toFixed(2)} value</Text>
+    <Text style={styles.swipeValue}>{valueLabel ?? `$${item.price.toFixed(2)}`} value</Text>
   </View>;
   const sourceLabel =
     item.expirySource === 'PACKAGE_DATE'

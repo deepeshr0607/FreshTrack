@@ -3,11 +3,13 @@ import { useAuth } from './AuthContext';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
 import { createPantryApi } from '@/lib/pantryApi';
 import { NeonAuthError } from '@/lib/neonAuth';
-import type { PantryCreateInput, PantryItemDto } from '@/types/api';
+import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryItemDto } from '@/types/api';
 
 type Value = { enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
   reload: () => Promise<void>; loadMore: () => Promise<void>;
   add: (input: PantryCreateInput, key: string) => Promise<PantryItemDto>;
+  edit: (id: string, input: PantryEditInput, key: string) => Promise<PantryItemDto>;
+  outcome: (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => Promise<PantryItemDto>;
   find: (id: string) => Promise<PantryItemDto> };
 const Context = createContext<Value | null>(null);
 export function RealPantryProvider({ children }: { children: React.ReactNode }) {
@@ -53,7 +55,19 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     if (mounted.current) await reload(); // Reload failures retain the saved row and display a retry notice.
     return item;
   };
-  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, reload, loadMore, add,
+  const reconcile = async (response: { data: { item: PantryItemDto } }) => {
+    const item = response.data.item;
+    if (mounted.current) {
+      generation.current++; // In-flight list reads cannot restore a pre-mutation row.
+      setItems(current => item.status === 'ACTIVE'
+        ? [item, ...current.filter(entry => entry.id !== item.id)] : current.filter(entry => entry.id !== item.id));
+      await reload();
+    }
+    return item;
+  };
+  const edit = async (id: string, input: PantryEditInput, key: string) => reconcile(await api.edit(id, input, key));
+  const outcome = async (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => reconcile(await api.outcome(id, action, input, key));
+  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, reload, loadMore, add, edit, outcome,
     find }}>{children}</Context.Provider>;
 }
 export function useRealPantry() {
