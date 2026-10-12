@@ -1,3 +1,5 @@
+import PantryExpiryFields from '@/components/PantryExpiryFields';
+import { expiryDraft, expirySelection, resolveExpiry } from '@/lib/pantryExpiry';
 import React, { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -71,6 +73,8 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
   const real = useRealPantry();
   const initial: PantryDraft = { name: item.name, category: pantryCardItem(item).category, quantity: item.quantity,
     unit: item.unit, expiresOn: item.expiresOn, price: item.totalCostMinor === null ? '' : (item.totalCostMinor / 100).toFixed(2) };
+  const initialExpiry = expiryDraft(item);
+  const [expiry, setExpiry] = useState(initialExpiry);
   const [draft, setDraft] = useState(initial); const [error, setError] = useState('');
   const [message, setMessage] = useState(''); const [confirmation, setConfirmation] = useState<'CONSUMED' | 'WASTED' | 'RESTORE' | null>(null);
   const [outcomeError, setOutcomeError] = useState('');
@@ -78,7 +82,7 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
   const editKey = useRef(pantryRetryKey()); const outcomeKey = useRef(pantryRetryKey());
   const busy = saveRequest.loading || outcomeRequest.loading;
   const active = item.status === 'ACTIVE';
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial) || JSON.stringify(expiry) !== JSON.stringify(initialExpiry);
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     if (busy) return;
     setDraft(current => ({ ...current, [key]: value })); setError(''); setMessage(''); editKey.current = pantryRetryKey();
@@ -102,8 +106,8 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
       </View>
       <FormInput label="Quantity" value={draft.quantity} keyboardType="decimal-pad" editable={active && !busy} onChangeText={value => change('quantity', value)} />
       <FormInput label="Unit" value={draft.unit} maxLength={32} editable={active && !busy} onChangeText={value => change('unit', value)} />
-      <FormInput label="Expiry date (YYYY-MM-DD)" value={draft.expiresOn} maxLength={10} autoCapitalize="none" editable={active && !busy} onChangeText={value => change('expiresOn', value)} />
-      <Text style={styles.body}>Changing expiry marks the date as user entered. Days remaining use Asia/Kolkata.</Text>
+      <PantryExpiryFields name={draft.name} category={draft.category.toUpperCase() as PantryItemDto['category']} value={expiry} disabled={!active || busy}
+        onChange={value => { if (busy || !active) return; setExpiry(value); setError(''); setMessage(''); editKey.current = pantryRetryKey(); }} />
       <FormInput label="Purchase value (₹, optional)" value={draft.price} keyboardType="decimal-pad" editable={active && !busy} onChangeText={value => change('price', value)} />
       <Text style={styles.body}>Value of this whole entry. Blank is unknown; zero means free.</Text>
       {!!error && <Text style={styles.error} accessibilityRole="alert">{error}</Text>}
@@ -111,8 +115,11 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
       {active && <>
         <PrimaryButton label="Save Changes" loading={saveRequest.loading} disabled={!dirty || busy} onPress={() => {
           setError(''); void saveRequest.run(async isMounted => {
-            const validation = validatePantryEdit(draft); if (validation) throw new NeonAuthError('INVALID_REQUEST', validation);
-            const saved = await real.edit(item.id, { ...manualPantryInput(draft), expectedUpdatedAt: item.updatedAt }, editKey.current);
+            let resolved;
+            try { resolved = resolveExpiry(expirySelection(expiry)); } catch (error) { throw new NeonAuthError('INVALID_REQUEST', (error as Error).message); }
+            const fields = { ...draft, expiresOn: resolved.expiresOn };
+            const validation = validatePantryEdit(fields); if (validation) throw new NeonAuthError('INVALID_REQUEST', validation);
+            const saved = await real.edit(item.id, { ...manualPantryInput(fields), expirySelection: resolved.selection, expectedUpdatedAt: item.updatedAt }, editKey.current);
             if (isMounted()) { setMessage('Changes saved to your household.'); onSaved(saved); }
           });
         }} />

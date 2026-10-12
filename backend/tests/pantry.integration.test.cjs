@@ -195,3 +195,31 @@ test('event failure rolls back the item; an account without membership cannot cr
       error => error instanceof PantryFailure && error.code === 'HOUSEHOLD_REQUIRED');
   } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_ROLLBACK_CHECK_FAILED'); }
 });
+
+test('estimated expiry persists through replay and edits; package/manual priority and event snapshots remain consistent', async () => {
+  try {
+    const user = await account(), foreign = await account(), service = createPantryService(db);
+    const estimate = { packageDate: null, userDate: null, preset: { baseDate: '2026-10-12', days: 7 } };
+    const fields = pantryInput({ ...input, expiresOn: '2026-10-19', expirySelection: estimate });
+    const key = randomUUID(); const item = await service.create(user, fields, key);
+    assert.equal(item.expirySource, 'PRESET_ESTIMATE'); assert.equal(item.freshnessPresetDays, 7); assert.equal(item.purchaseDate, '2026-10-12');
+    assert.equal((await service.create(user, fields, key)).id, item.id);
+    const restored = await service.find(user, item.id); assert.equal(restored.expirySource, 'PRESET_ESTIMATE');
+    await assert.rejects(service.edit(foreign, item.id, { ...fields, expectedUpdatedAt: item.updatedAt }, randomUUID()), error => error.code === 'ITEM_NOT_FOUND');
+    const customized = pantryInput({ ...input, expiresOn: '2026-10-21', expirySelection: { ...estimate, preset: { ...estimate.preset, days: 9 } } });
+    const editKey = randomUUID(); const changed = await service.edit(user, item.id, { ...customized, expectedUpdatedAt: item.updatedAt }, editKey);
+    assert.equal(changed.freshnessPresetDays, 9); assert.equal(changed.expiresOn, '2026-10-21');
+    await service.edit(user, item.id, { ...customized, expectedUpdatedAt: item.updatedAt }, editKey);
+    const printedFields = pantryInput({ ...input, expiresOn: '2026-10-25', expirySelection: { ...estimate, packageDate: '2026-10-25', userDate: '2026-10-20' } });
+    const printed = await service.edit(user, item.id, { ...printedFields, expectedUpdatedAt: changed.updatedAt }, randomUUID());
+    assert.equal(printed.expirySource, 'PACKAGE_DATE'); assert.equal(printed.freshnessPresetDays, null);
+    const manualFields = pantryInput({ ...input, expiresOn: '2026-10-20', expirySelection: { ...estimate, userDate: '2026-10-20' } });
+    const manual = await service.edit(user, item.id, { ...manualFields, expectedUpdatedAt: printed.updatedAt }, randomUUID());
+    assert.equal(manual.expirySource, 'USER_ENTERED'); assert.equal(manual.freshnessPresetDays, null);
+    const events = await db.pantryItemEvent.findMany({ where: { pantryItemId: item.id }, orderBy: { occurredAt: 'asc' } });
+    assert.deepEqual(events.map(event => event.expiresOn.toISOString().slice(0, 10)), ['2026-10-19', '2026-10-21', '2026-10-25', '2026-10-20']);
+    assert.deepEqual(events.map(event => event.metadata.expirySource), ['PRESET_ESTIMATE', 'PRESET_ESTIMATE', 'PACKAGE_DATE', 'USER_ENTERED']);
+    assert.equal(events[0].metadata.freshnessPresetDays, 7); assert.equal(events[1].metadata.freshnessPresetDays, 9);
+    assert.equal((await service.list(user, { page: 1, pageSize: 50 })).items[0].expiresOn, manual.expiresOn);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_EXPIRY_CHECK_FAILED'); }
+});

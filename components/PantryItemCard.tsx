@@ -28,9 +28,10 @@ interface Props {
   onWaste?: (id: string) => void;
   valueLabel?: string;
   hideActions?: boolean;
+  packageDateLabel?: string;
 }
 
-export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSelect, selected = false, valueLabel, hideActions = false }: Props) {
+export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSelect, selected = false, valueLabel, hideActions = false, packageDateLabel = '✓ Confirmed' }: Props) {
   const swipeable = useRef<SwipeableMethods>(null);
   const swiping = useRef(false);
   const requestAction = (direction: 'right' | 'left') => {
@@ -48,7 +49,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
   </View>;
   const sourceLabel =
     item.expirySource === 'PACKAGE_DATE'
-      ? '✓ Confirmed'
+      ? packageDateLabel
       : item.expirySource === 'USER_ENTERED'
       ? 'User set'
       : '✦ Estimated';

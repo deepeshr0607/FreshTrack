@@ -275,7 +275,7 @@ export default function PantryScreen() {
               <Text style={styles.bannerStatus}>Active</Text>
             </View>
             <Text style={styles.bannerSub}><Text style={styles.confirmedLabel}>● {real.enabled ? 'User set' : 'Confirmed'}: </Text>{real.enabled ? 'Your entered expiry dates, tracked in Asia/Kolkata.' : 'Package date in demo fixture.'}</Text>
-            <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>{real.enabled ? 'Shelf-life presets are coming in a later Pantry slice.' : 'Suggested shelf life for loose produce.'}</Text>
+            <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>{real.enabled ? 'Editable shelf-life assumptions; package dates take priority.' : 'Suggested shelf life for loose produce.'}</Text>
             <Text style={styles.bannerNote}>{real.enabled ? `Your household · INR · ${items.length} of ${real.total} items loaded. Filters apply to loaded items.` : 'Demo sources; no AI or package verification.'}</Text>
           </View>
         </View>
@@ -349,6 +349,7 @@ export default function PantryScreen() {
         ) : (
           filtered.map((item) => (
             <PantryItemCard
+              packageDateLabel={real.enabled ? 'Package date' : undefined}
               key={item.id}
               item={item}
               onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}

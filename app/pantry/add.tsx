@@ -1,3 +1,6 @@
+import PantryExpiryFields from '@/components/PantryExpiryFields';
+import { expiryDraft, expirySelection, resolveExpiry } from '@/lib/pantryExpiry';
+import { NeonAuthError } from '@/lib/neonAuth';
 import React, { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -18,6 +21,7 @@ export default function PantryAddScreen() {
   const real = useRealPantry();
   const [draft, setDraft] = useState<PantryDraft>({ name: '', quantity: '1', unit: '',
     expiresOn: '', category: 'Produce', price: '' });
+  const [expiry, setExpiry] = useState(expiryDraft());
   const [error, setError] = useState<string | null>(null);
   const submitted = useRef(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -47,10 +51,14 @@ export default function PantryAddScreen() {
         </Pressable>)}
       </View>
       <FormInput label="Quantity" accessibilityLabel="Quantity" keyboardType="decimal-pad" value={draft.quantity} onChangeText={(value) => change('quantity', value)} />
-      <FormInput label="Unit (e.g. bag, kg, bottle)" accessibilityLabel="Unit" value={draft.unit} onChangeText={(value) => change('unit', value)} maxLength={40} />
-      <FormInput label="Expiry date (YYYY-MM-DD)" accessibilityLabel="Expiry date" placeholder="YYYY-MM-DD"
+      <FormInput label="Unit (e.g. bag, kg, bottle)" accessibilityLabel="Unit" value={draft.unit} onChangeText={(value) => change('unit', value)} maxLength={real.enabled ? 32 : 40} />
+      {real.enabled ? <PantryExpiryFields name={draft.name} category={draft.category.toUpperCase() as Parameters<typeof PantryExpiryFields>[0]['category']}
+        value={expiry} disabled={request.loading} onChange={value => {
+          if (request.loading) return;
+          setExpiry(value); setError(null); retryKey.current = `entry-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        }} /> : <><FormInput label="Expiry date (YYYY-MM-DD)" accessibilityLabel="Expiry date" placeholder="YYYY-MM-DD"
         autoCapitalize="none" maxLength={10} value={draft.expiresOn} onChangeText={(value) => change('expiresOn', value)} />
-      <Text style={ui.text}>Enter the date you want to track. Past dates are allowed for items needing reconciliation.</Text>
+      <Text style={ui.text}>Enter the date you want to track. Past dates are allowed for items needing reconciliation.</Text></>}
       <FormInput label={`Purchase value (${real.enabled ? '₹' : MOCK_CURRENCY.symbol}, optional)`} accessibilityLabel="Purchase value" keyboardType="decimal-pad"
         value={draft.price} onChangeText={(value) => change('price', value)} placeholder="Unknown" />
       <Text style={ui.text}>{real.enabled ? 'Value of this whole entry in rupees, not per unit. Leave blank for unknown; zero means free.' : 'Value of this whole entry, not per unit. Unknown values count as $0 in this prototype.'}</Text>
@@ -60,7 +68,9 @@ export default function PantryAddScreen() {
         if (real.enabled) {
           setError(null);
           void request.run(async isMounted => {
-            const item = await real.add(manualPantryInput(draft), retryKey.current);
+            let resolved;
+            try { resolved = resolveExpiry(expirySelection(expiry)); } catch (error) { throw new NeonAuthError('INVALID_REQUEST', (error as Error).message); }
+            const item = await real.add({ ...manualPantryInput({ ...draft, expiresOn: resolved.expiresOn }), expirySelection: resolved.selection }, retryKey.current);
             if (isMounted()) { submitted.current = true; setSavedId(item.id); }
           });
           return;

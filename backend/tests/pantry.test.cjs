@@ -111,3 +111,13 @@ test('pantry failures are safe HTTP envelopes with server-owned request IDs', as
     assert.equal(response.body.error.requestId, response.headers['x-request-id']);
   }
 });
+
+test('explicit expiry choices validate precedence and reject mismatched dates or injected metadata', () => {
+  const expirySelection = { packageDate: '2026-10-25', userDate: '2026-10-20', preset: { baseDate: '2026-10-12', days: 7 } };
+  const selected = pantryInput({ ...valid, expiresOn: '2026-10-25', expirySelection });
+  assert.equal(selected.expiresOn, '2026-10-25'); assert.deepEqual(selected.expirySelection, expirySelection);
+  assert.throws(() => pantryInput({ ...valid, expirySelection }));
+  assert.throws(() => pantryInput({ ...valid, expirySource: 'PACKAGE_DATE' }));
+  assert.throws(() => pantryInput({ ...valid, freshnessPresetDays: 7 }));
+  assert.throws(() => pantryInput({ ...valid, expirySelection: { ...expirySelection, preset: { baseDate: '2026-10-12', days: 0 } } }));
+});
