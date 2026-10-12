@@ -66,9 +66,12 @@ export function createExpiryScheduler(io: {
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     invalidate() { revision++; },
     generation: () => revision,
+    notice(scope: string, message: string) {
+      if (currentScope() === scope) publish({ scope, message, ...(state.scope !== scope ? { count: 0, nextAt: null } : {}) });
+    },
     inspect(scope: string) { return run(async () => {
       if (currentScope() !== scope) return;
-      try { const rows = await io.list(); if (currentScope() === scope) stats(scope, rows, 'Device schedule checked. Sync to apply current Pantry data.'); }
+      try { const rows = await io.list(); if (currentScope() === scope) stats(scope, rows, 'Device schedule checked.'); }
       catch { publish({ scope, message: 'Unable to read the reminder schedule. Retry Sync Expiry Reminders.' }); }
     }); },
     cancel(scopeToKeep: string | null = null, ids?: string[]) {

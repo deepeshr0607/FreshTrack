@@ -3,6 +3,8 @@ import { useAuth } from './AuthContext';
 import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
 import { nativeExpiryScheduler } from '@/features/notifications/nativeScheduler';
+import { onReminderPreferenceSaved, readNativeReminderChoice } from '@/features/notifications/nativePreferences';
+import { bindAutomaticReminderSession, createAutomaticReminders } from '@/lib/automaticReminders';
 import { createPantryApi, requirePantryStatus, pantryFilterKey } from '@/lib/pantryApi';
 import { createPantryReadCache, cacheablePantryFailure } from '@/lib/pantryReadCache';
 import { NeonAuthError } from '@/lib/neonAuth';
@@ -14,6 +16,7 @@ type Value = { enabled: boolean; items: PantryItemDto[]; loading: boolean; error
   filters: PantryListFilters; inventory: PantryInventoryCounts; setFilters: (filters: PantryListFilters) => void;
   reload: () => Promise<void>; loadMore: () => Promise<void>;
   reminderItems: () => Promise<PantryItemDto[]>;
+  syncReminders: () => Promise<void>;
   duplicates: (input: PantryCreateInput) => Promise<{ matches: PantryItemDto[]; total: number }>;
   add: (input: PantryCreateInput, key: string) => Promise<PantryItemDto>;
   edit: (id: string, input: PantryEditInput, key: string) => Promise<PantryItemDto>;
@@ -52,7 +55,32 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const [inventory, setInventory] = useState<PantryInventoryCounts>({ active: 0, categories: {} });
   const loadingRef = useRef(false); const hasMoreRef = useRef(false);
   const page = useRef(0); const generation = useRef(0); const mounted = useRef(true);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current++; cache.clear(); }; }, [cache]);
+  const automatic = useMemo(() => {
+    const scheduler = nativeExpiryScheduler;
+    if (!scheduler || !enabled) return null;
+    return createAutomaticReminders({
+      active: () => { const current = session.getSnapshot(); return mounted.current && !current.checking && current.user?.id === state.user?.id; },
+      readChoice: () => readNativeReminderChoice(scope),
+      readItems: async () => {
+        // Recovery may fetch fresh server data while the screen is cached; never use cached rows.
+        if (previewRef.current) throw Error('PANTRY_CACHED');
+        await api.setup(); const rows = await api.reminderItems();
+        if (previewRef.current) throw Error('PANTRY_CACHED');
+        return rows;
+      },
+      invalidate: () => scheduler.invalidate(), generation: scheduler.generation,
+      commit: (rows, choice, revision) => scheduler.sync(scope, rows, choice.hour, choice.enabled, revision),
+      notice: message => scheduler.notice(scope, message),
+    });
+  }, [api, enabled, scope, session, state.user?.id]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current++; cache.clear(); automatic?.invalidate(); }; }, [cache, automatic]);
+  useEffect(() => {
+    const stop = onReminderPreferenceSaved(() => { void automatic?.request(); });
+    // Observe every session publication, even if React batches checking/verified renders on resume.
+    const stopSession = automatic ? bindAutomaticReminderSession(session, automatic,
+      id => id === state.user?.id && !previewRef.current) : () => undefined;
+    return () => { stop(); stopSession(); };
+  }, [automatic, session, state.user?.id, cachePreview]);
   const hydrateDisk = useCallback(() => {
     if (hydrated.current) return hydrated.current;
     const verified = session.getSnapshot();
@@ -133,7 +161,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     if (readOnlyRef.current) { loadingRef.current = false; setLoading(false); showCached(next); return; }
     void load(false);
   }, [load, showCached]);
-  const reload = useCallback(() => load(false), [load]);
+  const reload = useCallback(async () => { await load(false); if (!previewRef.current && mounted.current) void automatic?.request(); }, [load, automatic]);
   const loadMore = useCallback(() => load(true), [load]);
   const find = useCallback(async (id: string) => {
     const verified = session.getSnapshot();
@@ -170,11 +198,12 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     requireLive();
     if (!mounted.current) throw new NeonAuthError('PANTRY_CANCELLED', 'The pantry session changed.');
     const item = (await api.add(input, key)).data.item;
-    if (mounted.current) { generation.current++; cache.remember(scope, [item]); persistDisk(); }
-    if (mounted.current) await reload(); // Saved detail is returned; list refresh failures display a retry notice.
+    if (mounted.current) { automatic?.invalidate(); generation.current++; cache.remember(scope, [item]); persistDisk(); }
+    if (mounted.current) { await load(false); if (mounted.current) void automatic?.request(); } // Saved detail is returned; list refresh failures display a retry notice.
     return item;
   };
   const reconcileMany = async (changed: PantryItemDto[], rememberOutcome = false) => {
+    automatic?.invalidate();
     await nativeExpiryScheduler?.cancel(null, changed.map(item => item.id));
     if (mounted.current) {
       cache.remove(scope, changed.map(item => item.id)); cache.remember(scope, changed.filter(item => item.status === 'ACTIVE')); persistDisk();
@@ -182,7 +211,8 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       setItems(current => current.filter(entry => !changed.some(item => item.id === entry.id))); // Re-query before inserting: edits/restores may no longer match these filters.
       if (rememberOutcome) setLastOutcome(changed.filter(item => ['CONSUMED', 'WASTED'].includes(item.status)));
       else setLastOutcome(current => current.filter(entry => !changed.some(item => item.id === entry.id)));
-      await reload();
+      await load(false);
+      if (mounted.current) void automatic?.request();
     }
     return changed;
   };
@@ -209,13 +239,15 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     restoreSavedPreview: async () => {
       if (!__DEV__ || !enabled) return;
       generation.current++; loadingRef.current = false; setLoading(false);
+      automatic?.invalidate();
       previewRef.current = true; setCachePreview(true); readOnlyRef.current = true; setReadOnly(true);
       cache.clear(); hydrated.current = null;
       await hydrateDisk(); showCached(filtersRef.current);
     }, readOnly, cachedAt, cachePreview,
-    previewCache: () => { if (__DEV__ && enabled) { previewRef.current = true; setCachePreview(true); void reload(); } },
+    previewCache: () => { if (__DEV__ && enabled) { automatic?.invalidate(); previewRef.current = true; setCachePreview(true); void reload(); } },
     endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, add, edit, outcome, undo,
     reminderItems: async () => { requireLive(); await api.setup(); requireLive(); const rows = await api.reminderItems(); requireLive(); return rows; },
+    syncReminders: async () => { await automatic?.flush(); },
     batchOutcome, batchUndo, lastOutcome, dismissUndo: () => setLastOutcome([]),
     find }}>{children}</Context.Provider>;
 }
