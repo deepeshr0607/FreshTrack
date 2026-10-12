@@ -5,8 +5,8 @@ import { resolveExpiry } from './pantryExpiry.ts';
 
 export const reminderPrefix = 'freshtrack.expiry.v1.';
 export type ReminderItem = { id: string; expiresOn: string; status: string };
-export type ExpiryReminder = { identifier: string; scope: string; itemId: string; daysBefore: number; at: number };
-export type QueuedReminder = { identifier: string; scope?: string; at?: number };
+export type ExpiryReminder = { identifier: string; scope: string; itemId: string; daysBefore: number; at: number; actionVersion: 1 };
+export type QueuedReminder = { identifier: string; scope?: string; at?: number; actionVersion?: number };
 export function bindExpiryCleanup(session: {
   getSnapshot(): { checking: boolean; status: string; user: { id: string } | null };
   subscribe(listener: () => void): () => void;
@@ -38,7 +38,7 @@ export function planExpiryReminders(scope: string, items: ReminderItem[], hour: 
       date.setFullYear(calendar.getUTCFullYear(), calendar.getUTCMonth(), calendar.getUTCDate());
       date.setHours(hours!, minutes!, 0, 0);
       const at = date.getTime();
-      if (at > now) reminders.push({ identifier: `${reminderPrefix}${item.id}.${daysBefore}`, scope, itemId: item.id, daysBefore, at });
+      if (at > now) reminders.push({ identifier: `${reminderPrefix}${item.id}.${daysBefore}`, scope, itemId: item.id, daysBefore, at, actionVersion: 1 });
     }
   }
   reminders.sort((a, b) => a.at - b.at || a.identifier.localeCompare(b.identifier));
@@ -105,20 +105,20 @@ export function createExpiryScheduler(io: {
           const desired = enabled ? complete.reminders.slice(0, capacity) : [];
           for (const row of rows.filter(owned)) {
             if (!valid()) return;
-            const match = desired.find(reminder => reminder.identifier === row.identifier && reminder.scope === row.scope && reminder.at === row.at);
+            const match = desired.find(reminder => reminder.identifier === row.identifier && reminder.scope === row.scope && reminder.at === row.at && reminder.actionVersion === row.actionVersion);
             if (!match) await io.cancel(row.identifier);
           }
           for (const reminder of desired) {
             if (!valid()) return;
             if (reminder.at <= now()) continue;
-            if (!rows.some(row => row.identifier === reminder.identifier && row.scope === scope && row.at === reminder.at)) {
+            if (!rows.some(row => row.identifier === reminder.identifier && row.scope === scope && row.at === reminder.at && row.actionVersion === reminder.actionVersion)) {
               const identifier = await io.schedule(reminder);
               if (!valid() || identifier !== reminder.identifier) { await io.cancel(identifier); if (!valid()) return; throw Error('SCHEDULE_MISMATCH'); }
             }
           }
           const confirmed = await io.list(); if (!valid()) return;
           const expected = desired.filter(reminder => reminder.at > now());
-          if (expected.some(reminder => !confirmed.some(row => row.identifier === reminder.identifier && row.scope === scope && row.at === reminder.at))) throw Error('SCHEDULE_INCOMPLETE');
+          if (expected.some(reminder => !confirmed.some(row => row.identifier === reminder.identifier && row.scope === scope && row.at === reminder.at && row.actionVersion === reminder.actionVersion))) throw Error('SCHEDULE_INCOMPLETE');
           const omitted = enabled ? complete.omitted + complete.reminders.length - desired.length : 0;
           stats(scope, confirmed, !enabled ? 'Reminders are Off. FreshTrack alerts cancelled.'
             : omitted ? `Closest ${expected.length} alerts scheduled; ${omitted} later alerts deferred. Sync again as dates advance.`
