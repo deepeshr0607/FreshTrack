@@ -68,8 +68,11 @@ Development Preview `dpl_D3RUMLGCC1HLFSbr1EgZrwoeaRnN` is READY:
 https://freshtrack-7xxjkjf8d-dragon-2818.vercel.app. Explicit Preview/DRAGON scope deployment
 passed; production URL null. Public health200/tokenless duplicate-check and create401 passed.
 Ignored public mobile API URL updated; Neon Auth settings/origin preserved. Cloud install reports
-the prior36 audit findings; dependencies unchanged. iPhone acceptance pending. Next: verify duplicate cancel,
-explicit separate purchase/restart, original values and changed-date non-match on the iPhone.
-After acceptance, continue Phase4 offline-readable/recovery support and final review.
+the prior36 audit findings; dependencies unchanged. User reports all requested iPhone checks passing on 12 October 2026 at
+exp://192.168.1.21:8085: normalized duplicate review, cancellation keeping only the original,
+explicit separate-add/restart retaining both active purchases and original quantities/values,
+and changed-date addition without a duplicate prompt. This is user-reported acceptance, not
+automated native evidence. Uncertain-save/offline failure paths remain unverified.
+Exact next slice: Phase4 offline-readable Pantry and safe network recovery, followed by final review.
 Real Scanner imports, Android/release QA and deferred Phase1 native/design review remain later work.
 No Phase5 was started.

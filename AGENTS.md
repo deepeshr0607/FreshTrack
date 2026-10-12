@@ -165,12 +165,12 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
-**Manual duplicate review implemented (12 October):** authenticated household-scoped exact
+**Manual duplicate review verified on iPhone (12 October):** authenticated household-scoped exact
 name/category/date checks, cancellable previews and explicit Add Separately are connected to Add.
 Create rechecks transactionally and preserves existing purchases; exact payload/key retries avoid
 duplicating an uncertain save. Both TypeScript/build, root88/88, backend44/44, live Pantry17/17 with
 cleanup, health1/1, Doctor21/21 and final all-platform exports pass. Existing lint gaps remain.
-Development Preview READY; public health200/tokenless duplicate-check/create401 pass. iPhone acceptance pending; see [duplicate report](docs/Phase_4_Pantry_Duplicates.md).
+Development Preview READY; public health200/tokenless duplicate-check/create401 pass. User reports duplicate review/cancel, separate-add/restart, original values and changed-date checks pass; see [duplicate report](docs/Phase_4_Pantry_Duplicates.md).
 Next after acceptance: Phase4 offline support and final review. Scanner imports remain Phase6; no Phase5.
 
 
@@ -217,10 +217,10 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — duplicate review awaiting iPhone acceptance
+### Current phase: Phase 4 — duplicate review verified on iPhone
 
-- Manual duplicate slice implemented and checked as recorded above; current Preview/iPhone gate
-  follows in docs/Phase_4_Pantry_Duplicates.md. Offline support/final review remain. No Phase5.
+- Manual duplicate slice is deployed and user-reported iPhone checks pass as recorded above;
+  evidence and limits are in docs/Phase_4_Pantry_Duplicates.md. Offline support/final review remain. No Phase5.
 
 ### Phase 4 previous slice — BATCH/UNDO VERIFIED ON IPHONE
 
