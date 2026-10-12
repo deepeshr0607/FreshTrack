@@ -189,7 +189,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
-| 5 | Local expiry notifications + reconciliation | ⬜ Not started |
+| 5 | Local expiry notifications + reconciliation | 🟡 Permission/device preferences implemented; native acceptance pending |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
 | 8 | Waste analytics and data integrity | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 5 item 1 implemented (12 October), iPhone acceptance pending:** signed-in native Settings has contextual notification permission, blocked/retry recovery and device/account-scoped reminder On/Off and HH:MM persistence. Demo/digest preserved; no alerts scheduled yet. SDK-compatible expo-notifications ~57.0.22 installed. Both TypeScript checks, root111/111, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [permission/preferences report](docs/Phase_5_Permission_Preferences.md). Next: iPhone permission/restart checks, then item 2 scheduling when authorized. Items 2–8 remain incomplete.
 
 **Phase 4 — core development acceptance complete (12 October):** all six plan criteria reviewed against code, passing regression tests, recorded live database tests and user-reported iPhone checks. Final reruns: both TypeScript/build, root102/102, backend48/48, health1/1, database readiness/migration status, Doctor21/21 and all-platform exports pass; hosted health200/tokenless Pantry401 pass. Existing lint gaps and native transport/conflict/retry/full-cap/Android/release QA remain unverified. See [final review](docs/Phase_4_Final_Review.md). No Phase5; next authorized slice would be contextual notification permission/preferences.
 
