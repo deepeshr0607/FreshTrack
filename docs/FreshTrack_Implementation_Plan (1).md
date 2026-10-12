@@ -704,7 +704,7 @@ SQL checks, target verification/live connectivity, Prisma singleton and guarded 
 
 ## Phase 4 — Pantry inventory end-to-end
 
-### Current slice — expiry presets resumed (12 October 2026)
+### Current slice — expiry presets verified on iPhone (12 October 2026)
 
 User resumed the saved expiry work. Shared typed choices and one server-validated calculator apply
 package > manual > estimate precedence. Real Add/Edit provide editable starting dates and durations;
@@ -712,7 +712,9 @@ normalized name/category defaults are tracking assumptions, clearly labeled esti
 dependencies, household scope/retry guards, legacy clients and demo flow are preserved.
 Both TypeScript/build, root84/84, backend38/38, Doctor21/21 and all-platform exports pass. Existing lint
 gaps remain. Live Pantry12/12 and cleanup pass; new development Preview is READY, public health200
-and tokenless create/edit401 pass. iPhone acceptance is pending.
+and tokenless create/edit401 pass. User reports iPhone estimate/restart, invalid/custom duration,
+package priority/restart and manual override checks pass. Next: server-wide Pantry filters/sorting,
+then duplicate/offline handling and final Phase 4 review. Device failure paths/Android remain open.
 See [expiry report](Phase_4_Expiry_Presets.md). No Phase 5 or production work.
 
 

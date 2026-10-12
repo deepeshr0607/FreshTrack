@@ -199,7 +199,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Expiry-preset work resumed at user request (12 October):** Add/Edit now support editable estimates and package > manual > estimate precedence. Both TypeScript/build, root84/84, backend38/38, Doctor21/21 and all-platform exports pass. Live Pantry12/12 and fixture cleanup pass; development Preview is READY, public health200/tokenless mutations401 pass. iPhone checks are pending; see [expiry report](docs/Phase_4_Expiry_Presets.md).
+**Expiry presets verified on iPhone (12 October):** Add/Edit now support editable estimates and package > manual > estimate precedence. Both TypeScript/build, root84/84, backend38/38, Doctor21/21 and all-platform exports pass. Live Pantry12/12 and fixture cleanup pass; development Preview is READY, public health200/tokenless mutations401 pass. User reports estimate/restart, invalid/custom duration, package priority/restart and manual override checks pass; see [expiry report](docs/Phase_4_Expiry_Presets.md).
 
 
 **Batch/undo is deployed to development and its requested iPhone checks pass by user report.**
@@ -207,7 +207,7 @@ These include batch Used cancellation/confirmation, undo cancellation/restore/re
 and single-detail undo. Native failure paths, full-cap batches and Android remain unverified.
 Neon readiness and synthetic cleanup recovered. Final sequential live Pantry tests11/11 pass and
 zero reserved test memberships remain. See [batch/undo report](docs/Phase_4_Batch_Undo.md).
-Next: expiry presets and precedence, then server-wide filters, duplicate/offline handling and final review.
+Expiry presets are now verified as recorded above. Next: server-wide filters, duplicate/offline handling and final review.
 
 **Phase 4 is in progress: persisted Pantry add/list/edit and confirmed Used/Wasted are deployed to development.**
 Demo mode is preserved. User reports iPhone add/details/restart/refresh/sorting checks pass;
