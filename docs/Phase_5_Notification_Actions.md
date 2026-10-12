@@ -1,6 +1,7 @@
 # Phase 5 item 4 — notification actions
 
-Implemented on 13 October 2026 after user authorization. Native acceptance is pending.
+Implemented on 13 October 2026 after user authorization. The user reported the iPhone Expo Go
+checklist passed on 13 October; development-build acceptance remains pending.
 Items 5–8 and final Phase 5 review remain incomplete; no Phase 6 work.
 
 ## Behavior
@@ -102,8 +103,14 @@ If this is close to midnight, start after midnight so all test reminder times st
 
 ## Remaining acceptance
 
-No user result for this checklist is recorded yet. Real development-build iOS action rendering,
-Android action rendering/timing, device-lock/cold-start behavior, foreign-account taps, offline
-failure/retry and already-resolved notification paths require native validation. Android tools and
+The user answered “yes working” after the complete in-chat checklist on 13 October 2026.
+Recorded as user-reported Expo Go passes for Consumed/Wasted button visibility, cancellation,
+confirmed Used/Wasted, opening from closed Expo Go, outcome persistence after restart and disable
+cleanup. No direct agent observation, numeric queue counts or capacity-warning details were
+supplied. The optional body-tap check in this document was not in the in-chat checklist and is
+not counted as verified. No new automated checks were needed for this documentation-only update.
+Real development-build iOS/Android rendering, device-lock/cold-start behavior, foreign-account
+taps, offline failure/retry and already-resolved notification paths still require native validation. Android tools and
 an iOS development build are not presently available. Offline queued writes remain item 5.
-Next: execute the native checklist; then item 5 durable offline action syncing when authorized.
+Next implementation slice: item 5 durable offline action syncing when authorized. Development-build
+and Android validation remain required before final Phase 5 acceptance.
