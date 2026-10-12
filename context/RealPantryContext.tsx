@@ -1,15 +1,19 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
-import { createPantryApi } from '@/lib/pantryApi';
+import { createPantryApi, requirePantryStatus } from '@/lib/pantryApi';
 import { NeonAuthError } from '@/lib/neonAuth';
-import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryItemDto } from '@/types/api';
+import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryItemDto } from '@/types/api';
 
 type Value = { enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
   reload: () => Promise<void>; loadMore: () => Promise<void>;
   add: (input: PantryCreateInput, key: string) => Promise<PantryItemDto>;
   edit: (id: string, input: PantryEditInput, key: string) => Promise<PantryItemDto>;
   outcome: (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => Promise<PantryItemDto>;
+  undo: (id: string, input: PantryOutcomeInput, key: string) => Promise<PantryItemDto>;
+  batchOutcome: (input: PantryBatchOutcomeInput, key: string) => Promise<PantryItemDto[]>;
+  batchUndo: (input: PantryBatchInput, key: string) => Promise<PantryItemDto[]>;
+  lastOutcome: PantryItemDto[]; dismissUndo: () => void;
   find: (id: string) => Promise<PantryItemDto> };
 const Context = createContext<Value | null>(null);
 export function RealPantryProvider({ children }: { children: React.ReactNode }) {
@@ -24,6 +28,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     return token;
   }, __DEV__), [session, state.user?.id]);
   const [items, setItems] = useState<PantryItemDto[]>([]);
+  const [lastOutcome, setLastOutcome] = useState<PantryItemDto[]>([]);
   const [loading, setLoading] = useState(false); const [error, setError] = useState('');
   const [total, setTotal] = useState(0); const [hasMore, setHasMore] = useState(false);
   const page = useRef(0); const generation = useRef(0); const mounted = useRef(true);
@@ -55,19 +60,33 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     if (mounted.current) await reload(); // Reload failures retain the saved row and display a retry notice.
     return item;
   };
-  const reconcile = async (response: { data: { item: PantryItemDto } }) => {
-    const item = response.data.item;
+  const reconcileMany = async (changed: PantryItemDto[], rememberOutcome = false) => {
     if (mounted.current) {
       generation.current++; // In-flight list reads cannot restore a pre-mutation row.
-      setItems(current => item.status === 'ACTIVE'
-        ? [item, ...current.filter(entry => entry.id !== item.id)] : current.filter(entry => entry.id !== item.id));
+      setItems(current => [...changed.filter(item => item.status === 'ACTIVE'), ...current.filter(entry => !changed.some(item => item.id === entry.id))]);
+      if (rememberOutcome) setLastOutcome(changed.filter(item => ['CONSUMED', 'WASTED'].includes(item.status)));
+      else setLastOutcome(current => current.filter(entry => !changed.some(item => item.id === entry.id)));
       await reload();
     }
-    return item;
+    return changed;
   };
-  const edit = async (id: string, input: PantryEditInput, key: string) => reconcile(await api.edit(id, input, key));
-  const outcome = async (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => reconcile(await api.outcome(id, action, input, key));
-  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, reload, loadMore, add, edit, outcome,
+  const edit = async (id: string, input: PantryEditInput, key: string) => (await reconcileMany([(await api.edit(id, input, key)).data.item]))[0]!;
+  const outcome = async (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => {
+    const item = (await api.outcome(id, action, input, key)).data.item;
+    requirePantryStatus([item], action === 'consume' ? 'CONSUMED' : 'WASTED'); return (await reconcileMany([item], true))[0]!;
+  };
+  const undo = async (id: string, input: PantryOutcomeInput, key: string) => {
+    const item = (await api.undo(id, input, key)).data.item; requirePantryStatus([item], 'ACTIVE'); return (await reconcileMany([item]))[0]!;
+  };
+  const batchOutcome = async (input: PantryBatchOutcomeInput, key: string) => {
+    const changed = (await api.batchOutcome(input, key)).data.items;
+    requirePantryStatus(changed, input.action === 'consume' ? 'CONSUMED' : 'WASTED'); return reconcileMany(changed, true);
+  };
+  const batchUndo = async (input: PantryBatchInput, key: string) => {
+    const changed = (await api.batchUndo(input, key)).data.items; requirePantryStatus(changed, 'ACTIVE'); return reconcileMany(changed);
+  };
+  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, reload, loadMore, add, edit, outcome, undo,
+    batchOutcome, batchUndo, lastOutcome, dismissUndo: () => setLastOutcome([]),
     find }}>{children}</Context.Provider>;
 }
 export function useRealPantry() {

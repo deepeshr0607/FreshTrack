@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createPantryApi, manualPantryInput, rupeeValue } from '../lib/pantryApi.ts';
+import { createPantryApi, manualPantryInput, requirePantryStatus, rupeeValue } from '../lib/pantryApi.ts';
 test('manual entry represents paise exactly and preserves unknown/free prices and decimal quantity text', () => {
   const draft = { name: 'Milk', category: 'Dairy', unit: 'l', quantity: '0.5', expiresOn: '2026-10-20', price: '60.50' };
   assert.equal(manualPantryInput(draft).totalCostMinor, 6050); assert.equal(manualPantryInput(draft).quantity, '0.5');
@@ -8,6 +8,23 @@ test('manual entry represents paise exactly and preserves unknown/free prices an
   assert.equal(manualPantryInput({ ...draft, price: '0' }).totalCostMinor, 0);
   for (const change of [{ price: '0.001' }, { quantity: '1.2345' }, { quantity: '0' }]) assert.throws(() => manualPantryInput({ ...draft, ...change }));
   assert.equal(rupeeValue(6050), '₹60.50'); assert.equal(rupeeValue(null), 'Unknown value');
+});
+test('a replay superseded by a later outcome cannot be announced as successful undo', () => {
+  assert.doesNotThrow(() => requirePantryStatus([{ status: 'ACTIVE' }], 'ACTIVE'));
+  assert.throws(() => requirePantryStatus([{ status: 'WASTED' }], 'ACTIVE'), { code: 'PANTRY_CHANGED' });
+  assert.throws(() => requirePantryStatus([{ status: 'ACTIVE' }], 'CONSUMED'), { code: 'PANTRY_CHANGED' });
+});
+test('batch outcome/undo and item undo preserve selected versions, confirmation and retry keys', async () => {
+  const calls = []; const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async (url, options) => {
+    calls.push([url, JSON.parse(options.body), options.headers['Idempotency-Key']]); return Response.json({ data: {} });
+  });
+  const selected = { confirmed: true, items: [{ id: 'item', expectedUpdatedAt: '2026-10-12T00:00:00.000Z' }] };
+  await api.batchOutcome({ ...selected, action: 'consume' }, 'batch-key-123456789');
+  await api.batchUndo(selected, 'undo-key-123456789');
+  await api.undo('item', { confirmed: true, expectedUpdatedAt: selected.items[0].expectedUpdatedAt }, 'single-key-123456789');
+  assert.equal(calls[0][0], 'https://api.example.com/api/v1/pantry/batch-outcome'); assert.deepEqual(calls[0][1].items, selected.items);
+  assert.equal(calls[1][0], 'https://api.example.com/api/v1/pantry/batch-undo'); assert.deepEqual(calls[1][1], selected);
+  assert.equal(calls[2][0], 'https://api.example.com/api/v1/pantry/item/undo-status'); assert.equal(calls[2][2], 'single-key-123456789');
 });
 test('edit and outcome clients send the loaded version and explicit confirmation with replay keys', async () => {
   const calls = []; const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async (url, options) => {

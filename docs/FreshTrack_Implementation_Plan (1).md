@@ -706,6 +706,15 @@ SQL checks, target verification/live connectivity, Prisma singleton and guarded 
 
 **Goal:** Make the core app useful before adding OCR/AI.
 
+### Current status — batch/undo paused by user (12 October 2026)
+
+User requested pause to shut down the Mac. Batch/undo code is saved but not deployed or complete.
+Local TypeScript/build, root79/79, backend37/37, health1/1, Doctor21/21 and all-platform exports pass.
+Live suite first batch scenario passed then lost its Neon connection; remaining tests and cleanup
+failed. Reserved synthetic fixtures may remain. Restore readiness and scoped cleanup before rerunning
+live verification. See [paused handoff and recovery criteria](Phase_4_Batch_Undo_Paused.md).
+Resume only when asked. Existing verified edit/lifecycle deployment remains unchanged. No Phase 5.
+
 ### Current slice — persisted editing and outcomes verified on iPhone (12 October 2026)
 
 User approved this continuation. Validated membership-scoped PATCH and confirmed consume/waste

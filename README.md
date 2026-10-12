@@ -188,7 +188,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
-| 4 | Pantry CRUD end-to-end | 🟡 Add/list/edit/Used/Wasted verified on iPhone; remaining inventory work follows |
+| 4 | Pantry CRUD end-to-end | 🟡 Batch/undo work paused; prior add/edit/Used/Wasted verified |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
@@ -198,6 +198,11 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Work is paused at the user's request to shut down the Mac (12 October 2026).** Batch/undo changes
+are saved but not deployed. Local checks pass; live Neon verification and synthetic-test cleanup are
+pending after a connection failure. Read the [paused handoff](docs/Phase_4_Batch_Undo_Paused.md)
+before resuming. Existing deployed editing/Used/Wasted functionality remains unchanged.
 
 **Phase 4 is in progress: persisted Pantry add/list/edit and confirmed Used/Wasted are deployed to development.**
 Demo mode is preserved. User reports iPhone add/details/restart/refresh/sorting checks pass;

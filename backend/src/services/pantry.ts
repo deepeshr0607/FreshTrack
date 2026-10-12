@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Prisma, type PrismaClient, type PantryItem } from '@prisma/client';
-import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryItemDto, Pagination } from '../contracts/api';
+import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination } from '../contracts/api';
 import { InvalidApiInput, pageInfo, paginationOffset } from '../lib/api';
 import { calendarDate, expiryState, planStatusTransition, serializeCalendarDate, utcTimestamp } from '../lib/inventoryRules';
 import { minorAmount, quantityString } from '../lib/serialization';
@@ -25,6 +25,19 @@ export function pantryOutcomeInput(value: unknown): PantryOutcomeInput {
   const body = value as Record<string, unknown>;
   if (body['confirmed'] !== true || Object.keys(body).some(key => !['confirmed', 'expectedUpdatedAt'].includes(key))) throw new InvalidApiInput('Confirm the outcome without extra fields.');
   return { confirmed: true, expectedUpdatedAt: expectedVersion(body['expectedUpdatedAt']) };
+}
+export function pantryBatchInput(value: unknown, outcome = true): PantryBatchInput & { action?: 'consume' | 'waste' } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid batch.');
+  const body = value as Record<string, unknown>;
+  if (body['confirmed'] !== true || Object.keys(body).some(key => !(outcome ? ['confirmed', 'items', 'action'] : ['confirmed', 'items']).includes(key)) ||
+      (outcome && !['consume', 'waste'].includes(body['action'] as string)) || !Array.isArray(body['items']) || body['items'].length < 1 || body['items'].length > 20) throw new InvalidApiInput('Confirm between 1 and 20 items.');
+  const items = body['items'].map(value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !['id', 'expectedUpdatedAt'].includes(key)) ||
+        typeof value.id !== 'string' || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value.id)) throw new InvalidApiInput('Invalid batch item.');
+    return { id: value.id.toLowerCase(), expectedUpdatedAt: expectedVersion(value.expectedUpdatedAt) };
+  }).sort((a, b) => a.id.localeCompare(b.id));
+  if (new Set(items.map(item => item.id)).size !== items.length) throw new InvalidApiInput('Duplicate batch item.');
+  return { confirmed: true, items, ...(outcome ? { action: body['action'] as 'consume' | 'waste' } : {}) };
 }
 const categories = ['PRODUCE', 'DAIRY', 'BAKERY', 'SNACKS', 'MEAT', 'FROZEN', 'OTHER'];
 export function pantryInput(value: unknown): PantryCreateInput {
@@ -69,7 +82,7 @@ export function createPantryService(db: PrismaClient = prisma) {
     throw new PantryFailure('PANTRY_UNAVAILABLE');
   };
   const mutate = (identity: VerifiedIdentity, id: string, key: string,
-    mutation: { action: 'edit'; input: PantryEditInput } | { action: 'consume' | 'waste'; input: PantryOutcomeInput }) => run(async tx => {
+    mutation: { action: 'edit'; input: PantryEditInput } | { action: 'consume' | 'waste' | 'restore'; input: PantryOutcomeInput }) => run(async tx => {
     const membership = await member(tx, identity);
     const item = await tx.pantryItem.findFirst({ where: { id, householdId: membership.householdId, archivedAt: null,
       household: { members: { some: { authSubject: identity.id } } } } });
@@ -82,9 +95,9 @@ export function createPantryService(db: PrismaClient = prisma) {
       return view(item, membership.household.timezone);
     }
     // Repeating the same confirmed outcome is a no-op even if the first response was lost.
-    const target = mutation.action === 'consume' ? 'CONSUMED' : 'WASTED';
+    const target = mutation.action === 'restore' ? 'ACTIVE' : mutation.action === 'consume' ? 'CONSUMED' : 'WASTED';
     if (mutation.action !== 'edit' && item.status === target) return view(item, membership.household.timezone);
-    if (item.status !== 'ACTIVE') throw new PantryFailure('ITEM_RESOLVED');
+    if (mutation.action === 'restore' ? !['CONSUMED', 'WASTED'].includes(item.status) : item.status !== 'ACTIVE') throw new PantryFailure('ITEM_RESOLVED');
     if (utcTimestamp(item.updatedAt) !== mutation.input.expectedUpdatedAt) throw new PantryFailure('ITEM_CHANGED');
     const now = new Date(Math.max(Date.now(), item.updatedAt.getTime() + 1));
     let data: Prisma.PantryItemUpdateInput;
@@ -107,7 +120,45 @@ export function createPantryService(db: PrismaClient = prisma) {
       occurredAt: now, source: 'APP', idempotencyKey, metadata: { requestHash } } });
     return view(changed, membership.household.timezone);
   }, true);
+  const batch = (identity: VerifiedIdentity, input: PantryBatchInput, action: 'consume' | 'waste' | 'restore', key: string) => run(async tx => {
+    const membership = await member(tx, identity);
+    // Canonical order makes a reordered retry identical and reduces concurrent lock-order conflicts.
+    const selected = [...input.items].sort((a, b) => a.id.localeCompare(b.id));
+    const rows = await tx.pantryItem.findMany({ where: { id: { in: selected.map(item => item.id) }, householdId: membership.householdId,
+      archivedAt: null, household: { members: { some: { authSubject: identity.id } } } }, orderBy: { id: 'asc' } });
+    if (rows.length !== selected.length) throw new PantryFailure('ITEM_NOT_FOUND');
+    const requestHash = createHash('sha256').update(JSON.stringify({ action, items: selected, confirmed: true })).digest('hex');
+    const keys = selected.map((_item, index) => `batch:${key}:${index}`);
+    const prior = await tx.pantryItemEvent.findMany({ where: { householdId: membership.householdId, idempotencyKey: { in: keys } } });
+    if (prior.length) {
+      if (prior.length !== selected.length || selected.some((item, index) => !prior.some(event => event.idempotencyKey === keys[index] &&
+          event.pantryItemId === item.id && (event.metadata as { requestHash?: string } | null)?.requestHash === requestHash))) throw new PantryFailure('IDEMPOTENCY_CONFLICT');
+      return rows.map(row => view(row, membership.household.timezone));
+    }
+    for (const item of rows) {
+      if (action === 'restore' ? !['CONSUMED', 'WASTED'].includes(item.status) : item.status !== 'ACTIVE') throw new PantryFailure('ITEM_RESOLVED');
+      if (utcTimestamp(item.updatedAt) !== selected.find(entry => entry.id === item.id)!.expectedUpdatedAt) throw new PantryFailure('ITEM_CHANGED');
+    }
+    const result: PantryItemDto[] = [];
+    for (const [index, item] of rows.entries()) {
+      const transition = planStatusTransition(item.status, action);
+      const now = new Date(Math.max(Date.now(), item.updatedAt.getTime() + 1));
+      const changed = await tx.pantryItem.update({ where: { id: item.id, householdId: membership.householdId }, data: {
+        status: transition.newStatus, statusChangedAt: now, updatedAt: now, consumedAt: action === 'consume' ? now : null,
+        wastedAt: action === 'waste' ? now : null, assumedConsumedAt: null,
+      } });
+      await tx.pantryItemEvent.create({ data: { householdId: item.householdId, pantryItemId: item.id,
+        eventType: 'STATUS_CHANGED', previousStatus: item.status, newStatus: changed.status, quantity: changed.quantity,
+        totalCostMinor: changed.totalCostMinor, costSource: changed.costSource, currencyCode: changed.currencyCode,
+        category: changed.category, expiresOn: changed.expiresOn, timezone: membership.household.timezone,
+        occurredAt: now, source: 'APP', idempotencyKey: keys[index], metadata: { requestHash } } });
+      result.push(view(changed, membership.household.timezone));
+    }
+    return result;
+  }, true);
   return {
+    undo: (identity: VerifiedIdentity, id: string, input: PantryOutcomeInput, key: string) => mutate(identity, id, key, { action: 'restore', input }),
+    batch,
     edit: (identity: VerifiedIdentity, id: string, input: PantryEditInput, key: string) => mutate(identity, id, key, { action: 'edit', input }),
     outcome: (identity: VerifiedIdentity, id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => mutate(identity, id, key, { action, input }),
     list: (identity: VerifiedIdentity, pagination: Pagination) => run(async tx => {

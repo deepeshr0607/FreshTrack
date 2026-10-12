@@ -13,9 +13,12 @@ interface Props {
   onConfirm: () => void;
   loading?: boolean;
   error?: string;
+  undo?: boolean;
+  currencySymbol?: string;
+  unknownIds?: string[];
 }
 
-export default function PantryConfirmation({ item, items, action, onCancel, onConfirm, loading = false, error }: Props) {
+export default function PantryConfirmation({ item, items, action, onCancel, onConfirm, loading = false, error, undo = false, currencySymbol = '$', unknownIds = [] }: Props) {
   const batch = items !== undefined;
   const entries = items ?? (item ? [item] : []);
   const wasted = action === 'WASTED';
@@ -25,18 +28,18 @@ export default function PantryConfirmation({ item, items, action, onCancel, onCo
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <ScrollView contentContainerStyle={styles.content}>
             <Text accessibilityRole="header" style={styles.title}>
-              {batch ? `Mark ${entries.length} ${entries.length === 1 ? 'Item' : 'Items'} as ${wasted ? 'Wasted' : 'Used'}?` : wasted ? 'Mark as Wasted?' : 'Mark as Used?'}
+              {undo ? `Restore ${batch ? `${entries.length} Items` : 'Item'} to Pantry?` : batch ? `Mark ${entries.length} ${entries.length === 1 ? 'Item' : 'Items'} as ${wasted ? 'Wasted' : 'Used'}?` : wasted ? 'Mark as Wasted?' : 'Mark as Used?'}
             </Text>
             {entries.map((entry) => <Text key={entry.id} style={styles.body}>
-              {entry.name} · {entry.quantity} {entry.unit}{batch ? ` · $${entry.price.toFixed(2)}` : ''}
+              {entry.name} · {entry.quantity} {entry.unit}{batch ? unknownIds.includes(entry.id) ? ' · Unknown value' : ` · ${currencySymbol}${entry.price.toFixed(2)}` : ''}
             </Text>)}
-            {batch && <Text style={styles.body}>Total value: ${entries.reduce((total, entry) => total + entry.price, 0).toFixed(2)}. This applies to each whole entry.</Text>}
+            {batch && <Text style={styles.body}>Total known value: {currencySymbol}{entries.reduce((total, entry) => total + entry.price, 0).toFixed(2)}. This applies to each whole entry.</Text>}
             <Text style={styles.body}>
-              {batch ? `Remove these selected entries from active inventory as ${wasted ? 'food waste' : 'consumed'}.` : wasted ? 'Remove this item from your active inventory as food waste.' :
+              {undo ? 'Return these groceries to active inventory and record the correction in their history.' : batch ? `Remove these selected entries from active inventory as ${wasted ? 'food waste' : 'consumed'}.` : wasted ? 'Remove this item from your active inventory as food waste.' :
                 'Remove this item from your active inventory as consumed.'}
             </Text>
             {!!error && <Text style={[styles.body, { color: Colors.error }]} accessibilityRole="alert">{error}</Text>}
-            <PrimaryButton label={wasted ? 'Confirm Waste' : 'Confirm Used'} loading={loading} onPress={onConfirm} />
+            <PrimaryButton label={undo ? 'Confirm Restore' : wasted ? 'Confirm Waste' : 'Confirm Used'} loading={loading} onPress={onConfirm} />
             <PrimaryButton label="Cancel" variant="ghost" disabled={loading} onPress={onCancel} />
           </ScrollView>
         </SafeAreaView>

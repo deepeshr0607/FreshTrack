@@ -194,7 +194,17 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — EDIT/LIFECYCLE SLICE VERIFIED ON IPHONE
+### Current phase: Phase 4 — BATCH/UNDO WORK PAUSED AT USER REQUEST
+
+- User requested pause on 12 October to shut down the Mac. Do not resume without their request.
+- Batch/undo code and tests are saved but not deployed or accepted. See docs/Phase_4_Batch_Undo_Paused.md.
+  Local TypeScript/build, root79/79, backend37/37, health1/1, Doctor21/21 and all-platform exports pass.
+- Live suite first batch test passed, then lost Neon connection; remaining checks and cleanup failed.
+  Reserved synthetic Pantry fixtures may remain. Guarded readiness/cleanup retries could not query.
+  Recover only exact validated test fixtures after connection restoration; preserve real accounts/seed.
+- Existing edit/lifecycle Preview remains working and unchanged. No new migration/dependency or Phase 5.
+
+### Phase 4 previous slice — EDIT/LIFECYCLE VERIFIED ON IPHONE
 
 - User approved persisted editing and confirmed Used/Wasted continuation. Existing form/cards/swipe
   sheets now call validated scoped PATCH/consume/waste endpoints. Version checks reject stale writes;
