@@ -194,7 +194,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — BATCH/UNDO DEPLOYED; IPHONE ACCEPTANCE PENDING
+### Current phase: Phase 4 — BATCH/UNDO VERIFIED ON IPHONE
 
 - User explicitly resumed on 12 October. Existing batch/undo code verified and deployed without a
   new schema/dependency change. Atomic batches cap20, scoped confirmed single/batch undo appends
@@ -206,8 +206,9 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   Existing lint gaps remain. See docs/Phase_4_Batch_Undo.md; paused handoff retained as historical.
 - New Preview dpl_5okbejrBGF9gDoqP5hHWW8262EDu READY after explicit DRAGON scope retry; public
   health200 and tokenless batch/undo401 pass. Ignored mobile API URL updated, Auth settings preserved.
-- iPhone batch cancel/confirm, undo cancel/restore/restart and detail undo checks pending at
-  exp://172.20.10.2:8085. Next: finish native acceptance. Presets/server filters/duplicates/offline/final
+- User reports iPhone batch Used cancel/confirm, undo cancel/restore/restart, batch Waste/restore
+  and detail undo checks pass at exp://172.20.10.2:8085. Native failure paths/full cap20 remain unverified.
+  Next: expiry presets/precedence. Server filters/duplicates/offline/final
   review and deferred Android/release QA remain. No Phase 5 or production writes.
 
 ### Phase 4 previous slice — EDIT/LIFECYCLE VERIFIED ON IPHONE

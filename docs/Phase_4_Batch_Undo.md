@@ -1,7 +1,7 @@
 # Phase 4 — batch outcomes and undo
 
 12 October 2026. Resumed at the user's request. Batch/undo is implemented, verified at API/database
-boundaries and deployed to development. **iPhone acceptance is pending.** Phase 4 remains in progress.
+boundaries and deployed to development. **Requested iPhone checks pass by user report.** Phase 4 remains in progress.
 No schema migration, dependency change, production change or Phase 5 work.
 
 ## Connected behavior
@@ -71,9 +71,9 @@ Cloud full dependency audit still reports previously documented development-tool
 
 ## Native acceptance and next step
 
-Requested iPhone checks use two named development samples: batch Used cancel/confirm; last-outcome
-undo cancel/restore and restart; batch Waste/restore; and single detail Used/Undo Outcome. Do not
-claim these interactions verified until the user reports results. Large text/accessibility/native
+User confirmed all requested iPhone checks working with the two named development samples: batch
+Used cancel/confirm; last-outcome undo cancel/restore and restart; batch Waste/restore; and single
+detail Used/Undo Outcome. Large text/accessibility/native
 offline/conflict cases and Android remain unverified; exports do not prove device behavior.
 
 The last-action undo bar is session/process scoped and is not restored after termination. Database
@@ -82,5 +82,5 @@ A history navigation screen/disk cache/queued mutations are not implemented. Sea
 sort still apply to loaded pages. Batch cap 20 is validated; live/native success at the full cap is
 not claimed by the two-item scenarios.
 
-Next: finish iPhone acceptance for this slice, then the next authorized Phase 4 inventory slice.
+Next: the next authorized Phase 4 inventory slice, starting with expiry presets and precedence.
 Presets/expiry precedence, server-wide filters, duplicate/offline handling and final review remain.
