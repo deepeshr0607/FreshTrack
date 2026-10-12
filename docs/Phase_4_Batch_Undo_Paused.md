@@ -1,5 +1,11 @@
 # Phase 4 batch/undo — paused handoff
 
+**Resumed on 12 October at the user's request.** Recovery cleanup and final live suite now pass;
+batch/undo is deployed to development with iPhone acceptance pending. See the
+[current report](Phase_4_Batch_Undo.md). The notes below preserve the earlier paused state.
+
+## Historical state at pause
+
 12 October 2026. **Paused at the user's request to shut down the Mac. Not complete or deployed.**
 Resume only when the user requests it. Existing working Preview and mobile API URL are unchanged:
 https://freshtrack-1qkkbjgzu-dragon-2818.vercel.app.
