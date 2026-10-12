@@ -194,7 +194,21 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — FIRST PANTRY SLICE VERIFIED ON IPHONE
+### Current phase: Phase 4 — EDIT/LIFECYCLE SLICE VERIFIED ON IPHONE
+
+- User approved persisted editing and confirmed Used/Wasted continuation. Existing form/cards/swipe
+  sheets now call validated scoped PATCH/consume/waste endpoints. Version checks reject stale writes;
+  retry hash/key and repeated-outcome no-ops prevent duplicate events. Item/event updates are atomic.
+- Edits preserve unchanged expiry/cost provenance; outcomes record consistent timestamps and snapshots.
+  Busy/error/retry/Reload Item feedback added, real ₹ swipe values retained, demo behavior preserved.
+  No dependency/schema/migration/production change. See docs/Phase_4_Pantry_Mutations.md.
+- Root77/77, backend35/35, live Pantry7/7 with cleanup, health1/1, both TypeScript/build, Doctor21/21,
+  all-platform exports pass. New Preview dpl_HDWv7kgTdJrDM7bBDyJcDUboLmNL READY; public health200 and
+  tokenless edit/outcome401 pass. Ignored mobile API URL updated; Auth settings preserved.
+- User reports iPhone edit/restart and cancel/confirm Used/Wasted/restart checks pass at
+  exp://172.20.10.2:8085. Native offline/conflict/retry failure paths remain unverified.
+  Next: remaining inventory slices. Batch/undo, presets, server-wide filters, duplicates/offline persistence
+  and final review remain. Android/native failure QA and release work remain unverified. No Phase 5.
 
 - User approved Phase 4 on 12 October. Signed-in native Pantry now sets up/restores its household,
   lists active persisted items and manually adds groceries with INR/Asia/Kolkata/read-only details.
@@ -206,9 +220,9 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   Public health200/tokenless pantry401 pass. Root76/76, backend33/33, live Pantry3/3 with cleanup,
   health1/1, both TypeScript/build, Doctor21/21 and all-platform exports pass. Existing lint gaps remain.
 - User reports iPhone add/details/restart/refresh/expiry sorting and unknown-price checks pass;
-  see docs/Phase_4_Pantry_First_Slice.md. Real editing,
-  Used/Wasted/batch, presets, server-wide filters, duplicates/offline persistence and final review remain.
-  Next: persisted edit/confirmed lifecycle transactions. Android/native failure-path checks remain
+  see docs/Phase_4_Pantry_First_Slice.md. Editing/Used/Wasted are now implemented in the next slice;
+  batch, presets, server-wide filters, duplicates/offline persistence and final review remain.
+  Android/native failure-path checks remain
   unverified. No Phase 5.
 
 ### Phase 3 — DEVELOPMENT ACCEPTANCE COMPLETE

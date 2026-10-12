@@ -23,7 +23,9 @@ import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme
 import type { ItemCategory, PantryItem } from '@/lib/mock';
 import { PANTRY_CATEGORIES } from '@/lib/pantry';
 import { useRealPantry } from '@/context/RealPantryContext';
-import { rupeeValue } from '@/lib/pantryApi';
+import { pantryCardItem, pantryRetryKey, rupeeValue } from '@/lib/pantryApi';
+import type { PantryItemDto } from '@/types/api';
+import useAuthRequest from '@/features/auth/useAuthRequest';
 
 type FilterChip = 'All' | 'Critical' | 'Caution' | 'Fresh';
 type SortMode = 'expiry' | 'name' | 'category';
@@ -39,12 +41,11 @@ export default function PantryScreen() {
   const demo = useMockPantry();
   const real = useRealPantry();
   const { dispatch } = demo;
-  const items: PantryItem[] = real.enabled ? real.items.map(item => {
-    const category = PANTRY_CATEGORIES.find(entry => entry.name.toUpperCase() === item.category)!;
-    return { ...item, category: category.name, quantity: Number(item.quantity), price: (item.totalCostMinor ?? 0) / 100, imageEmoji: category.emoji };
-  }) : demo.items;
+  const items: PantryItem[] = real.enabled ? real.items.map(pantryCardItem) : demo.items;
   useEffect(() => { if (real.enabled) void real.reload(); }, [real.enabled, real.reload]);
-  const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED' } | null>(null);
+  const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED'; persisted?: PantryItemDto; key?: string } | null>(null);
+  const [outcomeError, setOutcomeError] = useState('');
+  const outcomeRequest = useAuthRequest(setOutcomeError);
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchConfirmation, setBatchConfirmation] = useState<{ items: PantryItem[]; action: 'CONSUMED' | 'WASTED' } | null>(null);
@@ -94,6 +95,11 @@ export default function PantryScreen() {
   const hasActiveItems = items.some((item) => item.status === 'ACTIVE');
 
   const requestStatus = (id: string, action: 'CONSUMED' | 'WASTED') => {
+    if (real.enabled) {
+      const item = real.items.find(entry => entry.id === id);
+      if (item?.status === 'ACTIVE') { setOutcomeError(''); setConfirmation({ item: pantryCardItem(item), action, persisted: item, key: pantryRetryKey() }); }
+      return;
+    }
     const item = items.find((entry) => entry.id === id);
     if (item?.status === 'ACTIVE') setConfirmation({ item, action });
   };
@@ -101,8 +107,19 @@ export default function PantryScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <PantryConfirmation item={confirmation?.item ?? null} action={confirmation?.action ?? 'CONSUMED'}
-        onCancel={() => setConfirmation(null)} onConfirm={() => {
+        loading={outcomeRequest.loading} error={outcomeError}
+        onCancel={() => { setConfirmation(null); setOutcomeError(''); }} onConfirm={() => {
           if (!confirmation) return;
+          if (real.enabled && confirmation.persisted && confirmation.key) {
+            const pending = confirmation;
+            setOutcomeError('');
+            void outcomeRequest.run(async isMounted => {
+              await real.outcome(pending.persisted!.id, pending.action === 'CONSUMED' ? 'consume' : 'waste',
+                { confirmed: true, expectedUpdatedAt: pending.persisted!.updatedAt }, pending.key!);
+              if (isMounted()) { setConfirmation(null); setBatchNotice(`Item marked as ${pending.action === 'CONSUMED' ? 'Used' : 'Wasted'} and saved to your household.`); }
+            });
+            return;
+          }
           dispatch({ type: 'status', id: confirmation.item.id, status: confirmation.action });
           setConfirmation(null);
         }} />
@@ -272,10 +289,10 @@ export default function PantryScreen() {
         {real.enabled && <>
           <PrimaryButton label="Refresh Pantry" variant="ghost" loading={real.loading} onPress={() => void real.reload()} />
           {!!real.error && <Text style={[styles.swipeHint, { color: Colors.error }]} accessibilityRole="alert">{real.error} {items.length ? 'Showing previously loaded items.' : ''}</Text>}
-          <Text style={styles.swipeHint}>Manual add and item viewing are connected. Editing, Used/Wasted and scanner imports are coming next; other tabs remain prototypes.</Text>
+          <Text style={styles.swipeHint}>Pantry changes are saved to your household after confirmation. Batch actions and scanner imports are coming later; other tabs remain prototypes.</Text>
         </>}
         {/* Items list */}
-        {!real.enabled && !batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
+        {!batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
         {real.enabled && !items.length && (real.loading || real.error) ? <Text style={styles.swipeHint}>{real.loading ? 'Loading your household pantry…' : 'Your pantry could not be loaded. Tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🥦</Text>
@@ -297,9 +314,8 @@ export default function PantryScreen() {
               onSelect={batchMode ? () => toggleSelection(item.id) : undefined}
               selected={batchMode && selectedIds.includes(item.id)}
               valueLabel={real.enabled ? rupeeValue(real.items.find(entry => entry.id === item.id)!.totalCostMinor) : undefined}
-              hideActions={real.enabled}
-              onConsume={real.enabled ? undefined : (id) => requestStatus(id, 'CONSUMED')}
-              onWaste={real.enabled ? undefined : (id) => requestStatus(id, 'WASTED')}
+              onConsume={(id) => requestStatus(id, 'CONSUMED')}
+              onWaste={(id) => requestStatus(id, 'WASTED')}
             />
           ))
         )}

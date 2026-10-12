@@ -9,6 +9,18 @@ test('manual entry represents paise exactly and preserves unknown/free prices an
   for (const change of [{ price: '0.001' }, { quantity: '1.2345' }, { quantity: '0' }]) assert.throws(() => manualPantryInput({ ...draft, ...change }));
   assert.equal(rupeeValue(6050), '₹60.50'); assert.equal(rupeeValue(null), 'Unknown value');
 });
+test('edit and outcome clients send the loaded version and explicit confirmation with replay keys', async () => {
+  const calls = []; const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async (url, options) => {
+    calls.push([url, options]); return Response.json({ data: {} });
+  });
+  const version = '2026-10-12T00:00:00.000Z';
+  await api.edit('item-id', { expectedUpdatedAt: version, name: 'Edited' }, 'edit-retry-key-1234');
+  await api.outcome('item-id', 'waste', { confirmed: true, expectedUpdatedAt: version }, 'outcome-retry-key-1234');
+  assert.equal(calls[0][1].method, 'PATCH'); assert.equal(JSON.parse(calls[0][1].body).expectedUpdatedAt, version);
+  assert.equal(calls[1][0], 'https://api.example.com/api/v1/pantry/item-id/waste');
+  assert.deepEqual(JSON.parse(calls[1][1].body), { confirmed: true, expectedUpdatedAt: version });
+  assert.equal(calls[1][1].headers['Idempotency-Key'], 'outcome-retry-key-1234');
+});
 test('client scopes requests through bearer only and passes an unchanged retry key without client identity', async () => {
   const calls = []; const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async (url, options) => {
     calls.push([url, options]); return Response.json({ data: {} });

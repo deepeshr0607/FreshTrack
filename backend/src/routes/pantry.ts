@@ -2,11 +2,29 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { InvalidApiInput, parsePagination, sendFailure, success } from '../lib/api';
 import { requireIdentity } from '../middleware/auth';
 import type { VerifiedIdentity, VerifyIdentity } from '../services/auth';
-import { createPantryService, pantryInput, PantryFailure, type PantryService } from '../services/pantry';
+import { createPantryService, pantryInput, pantryEditInput, pantryOutcomeInput, PantryFailure, type PantryService } from '../services/pantry';
 
 export function createPantryRouter(verify: VerifyIdentity, service: PantryService = createPantryService()) {
   const router = Router();
   router.use('/pantry', requireIdentity(verify));
+  const mutationRequest = (req: Request) => {
+    const id = req.params['itemId']; const key = req.get('Idempotency-Key');
+    if (!id || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id) || !key ||
+        !/^[A-Za-z0-9_-]{16,100}$/.test(key) || req.originalUrl.includes('?') || !req.is('application/json')) throw new InvalidApiInput('Invalid item mutation request.');
+    return { id: id.toLowerCase(), key };
+  };
+  router.patch('/pantry/:itemId', async (req, res, next) => {
+    try {
+      const { id, key } = mutationRequest(req);
+      res.json(success({ item: await service.edit(res.locals.identity as VerifiedIdentity, id, pantryEditInput(req.body), key) }));
+    } catch (error) { next(error); }
+  });
+  for (const action of ['consume', 'waste'] as const) router.post(`/pantry/:itemId/${action}`, async (req, res, next) => {
+    try {
+      const { id, key } = mutationRequest(req);
+      res.json(success({ item: await service.outcome(res.locals.identity as VerifiedIdentity, id, action, pantryOutcomeInput(req.body), key) }));
+    } catch (error) { next(error); }
+  });
   router.get('/pantry', async (req, res, next) => {
     try {
       if (Number(req.get('content-length') || 0) || req.get('transfer-encoding')) throw new InvalidApiInput('No body accepted.');
@@ -36,6 +54,8 @@ export function createPantryRouter(verify: VerifyIdentity, service: PantryServic
     const message = error.code === 'HOUSEHOLD_REQUIRED' ? 'Set up your household before using the pantry.'
       : error.code === 'ITEM_NOT_FOUND' ? 'Item not found for this household.'
       : error.code === 'IDEMPOTENCY_CONFLICT' ? 'This retry key was already used for a different entry.'
+      : error.code === 'ITEM_CHANGED' ? 'This item changed. Reload it before saving or confirming an outcome.'
+      : error.code === 'ITEM_RESOLVED' ? 'This item already has a confirmed outcome.'
       : 'Pantry services are temporarily unavailable. Please retry.';
     sendFailure(req, res, status, error.code, message);
   });

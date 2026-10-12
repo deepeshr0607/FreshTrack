@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const { createApp } = require('../dist/app.js');
-const { pantryInput, PantryFailure } = require('../dist/services/pantry.js');
+const { pantryInput, pantryEditInput, pantryOutcomeInput, PantryFailure } = require('../dist/services/pantry.js');
 const { AuthFailure } = require('../dist/services/auth.js');
 const valid = { name: '  Milk  ', category: 'DAIRY', quantity: '0.500', unit: ' l ', expiresOn: '2026-10-20', totalCostMinor: 6050 };
 test('manual input keeps paise and exact quantities; rejects identity overrides and invalid domain fields', () => {
@@ -14,6 +14,33 @@ test('manual input keeps paise and exact quantities; rejects identity overrides 
   }
   assert.equal(pantryInput({ ...valid, totalCostMinor: null }).totalCostMinor, null);
   assert.equal(pantryInput({ ...valid, totalCostMinor: 0 }).totalCostMinor, 0);
+});
+test('editing requires a valid version; outcome requires explicit confirmation and accepts no identity/status fields', () => {
+  const expectedUpdatedAt = '2026-10-12T00:00:00.000Z';
+  assert.equal(pantryEditInput({ ...valid, expectedUpdatedAt }).quantity, '0.5');
+  for (const version of [undefined, 'bad', '2026-02-30T00:00:00.000Z']) assert.throws(() => pantryEditInput({ ...valid, expectedUpdatedAt: version }));
+  assert.deepEqual(pantryOutcomeInput({ confirmed: true, expectedUpdatedAt }), { confirmed: true, expectedUpdatedAt });
+  for (const change of [{ confirmed: false }, { userId: 'victim' }, { status: 'ACTIVE' }, { expectedUpdatedAt: '' }]) {
+    assert.throws(() => pantryOutcomeInput({ confirmed: true, expectedUpdatedAt, ...change }));
+  }
+});
+test('mutation HTTP routes enforce auth, validation and retry key before service writes', async () => {
+  let calls = 0; const id = '11111111-1111-1111-1111-111111111111'; const expectedUpdatedAt = '2026-10-12T00:00:00.000Z';
+  const service = {
+    edit: async (account, itemId, input, key) => { calls++; assert.equal(account.id, identity.id); assert.equal(itemId, id); assert.equal(key, 'mutation-key-123456'); return { id }; },
+    outcome: async (account, itemId, action, input) => { calls++; assert.equal(account.id, identity.id); assert.equal(itemId, id); assert.equal(input.confirmed, true); return { id, status: action }; },
+  };
+  const app = createApp({ verifyIdentity, pantryService: service });
+  assert.equal((await request(app).post(`/api/v1/pantry/${id}/consume`).send({ confirmed: true, expectedUpdatedAt })).status, 401);
+  assert.equal((await request(app).patch(`/api/v1/pantry/${id}`).set('Authorization', 'Bearer a.b.c').set('Idempotency-Key', 'mutation-key-123456').send({ ...valid, expectedUpdatedAt })).status, 200);
+  for (const action of ['consume', 'waste']) {
+    assert.equal((await request(app).post(`/api/v1/pantry/${id}/${action}`).set('Authorization', 'Bearer a.b.c')
+      .set('Idempotency-Key', 'mutation-key-123456').send({ confirmed: true, expectedUpdatedAt })).status, 200);
+  }
+  assert.equal(calls, 3);
+  assert.equal((await request(app).post(`/api/v1/pantry/${id}/consume`).set('Authorization', 'Bearer a.b.c').set('Idempotency-Key', 'mutation-key-123456').send({ confirmed: false, expectedUpdatedAt })).status, 400);
+  assert.equal((await request(app).patch(`/api/v1/pantry/${id}`).set('Authorization', 'Bearer a.b.c').send({ ...valid, expectedUpdatedAt })).status, 400);
+  assert.equal(calls, 3);
 });
 const identity = { id: 'freshtrack-dev-test:pantry', email: 'fixture@example.test', name: 'Fixture' };
 const verifyIdentity = async token => { if (token !== 'a.b.c') throw new AuthFailure(); return identity; };

@@ -20,6 +20,70 @@ after(async () => {
     assert.equal(await db.householdMember.count({ where: { authSubject: { in: subjects } } }), 0);
   } finally { await db.$disconnect(); }
 });
+test('edit persists new exact fields with immutable history; stale edits and foreign writes fail', async () => {
+  try {
+    const a = await account(), b = await account(); const service = createPantryService(db);
+    const original = await service.create(a, input, randomUUID());
+    const editedInput = { ...input, name: 'Edited milk', quantity: '0.75', totalCostMinor: 7200, expiresOn: '2026-10-18', expectedUpdatedAt: original.updatedAt };
+    const key = randomUUID(); const edited = await service.edit(a, original.id, editedInput, key);
+    assert.equal(edited.quantity, '0.75'); assert.equal(edited.totalCostMinor, 7200); assert.notEqual(edited.updatedAt, original.updatedAt);
+    assert.equal((await service.edit(a, original.id, editedInput, key)).updatedAt, edited.updatedAt);
+    await assert.rejects(service.edit(a, original.id, { ...editedInput, totalCostMinor: 7300 }, key), error => error.code === 'IDEMPOTENCY_CONFLICT');
+    await assert.rejects(service.edit(a, original.id, editedInput, randomUUID()), error => error.code === 'ITEM_CHANGED');
+    await assert.rejects(service.edit(b, original.id, { ...editedInput, expectedUpdatedAt: edited.updatedAt }, randomUUID()), error => error.code === 'ITEM_NOT_FOUND');
+    const events = await db.pantryItemEvent.findMany({ where: { pantryItemId: original.id }, orderBy: { occurredAt: 'asc' } });
+    assert.equal(events.length, 2); assert.equal(events[0].totalCostMinor, 6050); assert.equal(events[0].quantity.toString(), '0.5');
+    assert.equal(events[1].eventType, 'EDITED'); assert.equal(events[1].totalCostMinor, 7200); assert.equal(events[1].previousStatus, 'ACTIVE');
+    assert.equal((await service.find(a, original.id)).name, 'Edited milk');
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_EDIT_CHECK_FAILED'); }
+});
+test('editing another field preserves expiry/cost provenance; explicit date change records user-entered expiry', async () => {
+  try {
+    const user = await account(); const service = createPantryService(db); const original = await service.create(user, input, randomUUID());
+    const row = await db.pantryItem.update({ where: { id: original.id }, data: { expirySource: 'PACKAGE_DATE', freshnessPresetDays: 5, costSource: 'ESTIMATE' } });
+    const changedName = await service.edit(user, row.id, { ...input, name: 'New label', expectedUpdatedAt: row.updatedAt.toISOString() }, randomUUID());
+    assert.equal(changedName.expirySource, 'PACKAGE_DATE');
+    assert.equal((await db.pantryItem.findUniqueOrThrow({ where: { id: row.id } })).costSource, 'ESTIMATE');
+    const changedDate = await service.edit(user, row.id, { ...input, name: 'New label', expiresOn: '2026-10-22', expectedUpdatedAt: changedName.updatedAt }, randomUUID());
+    assert.equal(changedDate.expirySource, 'USER_ENTERED');
+    assert.equal((await db.pantryItem.findUniqueOrThrow({ where: { id: row.id } })).freshnessPresetDays, null);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_PROVENANCE_CHECK_FAILED'); }
+});
+test('Used/Wasted outcomes persist timestamps and snapshots; replay and conflicting confirmations add no duplicate events', async () => {
+  try {
+    const a = await account(), b = await account(); const service = createPantryService(db);
+    for (const action of ['consume', 'waste']) {
+      const original = await service.create(a, input, randomUUID());
+      const confirmed = { confirmed: true, expectedUpdatedAt: original.updatedAt }; const key = randomUUID();
+      await assert.rejects(service.outcome(b, original.id, action, confirmed, randomUUID()), error => error.code === 'ITEM_NOT_FOUND');
+      const results = await Promise.all([service.outcome(a, original.id, action, confirmed, key), service.outcome(a, original.id, action, confirmed, key)]);
+      const target = action === 'consume' ? 'CONSUMED' : 'WASTED'; assert.ok(results.every(item => item.status === target));
+      await service.outcome(a, original.id, action, confirmed, randomUUID());
+      await assert.rejects(service.outcome(a, original.id, action === 'consume' ? 'waste' : 'consume', confirmed, randomUUID()), error => error.code === 'ITEM_RESOLVED');
+      const row = await db.pantryItem.findUniqueOrThrow({ where: { id: original.id } });
+      assert.ok(action === 'consume' ? row.consumedAt : row.wastedAt);
+      const events = await db.pantryItemEvent.findMany({ where: { pantryItemId: original.id } });
+      assert.equal(events.length, 2); assert.equal(events.find(event => event.eventType === 'STATUS_CHANGED').newStatus, target);
+      assert.equal((await service.find(a, original.id)).status, target);
+    }
+    assert.equal((await service.list(a, { page: 1, pageSize: 50 })).items.length, 0);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_OUTCOME_CHECK_FAILED'); }
+});
+test('failed mutation event rolls back edits and status; stale confirmation cannot resolve a changed entry', async () => {
+  try {
+    const user = await account(); const service = createPantryService(db); const original = await service.create(user, input, randomUUID());
+    const failing = { $transaction: (run, options) => db.$transaction(tx => run({ ...tx, householdMember: tx.householdMember,
+      pantryItem: tx.pantryItem, pantryItemEvent: { findUnique: tx.pantryItemEvent.findUnique, create: async () => { throw Error('private-fixture-error'); } } }), options) };
+    const broken = createPantryService(failing);
+    await assert.rejects(broken.edit(user, original.id, { ...input, name: 'Should roll back', expectedUpdatedAt: original.updatedAt }, randomUUID()), error => error.code === 'PANTRY_UNAVAILABLE');
+    await assert.rejects(broken.outcome(user, original.id, 'waste', { confirmed: true, expectedUpdatedAt: original.updatedAt }, randomUUID()), error => error.code === 'PANTRY_UNAVAILABLE');
+    const unchanged = await service.find(user, original.id); assert.equal(unchanged.updatedAt, original.updatedAt); assert.equal(unchanged.status, 'ACTIVE');
+    assert.equal(await db.pantryItemEvent.count({ where: { pantryItemId: original.id } }), 1);
+    const updated = await service.edit(user, original.id, { ...input, quantity: '1', expectedUpdatedAt: original.updatedAt }, randomUUID());
+    await assert.rejects(service.outcome(user, original.id, 'consume', { confirmed: true, expectedUpdatedAt: original.updatedAt }, randomUUID()), error => error.code === 'ITEM_CHANGED');
+    assert.equal((await service.find(user, original.id)).updatedAt, updated.updatedAt);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_MUTATION_ROLLBACK_CHECK_FAILED'); }
+});
 const input = pantryInput({ name: 'Acceptance milk', category: 'DAIRY', quantity: '0.5', unit: 'l', expiresOn: '2026-10-20', totalCostMinor: 6050 });
 test('create persists exact data and one snapshot event; retry/concurrent replay cannot duplicate the entry', async () => {
   try {
