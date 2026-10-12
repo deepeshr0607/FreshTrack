@@ -60,12 +60,15 @@ https://freshtrack-5t24mq459-dragon-2818.vercel.app. Deployment used explicit Pr
 DRAGON scope; production URL is null. Public health200 and tokenless create/edit401 passed.
 Ignored mobile API URL updated; Neon Auth origin/configuration unchanged. The deployment still
 reports the existing 36 dependency audit findings; dependencies were not changed in this slice.
-iPhone acceptance is pending.
+User reported all requested iPhone checks working on 12 October 2026 at
+exp://192.168.1.21:8085: estimated add/restart, invalid duration rejection, custom 9-day
+estimate/reopen, package precedence/restart and explicit manual override/reopen. This is
+user-reported native acceptance, not automated device evidence.
 Existing demo UI is preserved. Exports verify bundling, not native interaction/layout or Android QA.
 
 ## Remaining Phase 4 / exact next step
 
-Verify estimate add/edit/restart, manual/package priority and invalid input on the iPhone using
-exp://192.168.1.21:8085 on the same Wi-Fi.
-After acceptance, continue server-wide filters, duplicate/offline handling and final Phase 4 review.
+Next small slice: server-wide Pantry search/category/freshness filters and sorting across paginated
+results, with scoped query validation and preserved current controls. Duplicate/offline handling
+and final Phase 4 review follow.
 Full-cap/native failure paths, Android and release QA remain unverified. Other tabs remain prototypes.

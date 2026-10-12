@@ -165,7 +165,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
-**Expiry-preset work resumed at user request (12 October):** Add/Edit now support editable estimates and package > manual > estimate precedence. Both TypeScript/build, root84/84, backend38/38, Doctor21/21 and all-platform exports pass. Live Pantry12/12 and fixture cleanup pass; development Preview is READY, public health200/tokenless mutations401 pass. iPhone checks are pending; see [expiry report](docs/Phase_4_Expiry_Presets.md).
+**Expiry presets verified on iPhone (12 October):** Add/Edit now support editable estimates and package > manual > estimate precedence. Both TypeScript/build, root84/84, backend38/38, Doctor21/21 and all-platform exports pass. Live Pantry12/12 and fixture cleanup pass; development Preview is READY, public health200/tokenless mutations401 pass. User reports estimate/restart, invalid/custom duration, package priority/restart and manual override checks pass; see [expiry report](docs/Phase_4_Expiry_Presets.md).
 
 
 ### Phase 0 — COMPLETE ✓
@@ -211,7 +211,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
   health200 and tokenless batch/undo401 pass. Ignored mobile API URL updated, Auth settings preserved.
 - User reports iPhone batch Used cancel/confirm, undo cancel/restore/restart, batch Waste/restore
   and detail undo checks pass at exp://172.20.10.2:8085. Native failure paths/full cap20 remain unverified.
-  Next: expiry presets/precedence. Server filters/duplicates/offline/final
+  Expiry presets/precedence are now verified as recorded above. Next: server filters/duplicates/offline/final
   review and deferred Android/release QA remain. No Phase 5 or production writes.
 
 ### Phase 4 previous slice — EDIT/LIFECYCLE VERIFIED ON IPHONE
