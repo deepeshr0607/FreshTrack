@@ -199,7 +199,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
-**Offline-read slice resumed (12 October):** session-only cached Pantry list/details and local filtering are read-only during availability failures. Auth gate preserved; Context blocks writes. Both TypeScript, root94/94, backend44/44, health1/1 and Doctor21/21 pass. Final all-platform exports pass; iPhone diagnostic checks pending; see [offline-read report](docs/Phase_4_Offline_Reads.md). Disk persistence/restart support and final Phase4 review remain; no Phase5.
+**Session-cache diagnostic verified on iPhone (12 October):** session-only cached Pantry list/details and local filtering are read-only during availability failures. Auth gate preserved; Context blocks writes. Both TypeScript, root94/94, backend44/44, health1/1 and Doctor21/21 pass. Final all-platform exports pass; User reports cached reads/blocked writes/recovery/sign-out diagnostic checks pass; actual offline/restart behavior remains unverified; see [offline-read report](docs/Phase_4_Offline_Reads.md). Disk persistence/restart support and final Phase4 review remain; no Phase5.
 
 
 **Manual duplicate review verified on iPhone (12 October):** authenticated household-scoped exact
