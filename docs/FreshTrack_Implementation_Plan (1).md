@@ -704,7 +704,7 @@ SQL checks, target verification/live connectivity, Prisma singleton and guarded 
 
 ## Phase 4 — Pantry inventory end-to-end
 
-### Current slice — manual duplicate review implemented (12 October 2026)
+### Current slice — manual duplicate review verified on iPhone (12 October 2026)
 
 Verified-household name/category/date checks show up to five recent matching active purchases.
 Cancel writes no groceries; explicit Add Separately creates a separate row/event while preserving
@@ -712,7 +712,7 @@ originals. Create rechecks in a serializable transaction and rejects unconfirmed
 Replay precedes matching, and mobile uncertain saves retry the same payload/key without re-preflight.
 Both TypeScript/build, root88/88, backend44/44, live Pantry17/17 with cleanup, health1/1, Doctor21/21
 and final all-platform exports pass. Existing lint gaps remain. No schema/dependency/Auth change.
-Development Preview READY; public health200/tokenless duplicate-check/create401 pass. iPhone acceptance pending; see [duplicate report](Phase_4_Pantry_Duplicates.md).
+Development Preview READY; public health200/tokenless duplicate-check/create401 pass. User reports duplicate review/cancel, separate-add/restart, original values and changed-date checks pass; see [duplicate report](Phase_4_Pantry_Duplicates.md).
 Next: offline support and Phase4 final review. Real Scanner imports remain Phase6. No Phase5/production.
 
 
