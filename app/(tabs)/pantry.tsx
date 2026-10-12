@@ -2,7 +2,7 @@
  * Pantry / Kitchen Inventory screen
  * Design reference: design-reference/kitchen_inventory_swipe_actions/screen.png
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -23,8 +23,8 @@ import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme
 import type { ItemCategory, PantryItem } from '@/lib/mock';
 import { PANTRY_CATEGORIES } from '@/lib/pantry';
 import { useRealPantry } from '@/context/RealPantryContext';
-import { pantryCardItem, pantryRetryKey, rupeeValue } from '@/lib/pantryApi';
-import type { PantryItemDto } from '@/types/api';
+import { pantryFilterKey, pantryCardItem, pantryRetryKey, rupeeValue } from '@/lib/pantryApi';
+import type { PantryItemDto, PantryListFilters } from '@/types/api';
 import useAuthRequest from '@/features/auth/useAuthRequest';
 
 type FilterChip = 'All' | 'Critical' | 'Caution' | 'Fresh';
@@ -62,7 +62,18 @@ export default function PantryScreen() {
     if (added) { setSearch(''); setFilter('All'); setCategory('All'); }
   }, [added]);
 
-  const filtered = items
+  const criteria = useMemo<PantryListFilters>(() => ({ q: search.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase(),
+    category: category === 'All' ? undefined : category.toUpperCase() as PantryItemDto['category'],
+    freshness: filter === 'All' ? undefined : filter.toLowerCase() as PantryListFilters['freshness'], sort }), [search, category, filter, sort]);
+  const criteriaKey = pantryFilterKey(criteria);
+  const pendingCriteria = real.enabled && criteriaKey !== pantryFilterKey(real.filters);
+  useEffect(() => {
+    if (!real.enabled) return;
+    const timer = setTimeout(() => real.setFilters(criteria), 250);
+    return () => clearTimeout(timer);
+  }, [criteria, real.enabled, real.setFilters]);
+  const listBusy = real.enabled && (pendingCriteria || real.loading);
+  const filtered = real.enabled ? (pendingCriteria ? [] : items) : items
     .filter((i) => i.status === 'ACTIVE')
     .filter((i) => !search.trim() || i.name.toLowerCase().includes(search.trim().toLowerCase()))
     .filter((i) => category === 'All' || i.category === category)
@@ -80,7 +91,7 @@ export default function PantryScreen() {
       return 0;
     });
 
-  useEffect(() => { setSelectedIds([]); setBatchNotice(''); }, [search, filter, category]);
+  useEffect(() => { setSelectedIds([]); setBatchNotice(''); }, [search, filter, category, sort]);
   const selectedItems = filtered.filter((item) => selectedIds.includes(item.id));
   const toggleSelection = (id: string) => {
     if (real.enabled && !selectedIds.includes(id) && selectedIds.length >= 20) { setBatchNotice('Select up to 20 items per batch.'); return; }
@@ -101,8 +112,8 @@ export default function PantryScreen() {
   const totalValue = filtered.reduce((sum, i) => sum + i.price, 0);
   const filtersActive = !!search.trim() || filter !== 'All' || category !== 'All';
   const resetFilters = () => { setSearch(''); setFilter('All'); setCategory('All'); };
-  const activeCount = items.filter((item) => item.status === 'ACTIVE').length;
-  const hasActiveItems = items.some((item) => item.status === 'ACTIVE');
+  const activeCount = real.enabled ? real.inventory.active : items.filter((item) => item.status === 'ACTIVE').length;
+  const hasActiveItems = activeCount > 0;
 
   const requestStatus = (id: string, action: 'CONSUMED' | 'WASTED') => {
     if (real.enabled) {
@@ -183,6 +194,7 @@ export default function PantryScreen() {
             placeholder={`Search ${activeCount} pantry & fridge items...`}
             placeholderTextColor={Colors.onSurfaceVariant}
             value={search}
+            maxLength={120}
             onChangeText={setSearch}
             returnKeyType="search"
             clearButtonMode="while-editing"
@@ -254,7 +266,7 @@ export default function PantryScreen() {
             <Text style={[styles.chipText, category === 'All' && styles.chipTextActive]}>All Categories ({activeCount})</Text>
           </Pressable>
           {PANTRY_CATEGORIES.map((entry) => {
-            const count = items.filter((item) => item.status === 'ACTIVE' && item.category === entry.name).length;
+            const count = real.enabled ? real.inventory.categories[entry.name.toUpperCase() as PantryItemDto['category']] ?? 0 : items.filter((item) => item.status === 'ACTIVE' && item.category === entry.name).length;
             return <Pressable key={entry.name} style={[styles.chip, category === entry.name && styles.categoryActive]}
               onPress={() => setCategory(entry.name)} accessibilityRole="radio"
               accessibilityLabel={`${entry.name}, ${count} active items`}
@@ -276,7 +288,7 @@ export default function PantryScreen() {
             </View>
             <Text style={styles.bannerSub}><Text style={styles.confirmedLabel}>● {real.enabled ? 'User set' : 'Confirmed'}: </Text>{real.enabled ? 'Your entered expiry dates, tracked in Asia/Kolkata.' : 'Package date in demo fixture.'}</Text>
             <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>{real.enabled ? 'Editable shelf-life assumptions; package dates take priority.' : 'Suggested shelf life for loose produce.'}</Text>
-            <Text style={styles.bannerNote}>{real.enabled ? `Your household · INR · ${items.length} of ${real.total} items loaded. Filters apply to loaded items.` : 'Demo sources; no AI or package verification.'}</Text>
+            <Text style={styles.bannerNote}>{real.enabled ? `Your household · INR · ${filtered.length} of ${real.total} matching items loaded. Filters search your whole pantry.` : 'Demo sources; no AI or package verification.'}</Text>
           </View>
         </View>
 
@@ -302,12 +314,12 @@ export default function PantryScreen() {
             <Text style={styles.chipText}>＋ Add Item Manually</Text>
           </Pressable>
           <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
-            onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems}
+            onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems || listBusy}
             accessibilityRole="button" accessibilityLabel={batchMode ? 'Cancel batch selection' : 'Batch Select'}
             accessibilityState={{ expanded: batchMode }} aria-expanded={batchMode}>
             <Text style={[styles.chipText, batchMode && styles.chipTextActive]}>{batchMode ? 'Cancel Selection' : '☑ Batch Select'} ({selectedItems.length})</Text>
           </Pressable>
-          {batchMode && <Pressable style={styles.chip} disabled={!filtered.length}
+          {batchMode && <Pressable style={styles.chip} disabled={!filtered.length || listBusy}
             onPress={() => {
               if (real.enabled && filtered.length > 20 && selectedItems.length !== filtered.length) { setBatchNotice('More than 20 items are visible. Choose up to 20 individually.'); return; }
               setSelectedIds(selectedItems.length === filtered.length ? [] : filtered.map(item => item.id));
@@ -318,8 +330,8 @@ export default function PantryScreen() {
         </View>
         {batchMode && <View style={styles.batchPanel}>
           <Text style={styles.swipeHint}>{selectedItems.length} selected · {real.enabled ? '₹' : '$'}{selectedItems.reduce((total, item) => total + item.price, 0).toFixed(2)} known value. Changing filters clears selection.{real.enabled ? ' Up to 20 per batch.' : ''}</Text>
-          <PrimaryButton label="Mark Selected Used" disabled={!selectedItems.length} onPress={() => requestBatch('CONSUMED')} />
-          <PrimaryButton label="Mark Selected Wasted" variant="ghost" disabled={!selectedItems.length} onPress={() => requestBatch('WASTED')} />
+          <PrimaryButton label="Mark Selected Used" disabled={!selectedItems.length || listBusy} onPress={() => requestBatch('CONSUMED')} />
+          <PrimaryButton label="Mark Selected Wasted" variant="ghost" disabled={!selectedItems.length || listBusy} onPress={() => requestBatch('WASTED')} />
         </View>}
         {!!batchNotice && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{batchNotice}</Text>}
         {real.enabled && <>
@@ -334,7 +346,7 @@ export default function PantryScreen() {
         </>}
         {/* Items list */}
         {!batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
-        {real.enabled && !items.length && (real.loading || real.error) ? <Text style={styles.swipeHint}>{real.loading ? 'Loading your household pantry…' : 'Your pantry could not be loaded. Tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
+        {real.enabled && (pendingCriteria || (!items.length && (real.loading || real.error))) ? <Text style={styles.swipeHint}>{listBusy ? 'Loading matching pantry items…' : 'Your pantry could not be loaded. Tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🥦</Text>
             <Text style={styles.emptyTitle}>
@@ -349,11 +361,12 @@ export default function PantryScreen() {
         ) : (
           filtered.map((item) => (
             <PantryItemCard
+              hideActions={listBusy || (real.enabled && !!real.error)}
               packageDateLabel={real.enabled ? 'Package date' : undefined}
               key={item.id}
               item={item}
               onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
-              onSelect={batchMode ? () => toggleSelection(item.id) : undefined}
+              onSelect={batchMode ? () => { if (!listBusy) toggleSelection(item.id); } : undefined}
               selected={batchMode && selectedIds.includes(item.id)}
               valueLabel={real.enabled ? rupeeValue(real.items.find(entry => entry.id === item.id)!.totalCostMinor) : undefined}
               onConsume={(id) => requestStatus(id, 'CONSUMED')}
@@ -361,7 +374,7 @@ export default function PantryScreen() {
             />
           ))
         )}
-        {real.enabled && real.hasMore && <PrimaryButton label="Load More Items" variant="ghost" loading={real.loading} onPress={() => void real.loadMore()} />}
+        {real.enabled && !pendingCriteria && real.hasMore && <PrimaryButton label="Load More Items" variant="ghost" loading={real.loading} onPress={() => void real.loadMore()} />}
 
         {/* Add item FAB hint */}
         <Pressable

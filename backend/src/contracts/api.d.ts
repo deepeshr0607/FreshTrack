@@ -23,6 +23,11 @@ export type PantryStatus = 'ACTIVE' | 'CONSUMED' | 'WASTED' | 'ASSUMED_CONSUMED'
 export type CostSource = 'PURCHASE' | 'ESTIMATE' | 'UNKNOWN';
 export interface EntryCost { currencyCode: 'INR'; unitCostMinor: number | null; totalCostMinor: number | null; costSource: CostSource }
 export type PantryCategory = 'PRODUCE' | 'DAIRY' | 'BAKERY' | 'SNACKS' | 'MEAT' | 'FROZEN' | 'OTHER';
+export interface PantryListFilters {
+  q?: string; category?: PantryCategory; freshness?: 'critical' | 'caution' | 'fresh'; sort?: 'expiry' | 'name' | 'category';
+}
+export interface PantryInventoryCounts { active: number; categories: Partial<Record<PantryCategory, number>> }
+export type PantryListResponse = ApiSuccess<{ items: PantryItemDto[]; pagination: PageInfo; inventory: PantryInventoryCounts }>;
 export interface ExpirySelection {
   packageDate: string | null; userDate: string | null;
   preset: { baseDate: string; days: number } | null;

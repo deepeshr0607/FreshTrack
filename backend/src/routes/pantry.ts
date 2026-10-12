@@ -1,5 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { InvalidApiInput, parsePagination, sendFailure, success } from '../lib/api';
+import { InvalidApiInput, sendFailure, success } from '../lib/api';
+import { pantryListQuery } from '../lib/pantryQuery';
 import { requireIdentity } from '../middleware/auth';
 import type { VerifiedIdentity, VerifyIdentity } from '../services/auth';
 import { createPantryService, pantryInput, pantryEditInput, pantryOutcomeInput, pantryBatchInput, PantryFailure, type PantryService } from '../services/pantry';
@@ -43,7 +44,8 @@ export function createPantryRouter(verify: VerifyIdentity, service: PantryServic
     try {
       if (Number(req.get('content-length') || 0) || req.get('transfer-encoding')) throw new InvalidApiInput('No body accepted.');
       const query = new URLSearchParams(req.originalUrl.split('?')[1] || '');
-      res.json(success(await service.list(res.locals.identity as VerifiedIdentity, parsePagination(query))));
+      const { pagination, filters } = pantryListQuery(query);
+      res.json(success(await service.list(res.locals.identity as VerifiedIdentity, pagination, filters)));
     } catch (error) { next(error); }
   });
   router.post('/pantry', async (req, res, next) => {

@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { resolveExpiry } from '../contracts/expiry';
 import { Prisma, type PrismaClient, type PantryItem } from '@prisma/client';
-import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination } from '../contracts/api';
+import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination, PantryListFilters } from '../contracts/api';
 import { InvalidApiInput, pageInfo, paginationOffset } from '../lib/api';
 import { calendarDate, expiryState, planStatusTransition, serializeCalendarDate, utcTimestamp } from '../lib/inventoryRules';
+import { pantryListWhere, pantryListOrder, categoryPageWindows } from '../lib/pantryQuery';
 import { minorAmount, quantityString } from '../lib/serialization';
 import { prisma } from '../lib/prisma';
 import type { VerifiedIdentity } from './auth';
@@ -62,12 +63,12 @@ export function pantryInput(value: unknown): PantryCreateInput {
     quantity: quantityString(body['quantity'] as string), unit: text('unit', 32),
     expiresOn: calendarDate(body['expiresOn'] as string), totalCostMinor: minorAmount(body['totalCostMinor']) };
 }
-function view(item: PantryItem, timezone: string): PantryItemDto {
+function view(item: PantryItem, timezone: string, now = new Date()): PantryItemDto {
   const expiresOn = serializeCalendarDate(item.expiresOn);
   return { id: item.id, name: item.name, category: item.category, quantity: quantityString(item.quantity.toString()),
     unit: item.unit, expiresOn, totalCostMinor: item.totalCostMinor, currencyCode: 'INR', status: item.status,
     source: item.source, expirySource: item.expirySource,
-    purchaseDate: item.purchaseDate ? serializeCalendarDate(item.purchaseDate) : null, freshnessPresetDays: item.freshnessPresetDays, ...expiryState(expiresOn, timezone, new Date()),
+    purchaseDate: item.purchaseDate ? serializeCalendarDate(item.purchaseDate) : null, freshnessPresetDays: item.freshnessPresetDays, ...expiryState(expiresOn, timezone, now),
     createdAt: utcTimestamp(item.createdAt), updatedAt: utcTimestamp(item.updatedAt) };
 }
 export function createPantryService(db: PrismaClient = prisma) {
@@ -172,14 +173,27 @@ export function createPantryService(db: PrismaClient = prisma) {
     batch,
     edit: (identity: VerifiedIdentity, id: string, input: PantryEditInput, key: string) => mutate(identity, id, key, { action: 'edit', input }),
     outcome: (identity: VerifiedIdentity, id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => mutate(identity, id, key, { action, input }),
-    list: (identity: VerifiedIdentity, pagination: Pagination) => run(async tx => {
+    list: (identity: VerifiedIdentity, pagination: Pagination, filters: PantryListFilters = {}) => run(async tx => {
       const membership = await member(tx, identity);
-      const where = { householdId: membership.householdId, status: 'ACTIVE' as const, archivedAt: null,
+      const scope = { householdId: membership.householdId, status: 'ACTIVE' as const, archivedAt: null,
         household: { members: { some: { authSubject: identity.id } } } };
+      const now = new Date();
+      const where = { ...scope, ...pantryListWhere(filters, membership.household.timezone, now) };
       const total = await tx.pantryItem.count({ where });
-      const rows = await tx.pantryItem.findMany({ where, orderBy: [{ expiresOn: 'asc' }, { id: 'asc' }],
-        skip: paginationOffset(pagination), take: pagination.pageSize });
-      return { items: rows.map(row => view(row, membership.household.timezone)), pagination: pageInfo(pagination, total) };
+      const counts = await tx.pantryItem.groupBy({ by: ['category'], where: scope, _count: { _all: true } });
+      const inventory = { active: counts.reduce((sum, row) => sum + row._count._all, 0),
+        categories: Object.fromEntries(counts.map(row => [row.category, row._count._all])) };
+      const skip = paginationOffset(pagination);
+      let rows: PantryItem[];
+      if (filters.sort === 'category') {
+        const matching = filters.q || filters.category || filters.freshness
+          ? await tx.pantryItem.groupBy({ by: ['category'], where, _count: { _all: true } }) : counts;
+        const windows = categoryPageWindows(matching.map(row => ({ category: row.category, count: row._count._all })), skip, pagination.pageSize);
+        rows = [];
+        for (const window of windows) rows.push(...await tx.pantryItem.findMany({
+          where: { ...where, category: window.category }, orderBy: pantryListOrder('name'), skip: window.skip, take: window.take }));
+      } else rows = await tx.pantryItem.findMany({ where, orderBy: pantryListOrder(filters.sort), skip, take: pagination.pageSize });
+      return { items: rows.map(row => view(row, membership.household.timezone, now)), pagination: pageInfo(pagination, total), inventory };
     }),
     find: (identity: VerifiedIdentity, id: string) => run(async tx => {
       const membership = await member(tx, identity);

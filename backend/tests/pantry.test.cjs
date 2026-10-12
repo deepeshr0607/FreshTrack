@@ -121,3 +121,46 @@ test('explicit expiry choices validate precedence and reject mismatched dates or
   assert.throws(() => pantryInput({ ...valid, freshnessPresetDays: 7 }));
   assert.throws(() => pantryInput({ ...valid, expirySelection: { ...expirySelection, preset: { baseDate: '2026-10-12', days: 0 } } }));
 });
+
+const { pantryListQuery, pantryListWhere, pantryListOrder } = require('../dist/lib/pantryQuery.js');
+test('list query normalizes search and strictly bounds every raw filter, duplicate and pagination field', () => {
+  const result = pantryListQuery(new URLSearchParams('q=%20Whole%20%20MILK%20&category=DAIRY&freshness=caution&sort=name&page=2&pageSize=1'));
+  assert.deepEqual(result, { pagination: { page: 2, pageSize: 1 }, filters: { q: 'whole milk', category: 'DAIRY', freshness: 'caution', sort: 'name' } });
+  for (const query of ['q=a&q=b', 'category=DAIRY&category=OTHER', 'freshness=expired', 'sort=desc', 'category=dairy',
+    'q[x]=milk', 'householdId=foreign', 'status=WASTED', 'pageSize=101', 'q=%00', 'q=' + 'x'.repeat(121)]) {
+    assert.throws(() => pantryListQuery(new URLSearchParams(query)));
+  }
+});
+test('freshness uses household calendar tiers and literal LIKE search with stable order ties', () => {
+  const now = new Date('2026-10-12T18:30:00Z');
+  const critical = pantryListWhere({ freshness: 'critical' }, 'Asia/Kolkata', now);
+  assert.equal(critical.expiresOn.lte.toISOString(), '2026-10-14T00:00:00.000Z');
+  const caution = pantryListWhere({ freshness: 'caution' }, 'Asia/Kolkata', now);
+  assert.equal(caution.expiresOn.gte.toISOString(), '2026-10-15T00:00:00.000Z');
+  assert.equal(caution.expiresOn.lte.toISOString(), '2026-10-19T00:00:00.000Z');
+  assert.equal(pantryListWhere({ freshness: 'fresh' }, 'Asia/Kolkata', now).expiresOn.gte.toISOString(), '2026-10-20T00:00:00.000Z');
+  assert.equal(pantryListWhere({ q: '100%_\\' }, 'UTC', now).normalizedName.contains, '100\\%\\_\\\\');
+  assert.deepEqual(pantryListOrder('name'), [{ normalizedName: 'asc' }, { id: 'asc' }]);
+  assert.deepEqual(pantryListOrder('expiry').at(-1), { id: 'asc' });
+});
+test('filtered list HTTP contract authenticates before query work and passes only validated server criteria', async () => {
+  let calls = 0;
+  const app = createApp({ verifyIdentity, pantryService: { list: async (user, page, filters) => {
+    calls++; assert.equal(user.id, identity.id); assert.equal(page.page, 2);
+    assert.deepEqual(filters, { q: 'milk', category: 'DAIRY', sort: 'name' });
+    return { items: [], pagination: page, inventory: { active: 8, categories: { DAIRY: 2 } } };
+  } } });
+  const path = '/api/v1/pantry?q=Milk&category=DAIRY&sort=name&page=2';
+  assert.equal((await request(app).get(path)).status, 401);
+  assert.equal((await request(app).get(path + '&q=other').set('Authorization', 'Bearer a.b.c')).status, 400);
+  const result = await request(app).get(path).set('Authorization', 'Bearer a.b.c');
+  assert.equal(result.status, 200); assert.equal(result.body.data.inventory.active, 8); assert.equal(calls, 1);
+});
+
+const { categoryPageWindows } = require('../dist/lib/pantryQuery.js');
+test('alphabetic category paging spans group boundaries and preserves offsets despite enum declaration order', () => {
+  const groups = [{ category: 'PRODUCE', count: 2 }, { category: 'DAIRY', count: 3 }, { category: 'BAKERY', count: 1 }];
+  assert.deepEqual(categoryPageWindows(groups, 0, 2), [{ category: 'BAKERY', skip: 0, take: 1 }, { category: 'DAIRY', skip: 0, take: 1 }]);
+  assert.deepEqual(categoryPageWindows(groups, 3, 2), [{ category: 'DAIRY', skip: 2, take: 1 }, { category: 'PRODUCE', skip: 0, take: 1 }]);
+  assert.deepEqual(categoryPageWindows(groups, 6, 2), []);
+});
