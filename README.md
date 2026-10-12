@@ -199,6 +199,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
+**Persisted Pantry copy implemented (12 October), iPhone acceptance pending:** native SecureStore holds up to 20 scoped active entries for 24 hours, restores read-only after verified authentication, and clears on successful sign-out. Auth gate and online mutations preserved; no offline write queue. Both TypeScript/build, root102/102, backend48/48, health1/1, Doctor21/21 and all-platform exports pass. Existing lint gaps remain. See [persisted-cache report](docs/Phase_4_Persisted_Cache.md). Next: iPhone restart/cleanup checks, then Phase4 final review. No Phase5.
+
 **Session-cache diagnostic verified on iPhone (12 October):** session-only cached Pantry list/details and local filtering are read-only during availability failures. Auth gate preserved; Context blocks writes. Both TypeScript, root94/94, backend44/44, health1/1 and Doctor21/21 pass. Final all-platform exports pass; User reports cached reads/blocked writes/recovery/sign-out diagnostic checks pass; actual offline/restart behavior remains unverified; see [offline-read report](docs/Phase_4_Offline_Reads.md). Disk persistence/restart support and final Phase4 review remain; no Phase5.
 
 

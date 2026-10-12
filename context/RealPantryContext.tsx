@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from './AuthContext';
+import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
 import { createPantryApi, requirePantryStatus, pantryFilterKey } from '@/lib/pantryApi';
 import { createPantryReadCache, cacheablePantryFailure } from '@/lib/pantryReadCache';
@@ -7,6 +8,7 @@ import { NeonAuthError } from '@/lib/neonAuth';
 import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryItemDto, PantryListFilters, PantryInventoryCounts } from '@/types/api';
 
 type Value = { enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
+  diskStatus: string; restoreSavedPreview: () => Promise<void>;
   readOnly: boolean; cachedAt: number | null; cachePreview: boolean; previewCache: () => void; endCachePreview: () => void;
   filters: PantryListFilters; inventory: PantryInventoryCounts; setFilters: (filters: PantryListFilters) => void;
   reload: () => Promise<void>; loadMore: () => Promise<void>;
@@ -33,6 +35,9 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   }, __DEV__), [session, state.user?.id]);
   const scope = JSON.stringify([process.env.EXPO_PUBLIC_NEON_AUTH_URL, state.user?.id]);
   const cache = useMemo(() => createPantryReadCache(scope), [scope]);
+  const [diskStatus, setDiskStatus] = useState('');
+  const diskRevision = useRef(0);
+  const hydrated = useRef<Promise<void> | null>(null);
   const [readOnly, setReadOnly] = useState(false); const readOnlyRef = useRef(false);
   const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [cachePreview, setCachePreview] = useState(false); const previewRef = useRef(false);
@@ -46,6 +51,32 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const loadingRef = useRef(false); const hasMoreRef = useRef(false);
   const page = useRef(0); const generation = useRef(0); const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current++; cache.clear(); }; }, [cache]);
+  const hydrateDisk = useCallback(() => {
+    if (hydrated.current) return hydrated.current;
+    const verified = session.getSnapshot();
+    if (!nativePantryDiskCache || verified.checking || verified.user?.id !== state.user?.id || !verified.user) return Promise.resolve();
+    hydrated.current = (async () => {
+      try {
+        const saved = await nativePantryDiskCache.load(scope);
+        const current = session.getSnapshot();
+        if (!mounted.current || current.checking || current.user?.id !== state.user?.id) { hydrated.current = null; return; }
+        if (saved) { cache.remember(scope, saved.items, false, new Date(saved.savedAt)); setDiskStatus(`Saved copy restored (${saved.items.length} entries).`); }
+        else setDiskStatus('No saved copy available for this account.');
+      } catch { hydrated.current = null; if (mounted.current) setDiskStatus('Saved copy unavailable. Refresh online to retry.'); }
+    })();
+    return hydrated.current;
+  }, [cache, scope, session, state.user?.id]);
+  const persistDisk = useCallback(() => {
+    const snapshot = cache.read(scope, { sort: 'expiry' });
+    const verified = session.getSnapshot();
+    if (!nativePantryDiskCache || !snapshot || verified.checking || verified.user?.id !== state.user?.id) return;
+    const revision = ++diskRevision.current;
+    setDiskStatus('Saving offline copy…');
+    const disk = nativePantryDiskCache;
+    void (async () => disk.save(scope, { savedAt: snapshot.savedAt, items: snapshot.items }))().then(saved => {
+      if (mounted.current && saved && revision === diskRevision.current) setDiskStatus('Offline copy saved (up to 20 entries, valid for 24 hours).');
+    }).catch(() => { if (mounted.current && revision === diskRevision.current) setDiskStatus('Offline copy unavailable. Your changes remain saved online; refresh to retry.'); });
+  }, [cache, scope, session, state.user?.id]);
   const showCached = useCallback((criteria: PantryListFilters) => {
     const verified = session.getSnapshot();
     if (verified.checking || verified.user?.id !== state.user?.id || !verified.user) return false;
@@ -65,6 +96,8 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     const nextPage = more ? page.current + 1 : 1;
     loadingRef.current = true; setLoading(true); setError('');
     try {
+      await hydrateDisk();
+      if (!mounted.current || version !== generation.current) return;
       if (__DEV__ && previewRef.current) throw new NeonAuthError('PANTRY_NETWORK', 'Development cached-view test.');
       await api.setup();
       if (!mounted.current || version !== generation.current) return;
@@ -73,6 +106,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       if (!response.data.inventory) throw new NeonAuthError('PANTRY_VERSION', 'The pantry service needs updating. Retry after the development API deployment.');
       const unfiltered = !criteria.q && !criteria.category && !criteria.freshness;
       cache.remember(scope, response.data.items, !more && unfiltered && !response.data.pagination.hasNextPage);
+      persistDisk();
       readOnlyRef.current = false; setReadOnly(false); setCachedAt(null);
       page.current = nextPage; hasMoreRef.current = response.data.pagination.hasNextPage;
       setInventory(response.data.inventory); setTotal(response.data.pagination.total); setHasMore(response.data.pagination.hasNextPage);
@@ -83,12 +117,12 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
           if (!showCached(criteria)) { readOnlyRef.current = true; setReadOnly(true); setItems([]); setCachedAt(null);
             setTotal(0); setInventory({ active: 0, categories: {} }); hasMoreRef.current = false; setHasMore(false); }
         }
-        else { cache.clear(); setItems([]); setCachedAt(null); setTotal(0); setInventory({ active: 0, categories: {} });
+        else { cache.clear(); diskRevision.current++; setDiskStatus('Saved copy unavailable. Refresh online to retry.'); void nativePantryDiskCache?.clear().catch(() => undefined); setItems([]); setCachedAt(null); setTotal(0); setInventory({ active: 0, categories: {} });
           hasMoreRef.current = false; setHasMore(false); readOnlyRef.current = true; setReadOnly(true); }
         setError(error instanceof NeonAuthError ? error.message : 'Unable to load your pantry. Please retry.');
       }
     } finally { if (mounted.current && version === generation.current) { loadingRef.current = false; setLoading(false); } }
-  }, [api, enabled, cache, scope, showCached]);
+  }, [api, enabled, cache, scope, showCached, hydrateDisk, persistDisk]);
   const setFilters = useCallback((next: PantryListFilters) => {
     if (pantryFilterKey(next) === pantryFilterKey(filtersRef.current)) return;
     filtersRef.current = next; updateFilters(next);
@@ -102,6 +136,9 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const find = useCallback(async (id: string) => {
     const verified = session.getSnapshot();
     if (verified.checking || !verified.user || verified.user.id !== state.user?.id) throw new NeonAuthError('UNAUTHORIZED', 'Verify your session before reading Pantry.');
+    await hydrateDisk();
+    const current = session.getSnapshot();
+    if (!mounted.current || current.checking || current.user?.id !== verified.user.id) throw new NeonAuthError('UNAUTHORIZED', 'Verify your session before reading Pantry.');
     const cached = () => cache.find(scope, id);
     if (readOnlyRef.current) {
       const item = cached(); if (item) return item;
@@ -109,7 +146,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     }
     try {
       const item = (await api.find(id)).data.item;
-      if (mounted.current) cache.remember(scope, [item]);
+      if (mounted.current) { cache.remember(scope, [item]); persistDisk(); }
       return item;
     }
     catch (error) {
@@ -118,7 +155,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       }
       throw error;
     }
-  }, [api, cache, scope, showCached, session, state.user?.id]);
+  }, [api, cache, scope, showCached, session, state.user?.id, hydrateDisk, persistDisk]);
   const duplicates = async (input: PantryCreateInput) => {
     requireLive();
     await api.setup();
@@ -131,13 +168,13 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     requireLive();
     if (!mounted.current) throw new NeonAuthError('PANTRY_CANCELLED', 'The pantry session changed.');
     const item = (await api.add(input, key)).data.item;
-    if (mounted.current) { generation.current++; cache.remember(scope, [item]); }
+    if (mounted.current) { generation.current++; cache.remember(scope, [item]); persistDisk(); }
     if (mounted.current) await reload(); // Saved detail is returned; list refresh failures display a retry notice.
     return item;
   };
   const reconcileMany = async (changed: PantryItemDto[], rememberOutcome = false) => {
     if (mounted.current) {
-      cache.remove(scope, changed.map(item => item.id)); cache.remember(scope, changed.filter(item => item.status === 'ACTIVE'));
+      cache.remove(scope, changed.map(item => item.id)); cache.remember(scope, changed.filter(item => item.status === 'ACTIVE')); persistDisk();
       generation.current++; // In-flight list reads cannot restore a pre-mutation row.
       setItems(current => current.filter(entry => !changed.some(item => item.id === entry.id))); // Re-query before inserting: edits/restores may no longer match these filters.
       if (rememberOutcome) setLastOutcome(changed.filter(item => ['CONSUMED', 'WASTED'].includes(item.status)));
@@ -165,7 +202,14 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     requireLive();
     const changed = (await api.batchUndo(input, key)).data.items; requirePantryStatus(changed, 'ACTIVE'); return reconcileMany(changed);
   };
-  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, readOnly, cachedAt, cachePreview,
+  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, diskStatus,
+    restoreSavedPreview: async () => {
+      if (!__DEV__ || !enabled) return;
+      generation.current++; loadingRef.current = false; setLoading(false);
+      previewRef.current = true; setCachePreview(true); readOnlyRef.current = true; setReadOnly(true);
+      cache.clear(); hydrated.current = null;
+      await hydrateDisk(); showCached(filtersRef.current);
+    }, readOnly, cachedAt, cachePreview,
     previewCache: () => { if (__DEV__ && enabled) { previewRef.current = true; setCachePreview(true); void reload(); } },
     endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, add, edit, outcome, undo,
     batchOutcome, batchUndo, lastOutcome, dismissUndo: () => setLastOutcome([]),
