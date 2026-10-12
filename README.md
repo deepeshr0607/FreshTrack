@@ -199,6 +199,16 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 
 ## Project Status
 
+**Server-wide Pantry filters implemented (12 October):** search/category/freshness matching and
+expiry/name/alphabetic-category sorting now run before API pagination. Full-household category
+counts, criteria-preserving refresh/Load More, debouncing and stale-response guards are connected
+to existing controls. Both TypeScript/build, root85/85, backend42/42, live Pantry14/14 with cleanup,
+health1/1, Doctor21/21 and all-platform exports pass. Existing lint gaps remain. An interrupted run
+required guarded synthetic recovery; the next run exposed/fixed enum category ordering. Final checks
+pass. Development Preview READY; public health200/tokenless filtered Pantry401 pass. iPhone acceptance pending; see
+[filters report](docs/Phase_4_Pantry_Filters.md). No Phase5 or production writes.
+
+
 **Expiry presets verified on iPhone (12 October):** Add/Edit now support editable estimates and package > manual > estimate precedence. Both TypeScript/build, root84/84, backend38/38, Doctor21/21 and all-platform exports pass. Live Pantry12/12 and fixture cleanup pass; development Preview is READY, public health200/tokenless mutations401 pass. User reports estimate/restart, invalid/custom duration, package priority/restart and manual override checks pass; see [expiry report](docs/Phase_4_Expiry_Presets.md).
 
 

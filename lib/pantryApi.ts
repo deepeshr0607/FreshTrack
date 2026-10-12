@@ -1,4 +1,4 @@
-import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryBatchResponse, PantryItemDto, PantryItemResponse, PaginatedResponse } from '../types/api';
+import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryBatchResponse, PantryItemDto, PantryItemResponse, PantryListFilters, PantryListResponse } from '../types/api';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { apiOrigin } from './backendIdentity.ts';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
@@ -8,6 +8,11 @@ import type { PantryDraft } from './pantry.ts';
 import { PANTRY_CATEGORIES } from './pantry.ts';
 import type { PantryItem } from './mock';
 
+/** Stable criteria identity for debounce, paging and stale-response protection. */
+export function pantryFilterKey(filters: PantryListFilters): string {
+  return JSON.stringify([filters.q?.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase() || '',
+    filters.category || '', filters.freshness || '', filters.sort || 'expiry']);
+}
 export function pantryRetryKey(): string { return `request-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`; }
 /** A replay returns current state; do not announce success if a subsequent action superseded it. */
 export function requirePantryStatus(items: PantryItemDto[], expected: PantryItemDto['status']): void {
@@ -58,7 +63,11 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
   }
   return {
     setup: () => request<HouseholdResponse>('/api/v1/households/current', 'POST', {}),
-    list: (page = 1) => request<PaginatedResponse<PantryItemDto>>(`/api/v1/pantry?page=${page}&pageSize=50`),
+    list: (page = 1, filters: PantryListFilters = {}) => {
+      const query = new URLSearchParams({ page: String(page), pageSize: '50' });
+      for (const key of ['q', 'category', 'freshness', 'sort'] as const) if (filters[key]) query.set(key, filters[key]!);
+      return request<PantryListResponse>(`/api/v1/pantry?${query}`);
+    },
     find: (id: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}`),
     add: (input: PantryCreateInput, key: string) => request<PantryItemResponse>('/api/v1/pantry', 'POST', input, key),
     edit: (id: string, input: PantryEditInput, key: string) => request<PantryItemResponse>(`/api/v1/pantry/${encodeURIComponent(id)}`, 'PATCH', input, key),

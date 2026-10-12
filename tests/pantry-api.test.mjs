@@ -53,3 +53,17 @@ test('client validates transport before credentials and never relays server/driv
   const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async () => Response.json({ error: 'private-driver-error' }, { status: 503 }));
   await assert.rejects(api.list(), error => error.code === 'PANTRY_HTTP_503' && !error.message.includes('private-driver'));
 });
+
+test('server list client preserves full criteria on subsequent pages and safely encodes search metacharacters', async () => {
+  const urls = []; const api = createPantryApi('https://api.example.com', async () => 'jwt', false, async url => {
+    urls.push(new URL(url)); return Response.json({ data: {} });
+  });
+  const filters = { q: '100%_\\ milk & bread', category: 'DAIRY', freshness: 'fresh', sort: 'name' };
+  await api.list(1, filters); await api.list(2, filters);
+  for (const url of urls) {
+    for (const [key, value] of Object.entries(filters)) assert.equal(url.searchParams.get(key), value);
+    assert.equal(url.searchParams.get('pageSize'), '50');
+  }
+  assert.equal(urls[1].searchParams.get('page'), '2');
+  await api.list(1, {}); assert.equal(urls[2].searchParams.has('q'), false); assert.equal(urls[2].searchParams.has('category'), false);
+});

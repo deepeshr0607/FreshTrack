@@ -223,3 +223,46 @@ test('estimated expiry persists through replay and edits; package/manual priorit
     assert.equal((await service.list(user, { page: 1, pageSize: 50 })).items[0].expiresOn, manual.expiresOn);
   } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_EXPIRY_CHECK_FAILED'); }
 });
+
+test('server filters find entries outside the loaded page, compose literal search/category and keep household-global counts', async () => {
+  try {
+    const user = await account(), foreign = await account(), service = createPantryService(db);
+    const first = await service.create(user, { ...input, name: 'A bread', category: 'BAKERY', expiresOn: '2026-10-12' }, randomUUID());
+    const target = await service.create(user, { ...input, name: 'Z 100%_\\ Milk', expiresOn: '2026-11-25' }, randomUUID());
+    const next = await service.create(user, { ...input, name: 'Z 100%_\\ Milk', expiresOn: '2026-11-26' }, randomUUID());
+    await service.create(user, { ...input, name: 'Z 100wild Milk', expiresOn: '2026-11-25' }, randomUUID());
+    await service.create(foreign, { ...input, name: 'Z 100%_\\ Milk' }, randomUUID());
+    const page = { page: 1, pageSize: 1 };
+    assert.equal((await service.list(user, page)).items[0].id, first.id);
+    const filters = { q: '100%_\\ milk', category: 'DAIRY', sort: 'name' };
+    const result = await service.list(user, page, filters);
+    assert.equal(result.pagination.total, 2); assert.equal(result.inventory.active, 4); assert.equal(result.inventory.categories.DAIRY, 3);
+    const second = await service.list(user, { ...page, page: 2 }, filters);
+    assert.deepEqual([result.items[0].id, second.items[0].id], [target.id, next.id].sort());
+    assert.equal(second.pagination.hasNextPage, false);
+    assert.equal((await service.list(user, page, { ...filters, category: 'BAKERY' })).pagination.total, 0);
+    assert.equal((await service.list(user, page, { q: 'no match' })).inventory.active, 4);
+    assert.equal((await service.list(user, { ...page, pageSize: 10 }, { sort: 'category' })).items[0].category, 'BAKERY');
+    assert.equal((await service.list(user, page, { sort: 'category' })).items[0].id, first.id);
+    assert.equal((await service.list(user, { ...page, page: 2 }, { sort: 'category' })).items[0].category, 'DAIRY');
+    await service.outcome(user, target.id, 'consume', { confirmed: true, expectedUpdatedAt: target.updatedAt }, randomUUID());
+    assert.equal((await service.list(user, page, filters)).pagination.total, 1);
+    assert.equal((await service.list(user, page, filters)).inventory.active, 3);
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_FILTER_CHECK_FAILED'); }
+});
+test('critical includes overdue; caution/fresh ranges match Kolkata days and compose category filters', async () => {
+  try {
+    const { householdDate } = require('../dist/lib/inventoryRules.js');
+    const user = await account(), service = createPantryService(db);
+    const today = new Date(householdDate(new Date(), 'Asia/Kolkata') + 'T00:00:00Z');
+    for (const offset of [-1, 0, 1, 2, 6, 7]) {
+      const expiresOn = new Date(today.getTime() + offset * 86400000).toISOString().slice(0, 10);
+      await service.create(user, { ...input, name: 'Tier ' + offset, expiresOn }, randomUUID());
+    }
+    for (const [freshness, expected] of [['critical', [-1, 0, 1]], ['caution', [2, 6]], ['fresh', [7]]]) {
+      const result = await service.list(user, { page: 1, pageSize: 50 }, { freshness, category: 'DAIRY' });
+      assert.deepEqual(result.items.map(item => item.daysLeft), expected); assert.equal(result.inventory.active, 6);
+      assert.equal((await service.list(user, { page: 1, pageSize: 50 }, { freshness, category: 'PRODUCE' })).pagination.total, 0);
+    }
+  } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('PANTRY_FRESHNESS_FILTER_CHECK_FAILED'); }
+});

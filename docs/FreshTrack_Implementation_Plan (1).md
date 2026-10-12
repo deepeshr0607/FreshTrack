@@ -704,6 +704,19 @@ SQL checks, target verification/live connectivity, Prisma singleton and guarded 
 
 ## Phase 4 — Pantry inventory end-to-end
 
+### Current slice — server-wide filters implemented (12 October 2026)
+
+Real Pantry controls now use validated membership-scoped server search/category/freshness and
+expiry/name/alphabetic-category ordering before pagination. Active household/category counts stay
+independent of filters. Debounced criteria changes reset paging/selection and discard older reads;
+mutations re-query current criteria. Existing demo/design controls and schema/dependencies preserved.
+Both TypeScript/build, root85/85, backend42/42, live Pantry14/14 with cleanup, health1/1, Doctor21/21
+and all-platform exports pass. Existing lint gaps remain. Interrupted DB suite required guarded fixture
+recovery; subsequent enum-order failure was fixed and final run passed. New Preview READY and public
+health200/tokenless filtered Pantry401 pass. iPhone acceptance pending; see [filters report](Phase_4_Pantry_Filters.md). Next: duplicates/offline and Phase4 final review.
+No Phase5 or production work.
+
+
 ### Current slice — expiry presets verified on iPhone (12 October 2026)
 
 User resumed the saved expiry work. Shared typed choices and one server-validated calculator apply
