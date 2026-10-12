@@ -833,7 +833,7 @@ Phase 5 has not started.
 
 ## Phase 5 — Local expiry notifications and reconciliation
 
-**Phase 5 item 1 implemented (12 October), iPhone acceptance pending:** signed-in native Settings has contextual notification permission, blocked/retry recovery and device/account-scoped reminder On/Off and HH:MM persistence. Demo/digest preserved; no alerts scheduled yet. SDK-compatible expo-notifications ~57.0.22 installed. Both TypeScript checks, root111/111, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [permission/preferences report](Phase_5_Permission_Preferences.md). Next: iPhone permission/restart checks, then item 2 scheduling when authorized. Items 2–8 remain incomplete.
+**Phase 5 item 1 verified on iPhone (12 October):** signed-in native Settings has contextual notification permission, blocked/retry recovery and device/account-scoped reminder On/Off and HH:MM persistence. Demo/digest preserved; no alerts scheduled yet. SDK-compatible expo-notifications ~57.0.22 installed. Both TypeScript checks, root111/111, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [permission/preferences report](Phase_5_Permission_Preferences.md). User reports permission/opt-in, time validation/restart and disable/restart checks pass. Optional native blocked-permission recovery remains unverified. Next: item 2 scheduling when authorized. Items 2–8 remain incomplete.
 
 **Goal:** Make expiry reminders reliable without requiring a cloud push for every reminder.
 

@@ -1,6 +1,6 @@
 # Phase 5 item 1 — contextual permission and device reminder preference
 
-User authorized this slice on 12 October 2026. Implemented; iPhone acceptance pending.
+User authorized this slice on 12 October 2026. Implemented; required iPhone checks passed by user report.
 Scheduling, notification actions/offline queue and overdue reconciliation are not started.
 
 ## Changes
@@ -66,10 +66,17 @@ restart persistence, allowed/quiet permission, denied/blocked recovery, account/
 invalid time/storage failure, session changes during a prompt, repeated submit, revocation/disable
 and initial-read retry. These are not evidence of actual native permission prompts or Settings UI.
 
-## Next step
+## iPhone acceptance and next step
 
-User iPhone checks pending at exp://192.168.1.248:8085: permission/opt-in, invalid/valid time and
-restart persistence, disabling/restart, optionally blocked permission/device-settings recovery.
-Android and standalone-build checks remain unverified. After item 1 acceptance, next authorized slice
-would be Phase 5 item 2: actual local expiry scheduling at T−3/T−1/expiry, skipping past targets.
-Items 2–8 and final Phase 5 acceptance remain incomplete; no Phase 6 work.
+User answered “yes working” to the requested checks at exp://192.168.1.248:8085. Recorded as
+user-reported passes for read-only permission status on opening Settings, explicit Enable/opt-in,
+invalid-time rejection, saving 18:30 and restoring the On/time preference after restart, and
+Disable/Off persistence after restart. These are native user reports, not automated UI evidence.
+The blocked-permission/device-settings recovery step was optional and was not specifically
+confirmed, so it remains unverified on device. Android and standalone-build checks also remain open.
+
+This acceptance update changes documentation only. Automated results above were run at implementation
+checkpoint 0579aab; they were not repeated for this update. Documentation diff checks pass.
+Exact next implementation slice: Phase 5 item 2, when authorized — actual local expiry scheduling
+at T−3/T−1/expiry, skipping past targets. No notifications are scheduled yet. Items 2–8 and final
+Phase 5 acceptance remain incomplete; no Phase 6 work.
