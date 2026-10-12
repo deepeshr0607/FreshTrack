@@ -165,7 +165,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
-**Offline-read slice resumed (12 October):** session-only cached Pantry list/details and local filtering are read-only during availability failures. Auth gate preserved; Context blocks writes. Both TypeScript, root94/94, backend44/44, health1/1 and Doctor21/21 pass. Final all-platform exports pass; iPhone diagnostic checks pending; see [offline-read report](docs/Phase_4_Offline_Reads.md). Disk persistence/restart support and final Phase4 review remain; no Phase5.
+**Session-cache diagnostic verified on iPhone (12 October):** session-only cached Pantry list/details and local filtering are read-only during availability failures. Auth gate preserved; Context blocks writes. Both TypeScript, root94/94, backend44/44, health1/1 and Doctor21/21 pass. Final all-platform exports pass; User reports cached reads/blocked writes/recovery/sign-out diagnostic checks pass; actual offline/restart behavior remains unverified; see [offline-read report](docs/Phase_4_Offline_Reads.md). Disk persistence/restart support and final Phase4 review remain; no Phase5.
 
 
 **Manual duplicate review verified on iPhone (12 October):** authenticated household-scoped exact
@@ -220,7 +220,7 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — session-only offline reads awaiting native acceptance
+### Current phase: Phase 4 — session-cache diagnostic verified on iPhone
 
 See docs/Phase_4_Offline_Reads.md for current checks and limits. Disk/restart support remains.
 

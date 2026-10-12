@@ -57,8 +57,13 @@ repeated because this slice changes no backend services or persistence. No DB cl
 
 No backend deployment required. Existing duplicate Preview dpl_D3RUMLGCC1HLFSbr1EgZrwoeaRnN and
 ignored API/Auth configuration remain unchanged. Expo is on exp://192.168.1.248:8085 (address changed).
-Next: iPhone diagnostic checks for labeled cached subset, search/details, disabled writes/swipes,
-online recovery and sign-out blocking. Device acceptance is pending.
+User reports the requested iPhone development diagnostic checks passing on 12 October 2026:
+labeled cached reads/filter/details, blocked editing/actions/swipes, cached no-match recovery,
+End Test & Refresh restoring live mode, and sign-out/back blocking/relogin without old test state.
+This is user-reported acceptance of simulated Pantry request loss with internet/authentication active;
+it does not verify actual native network interruption, cold restart or disk persistence.
+Exact next slice: secure persisted Pantry cache with owner/branch isolation and safe restart recovery,
+while preserving the existing fail-closed authentication gate.
 
 After this first slice, secure disk persistence and restart/recovery design remain Phase4 work.
 Actual native transport failure paths, Android and deferred native/design/release QA remain unverified.
