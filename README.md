@@ -188,7 +188,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 1 | Implement supplied designs and navigation | 🟡 In progress — Pantry add/detail/edit, Recipes and Insights prototypes implemented |
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
-| 4 | Pantry CRUD end-to-end | 🟡 Batch/undo verified on iPhone; remaining inventory work follows |
+| 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ⬜ Not started |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 4 — core development acceptance complete (12 October):** all six plan criteria reviewed against code, passing regression tests, recorded live database tests and user-reported iPhone checks. Final reruns: both TypeScript/build, root102/102, backend48/48, health1/1, database readiness/migration status, Doctor21/21 and all-platform exports pass; hosted health200/tokenless Pantry401 pass. Existing lint gaps and native transport/conflict/retry/full-cap/Android/release QA remain unverified. See [final review](docs/Phase_4_Final_Review.md). No Phase5; next authorized slice would be contextual notification permission/preferences.
 
 **Persisted Pantry copy verified on iPhone (12 October):** native SecureStore holds up to 20 scoped active entries for 24 hours, restores read-only after verified authentication, and clears on successful sign-out. Auth gate and online mutations preserved; no offline write queue. Both TypeScript/build, root102/102, backend48/48, health1/1, Doctor21/21 and all-platform exports pass. Existing lint gaps remain. See [persisted-cache report](docs/Phase_4_Persisted_Cache.md). User reports saved-copy restart with values retained, blocked writes/swipes, live recovery and sign-out/relogin cleanup pass. This storage diagnostic used internet for authentication; actual native transport-failure checks remain unverified. Next: Phase4 final review. No Phase5.
 

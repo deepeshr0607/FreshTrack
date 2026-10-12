@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 4 — core development acceptance complete (12 October):** all six plan criteria reviewed against code, passing regression tests, recorded live database tests and user-reported iPhone checks. Final reruns: both TypeScript/build, root102/102, backend48/48, health1/1, database readiness/migration status, Doctor21/21 and all-platform exports pass; hosted health200/tokenless Pantry401 pass. Existing lint gaps and native transport/conflict/retry/full-cap/Android/release QA remain unverified. See [final review](docs/Phase_4_Final_Review.md). No Phase5; next authorized slice would be contextual notification permission/preferences.
+
 **Persisted Pantry copy verified on iPhone (12 October):** native SecureStore holds up to 20 scoped active entries for 24 hours, restores read-only after verified authentication, and clears on successful sign-out. Auth gate and online mutations preserved; no offline write queue. Both TypeScript/build, root102/102, backend48/48, health1/1, Doctor21/21 and all-platform exports pass. Existing lint gaps remain. See [persisted-cache report](docs/Phase_4_Persisted_Cache.md). User reports saved-copy restart with values retained, blocked writes/swipes, live recovery and sign-out/relogin cleanup pass. This storage diagnostic used internet for authentication; actual native transport-failure checks remain unverified. Next: Phase4 final review. No Phase5.
 
 **Session-cache diagnostic verified on iPhone (12 October):** session-only cached Pantry list/details and local filtering are read-only during availability failures. Auth gate preserved; Context blocks writes. Both TypeScript, root94/94, backend44/44, health1/1 and Doctor21/21 pass. Final all-platform exports pass; User reports cached reads/blocked writes/recovery/sign-out diagnostic checks pass; actual offline/restart behavior remains unverified; see [offline-read report](docs/Phase_4_Offline_Reads.md). This session-only checkpoint is superseded by the persisted-cache acceptance above. Final Phase4 review remains; no Phase5.
@@ -222,9 +224,9 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — session-cache diagnostic verified on iPhone
+### Current phase: Phase 4 — core development acceptance complete
 
-See docs/Phase_4_Offline_Reads.md for current checks and limits. Disk/restart support remains.
+See docs/Phase_4_Final_Review.md for evidence and remaining QA limits. Phase 5 requires user authorization.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
