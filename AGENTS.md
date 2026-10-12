@@ -165,13 +165,14 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
-**Server-wide Pantry filters implemented (12 October):** search/category/freshness matching and
+**Server-wide Pantry filters verified on iPhone (12 October):** search/category/freshness matching and
 expiry/name/alphabetic-category sorting now run before API pagination. Full-household category
 counts, criteria-preserving refresh/Load More, debouncing and stale-response guards are connected
 to existing controls. Both TypeScript/build, root85/85, backend42/42, live Pantry14/14 with cleanup,
 health1/1, Doctor21/21 and all-platform exports pass. Existing lint gaps remain. An interrupted run
 required guarded synthetic recovery; the next run exposed/fixed enum category ordering. Final checks
-pass. Development Preview READY; public health200/tokenless filtered Pantry401 pass. iPhone acceptance pending; see
+pass. Development Preview READY; public health200/tokenless filtered Pantry401 pass. User reports search/composed filters, sorting/refresh/counts, rapid-change/no-match recovery and
+selection reset pass; see
 [filters report](docs/Phase_4_Pantry_Filters.md). No Phase5 or production writes.
 
 

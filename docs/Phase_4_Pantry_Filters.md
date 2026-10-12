@@ -73,6 +73,11 @@ Preview `dpl_5u4pezTaWMXfrnuDWhTGEj6p494N` is READY at
 https://freshtrack-7hyj2sqvh-dragon-2818.vercel.app. Explicit Preview/DRAGON scope deployment passed;
 production URL null, no deployment protection. Public health200 and tokenless filtered Pantry401
 passed. Ignored public mobile API URL updated; Neon Auth origin/settings unchanged. Cloud install
-still reports the prior36 audit findings; dependencies unchanged. iPhone acceptance pending.
-Next: test search/composed filters/reset/sort/rapid changes on Expo Go, exp://192.168.1.21:8085. Remaining Phase4: duplicate handling, offline-readable/recovery behavior and final review.
+still reports the prior36 audit findings; dependencies unchanged. User reported all requested iPhone checks working on 12 October 2026 at
+exp://192.168.1.21:8085: normalized search, composed freshness/category filters, clear/reset,
+expiry/name/alphabetic-category order, refresh preserving criteria, full-inventory counts,
+rapid search changes settling correctly, no-match recovery and batch selection reset.
+This is user-reported acceptance, not automated device evidence. Actual50-item Load More,
+offline/race failure paths and Android remain unverified.
+Exact next slice: duplicate detection with explicit user confirmation, preserving existing items. Remaining Phase4: duplicate handling, offline-readable/recovery behavior and final review.
 Android, full-cap batches, failure-path/native visual QA and release remain deferred. No Phase5.
