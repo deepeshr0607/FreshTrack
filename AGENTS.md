@@ -194,15 +194,21 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 4 — BATCH/UNDO WORK PAUSED AT USER REQUEST
+### Current phase: Phase 4 — BATCH/UNDO DEPLOYED; IPHONE ACCEPTANCE PENDING
 
-- User requested pause on 12 October to shut down the Mac. Do not resume without their request.
-- Batch/undo code and tests are saved but not deployed or accepted. See docs/Phase_4_Batch_Undo_Paused.md.
-  Local TypeScript/build, root79/79, backend37/37, health1/1, Doctor21/21 and all-platform exports pass.
-- Live suite first batch test passed, then lost Neon connection; remaining checks and cleanup failed.
-  Reserved synthetic Pantry fixtures may remain. Guarded readiness/cleanup retries could not query.
-  Recover only exact validated test fixtures after connection restoration; preserve real accounts/seed.
-- Existing edit/lifecycle Preview remains working and unchanged. No new migration/dependency or Phase 5.
+- User explicitly resumed on 12 October. Existing batch/undo code verified and deployed without a
+  new schema/dependency change. Atomic batches cap20, scoped confirmed single/batch undo appends
+  reversal history, version/retry guards prevent stale or superseded success. Demo/designs preserved.
+- Recovery removed14 reserved synthetic households. One cleanup overlapped a live run; that10/11
+  run was discarded. Final sequential Pantry11/11 and cleanup pass; separate reserved membership
+  count0 confirmed. Real accounts/seed excluded. Connection cause not established; no settings bypass.
+- Both TypeScript/build, root79/79, backend37/37, health1/1, Doctor21/21 and all-platform exports pass.
+  Existing lint gaps remain. See docs/Phase_4_Batch_Undo.md; paused handoff retained as historical.
+- New Preview dpl_5okbejrBGF9gDoqP5hHWW8262EDu READY after explicit DRAGON scope retry; public
+  health200 and tokenless batch/undo401 pass. Ignored mobile API URL updated, Auth settings preserved.
+- iPhone batch cancel/confirm, undo cancel/restore/restart and detail undo checks pending at
+  exp://172.20.10.2:8085. Next: finish native acceptance. Presets/server filters/duplicates/offline/final
+  review and deferred Android/release QA remain. No Phase 5 or production writes.
 
 ### Phase 4 previous slice — EDIT/LIFECYCLE VERIFIED ON IPHONE
 
