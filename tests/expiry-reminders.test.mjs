@@ -96,3 +96,11 @@ test('auth cleanup preserves generic alerts on offline failure and cancels them 
   value = { checking: false, status: 'anonymous', user: null }; listener();
   await h.scheduler.inspect(scope); assert.equal(h.rows.size, 0); stop(); assert.equal(listener, null);
 });
+test('legacy alerts are upgraded to action-bearing metadata without growing the pending queue', async () => {
+  const h = harness(); await h.scheduler.sync(scope, [item()], '17:00', true);
+  for (const row of h.rows.values()) delete row.actionVersion;
+  await h.scheduler.sync(scope, [item()], '17:00', true);
+  assert.equal(h.rows.size, 3); assert.equal(h.cancelled, 3);
+  assert.ok([...h.rows.values()].every(row => row.actionVersion === 1));
+  await h.scheduler.sync(scope, [item()], '17:00', true); assert.equal(h.cancelled, 3);
+});

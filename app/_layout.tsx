@@ -20,6 +20,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MockRecipeProvider } from '@/context/MockRecipeContext';
 import { MockPreferencesProvider } from '@/context/MockPreferencesContext';
 import { RealPantryProvider } from '@/context/RealPantryContext';
+import NotificationResponseBridge from '@/components/NotificationResponseBridge';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -76,6 +77,7 @@ function SessionNavigation() {
   const access = canAccessKitchen(state);
   const scope = state.user?.id || (state.demo ? 'demo' : 'anonymous');
   return <View style={{ flex: 1 }}>
+    <NotificationResponseBridge />
     <View style={{ flex: 1 }} pointerEvents={state.checking ? 'none' : 'auto'}
       accessibilityElementsHidden={state.checking} importantForAccessibility={state.checking ? 'no-hide-descendants' : 'auto'}>
     <MockPreferencesProvider><MockPantryProvider key={scope}><RealPantryProvider key={scope}><MockRecipeProvider>

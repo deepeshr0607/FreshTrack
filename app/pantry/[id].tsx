@@ -23,7 +23,8 @@ function backToPantry(added?: string) {
 }
 
 export default function PantryDetailScreen() {
-  const { id, added } = useLocalSearchParams<{ id: string; added?: string }>();
+  const { id, added, notificationAction, notificationKey } = useLocalSearchParams<{ id: string; added?: string; notificationAction?: string; notificationKey?: string }>();
+  const requestedAction = notificationAction === 'consume' || notificationAction === 'waste' ? notificationAction : undefined;
   const { items } = useMockPantry();
   const real = useRealPantry();
   const item = items.find((entry) => entry.id === id);
@@ -34,7 +35,7 @@ export default function PantryDetailScreen() {
           <Pressable accessibilityRole="button" onPress={() => backToPantry(added)} style={styles.back}>
             <Text style={styles.link}>← Back to Pantry</Text>
           </Pressable>
-          {real.enabled ? <PersistedItem key={id} id={id} /> : item ? <ItemEditor key={item.id} item={item} /> : (
+          {real.enabled ? <PersistedItem key={`${id}:${notificationKey || ''}`} id={id} requestedAction={requestedAction} /> : item ? <ItemEditor key={item.id} item={item} /> : (
             <View style={styles.card}>
               <Text style={styles.title}>Item unavailable</Text>
               <Text style={styles.body}>This item is not in your demo inventory.</Text>
@@ -47,7 +48,7 @@ export default function PantryDetailScreen() {
   );
 }
 
-function PersistedItem({ id }: { id: string }) {
+function PersistedItem({ id, requestedAction }: { id: string; requestedAction?: 'consume' | 'waste' }) {
   const { find, readOnly } = useRealPantry();
   const [item, setItem] = useState<PantryItemDto | null>(null);
   const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
@@ -62,21 +63,25 @@ function PersistedItem({ id }: { id: string }) {
   if (!item) return <View style={styles.card}><Text style={styles.body}>{error || 'Loading item…'}</Text>
     {!!error && <PrimaryButton label={readOnly ? "Back to Pantry" : "Retry Item"} onPress={() => readOnly ? backToPantry() : setAttempt(value => value + 1)} />}</View>;
   return <>
+    {requestedAction && <Text style={styles.body}>Opened from an expiry reminder. {readOnly ? 'Refresh Pantry online and reload this item before confirming.'
+      : item.status !== 'ACTIVE' ? 'This item already has a confirmed outcome. No notification action was applied.' : 'Review the current item before confirming the outcome.'}</Text>}
     {!!notice && <Text style={styles.link} accessibilityLiveRegion="polite">{notice}</Text>}
-    <PersistedEditor key={`${item.id}:${item.updatedAt}`} item={item} onSaved={saved => {
+    <PersistedEditor key={`${item.id}:${item.updatedAt}`} item={item} requestedAction={requestedAction} onSaved={saved => {
       setItem(saved); setNotice(saved.status === 'ACTIVE' ? item.status === 'ACTIVE' ? 'Changes saved to your household.' : 'Item restored to active Pantry.' : 'Confirmed outcome saved to your household.');
     }} onReload={() => { setItem(null); setNotice(''); setAttempt(value => value + 1); }} />
   </>;
 }
 
-function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onSaved: (item: PantryItemDto) => void; onReload: () => void }) {
+function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: PantryItemDto; onSaved: (item: PantryItemDto) => void; onReload: () => void; requestedAction?: 'consume' | 'waste' }) {
   const real = useRealPantry();
   const initial: PantryDraft = { name: item.name, category: pantryCardItem(item).category, quantity: item.quantity,
     unit: item.unit, expiresOn: item.expiresOn, price: item.totalCostMinor === null ? '' : (item.totalCostMinor / 100).toFixed(2) };
   const initialExpiry = expiryDraft(item);
   const [expiry, setExpiry] = useState(initialExpiry);
   const [draft, setDraft] = useState(initial); const [error, setError] = useState('');
-  const [message, setMessage] = useState(''); const [confirmation, setConfirmation] = useState<'CONSUMED' | 'WASTED' | 'RESTORE' | null>(null);
+  const [message, setMessage] = useState(''); const [confirmation, setConfirmation] = useState<'CONSUMED' | 'WASTED' | 'RESTORE' | null>(
+    item.status === 'ACTIVE' && !real.readOnly && requestedAction ? requestedAction === 'consume' ? 'CONSUMED' : 'WASTED' : null);
+  const clearNotification = () => { if (requestedAction) router.setParams({ notificationAction: undefined }); };
   const [outcomeError, setOutcomeError] = useState('');
   const saveRequest = useAuthRequest(setError); const outcomeRequest = useAuthRequest(setOutcomeError);
   const editKey = useRef(pantryRetryKey()); const outcomeKey = useRef(pantryRetryKey());
@@ -134,13 +139,13 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
       <Text style={styles.body}>Reload discards unsaved changes and fetches the latest item.</Text>
     </View>
     <PantryConfirmation item={confirmation ? pantryCardItem(item) : null} action={confirmation === 'WASTED' ? 'WASTED' : 'CONSUMED'} undo={confirmation === 'RESTORE'} loading={outcomeRequest.loading} error={outcomeError}
-      onCancel={() => { setConfirmation(null); setOutcomeError(''); }} onConfirm={() => {
+      onCancel={() => { clearNotification(); setConfirmation(null); setOutcomeError(''); }} onConfirm={() => {
         if (!confirmation) return; setOutcomeError('');
         void outcomeRequest.run(async isMounted => {
           const input = { confirmed: true as const, expectedUpdatedAt: item.updatedAt };
           const saved = confirmation === 'RESTORE' ? await real.undo(item.id, input, outcomeKey.current)
             : await real.outcome(item.id, confirmation === 'CONSUMED' ? 'consume' : 'waste', input, outcomeKey.current);
-          if (isMounted()) { setConfirmation(null); onSaved(saved); }
+          if (isMounted()) { clearNotification(); setConfirmation(null); onSaved(saved); }
         });
       }} />
   </>;
