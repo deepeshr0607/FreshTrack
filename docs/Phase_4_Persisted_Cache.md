@@ -1,6 +1,6 @@
 # Phase 4 — persisted read-only Pantry copy
 
-Implemented on 12 October 2026 after user approval. iPhone acceptance is pending.
+Implemented on 12 October 2026 after user approval. Requested iPhone storage checks passed by user report.
 The previous session-cache diagnostic passed by user report; that does not verify this storage slice.
 
 ## Behavior and limits
@@ -52,10 +52,22 @@ corruption and owner isolation, TTL/input rejection, sign-out during a save, aut
 copies, auth cleanup subscription and offline-auth failure/recovery. No live DB writes/tests or
 deployment were needed; no fixture cleanup is pending. Existing development API/Auth config preserved.
 
-## Next step
+## iPhone acceptance and next step
 
-Verify saved-copy restart, read-only controls, live recovery and successful sign-out cleanup on iPhone
-at exp://192.168.1.248:8085. Use Remember this device and Settings → Test Saved Pantry Restore
-before opening Pantry after each restart/relogin. Then perform Phase 4 final review; actual native
+User answered “yes working” to the requested checks at exp://192.168.1.248:8085:
+
+- Remember-device restart, followed by Settings → Test Saved Pantry Restore before opening Pantry,
+  restored saved groceries with their quantities, values and expiry dates.
+- The restored Pantry blocked add/edit/Used/Wasted and swipe actions.
+- End Test & Refresh restored live data and normal controls.
+- Successful sign-out and relogin removed the old copy; the diagnostic showed no saved copy before
+  live refresh repopulated it.
+
+These are user-reported native storage diagnostic results with internet available for authentication,
+not proof of actual offline cold-start access or native transport-failure behavior. No source changes
+or repeated automated tests were needed to record this acceptance; the command results above are
+from implementation checkpoint 01fa3b0. Documentation diff checks pass.
+
+Exact next step: Phase 4 final review against acceptance criteria and recorded evidence. Actual native
 transport/conflict/retry checks, full pagination/batch caps, Android and deferred visual/release QA
 remain unverified. Phase 5 has not started.
