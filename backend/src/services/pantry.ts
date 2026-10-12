@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { resolveExpiry } from '../contracts/expiry';
 import { Prisma, type PrismaClient, type PantryItem } from '@prisma/client';
 import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination } from '../contracts/api';
 import { InvalidApiInput, pageInfo, paginationOffset } from '../lib/api';
@@ -43,7 +44,7 @@ const categories = ['PRODUCE', 'DAIRY', 'BAKERY', 'SNACKS', 'MEAT', 'FROZEN', 'O
 export function pantryInput(value: unknown): PantryCreateInput {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid pantry entry.');
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor'].includes(key))) throw new InvalidApiInput('Unexpected request field.');
+  if (Object.keys(body).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'expirySelection'].includes(key))) throw new InvalidApiInput('Unexpected request field.');
   const text = (key: string, max: number) => {
     const value = body[key];
     if (typeof value !== 'string' || /[\u0000-\u001f\u007f]/.test(value)) throw new InvalidApiInput('Invalid text field.');
@@ -52,7 +53,12 @@ export function pantryInput(value: unknown): PantryCreateInput {
     return result;
   };
   if (typeof body['category'] !== 'string' || !categories.includes(body['category'])) throw new InvalidApiInput('Invalid category.');
-  return { name: text('name', 120), category: body['category'] as PantryCreateInput['category'],
+  let expiry;
+  if (body['expirySelection'] !== undefined) {
+    try { expiry = resolveExpiry(body['expirySelection']); } catch { throw new InvalidApiInput('Invalid expiry choice.'); }
+    if (calendarDate(body['expiresOn'] as string) !== expiry.expiresOn) throw new InvalidApiInput('Expiry does not match its source.');
+  }
+  return { ...(expiry ? { expirySelection: expiry.selection } : {}), name: text('name', 120), category: body['category'] as PantryCreateInput['category'],
     quantity: quantityString(body['quantity'] as string), unit: text('unit', 32),
     expiresOn: calendarDate(body['expiresOn'] as string), totalCostMinor: minorAmount(body['totalCostMinor']) };
 }
@@ -60,7 +66,8 @@ function view(item: PantryItem, timezone: string): PantryItemDto {
   const expiresOn = serializeCalendarDate(item.expiresOn);
   return { id: item.id, name: item.name, category: item.category, quantity: quantityString(item.quantity.toString()),
     unit: item.unit, expiresOn, totalCostMinor: item.totalCostMinor, currencyCode: 'INR', status: item.status,
-    source: item.source, expirySource: item.expirySource, ...expiryState(expiresOn, timezone, new Date()),
+    source: item.source, expirySource: item.expirySource,
+    purchaseDate: item.purchaseDate ? serializeCalendarDate(item.purchaseDate) : null, freshnessPresetDays: item.freshnessPresetDays, ...expiryState(expiresOn, timezone, new Date()),
     createdAt: utcTimestamp(item.createdAt), updatedAt: utcTimestamp(item.updatedAt) };
 }
 export function createPantryService(db: PrismaClient = prisma) {
@@ -102,11 +109,14 @@ export function createPantryService(db: PrismaClient = prisma) {
     const now = new Date(Math.max(Date.now(), item.updatedAt.getTime() + 1));
     let data: Prisma.PantryItemUpdateInput;
     if (mutation.action === 'edit') {
-      const { expectedUpdatedAt: _version, ...fields } = mutation.input;
-      data = { ...fields, normalizedName: fields.name.toLowerCase(), expiresOn: new Date(`${fields.expiresOn}T00:00:00Z`),
+      const { expectedUpdatedAt: _version, expirySelection, ...fields } = mutation.input;
+      const expiry = expirySelection ? resolveExpiry(expirySelection) : null;
+      data = { ...fields, normalizedName: fields.name.toLowerCase(), expiresOn: new Date(`${expiry?.expiresOn ?? fields.expiresOn}T00:00:00Z`),
         costSource: fields.totalCostMinor === item.totalCostMinor ? item.costSource : fields.totalCostMinor === null ? 'UNKNOWN' : 'PURCHASE',
         ...(fields.totalCostMinor !== item.totalCostMinor || fields.quantity !== item.quantity.toString() ? { unitCostMinor: null } : {}),
-        ...(fields.expiresOn !== serializeCalendarDate(item.expiresOn) ? { expirySource: 'USER_ENTERED', freshnessPresetDays: null } : {}), updatedAt: now };
+        ...(expiry ? { expirySource: expiry.expirySource, freshnessPresetDays: expiry.freshnessPresetDays,
+          purchaseDate: expiry.purchaseDate ? new Date(`${expiry.purchaseDate}T00:00:00Z`) : item.purchaseDate }
+          : fields.expiresOn !== serializeCalendarDate(item.expiresOn) ? { expirySource: 'USER_ENTERED', freshnessPresetDays: null } : {}), updatedAt: now };
     } else {
       const transition = planStatusTransition(item.status, mutation.action);
       data = { status: transition.newStatus, statusChangedAt: now, updatedAt: now,
@@ -117,7 +127,8 @@ export function createPantryService(db: PrismaClient = prisma) {
       eventType: mutation.action === 'edit' ? 'EDITED' : 'STATUS_CHANGED', previousStatus: item.status, newStatus: changed.status,
       quantity: changed.quantity, totalCostMinor: changed.totalCostMinor, costSource: changed.costSource, currencyCode: changed.currencyCode,
       category: changed.category, expiresOn: changed.expiresOn, timezone: membership.household.timezone,
-      occurredAt: now, source: 'APP', idempotencyKey, metadata: { requestHash } } });
+      occurredAt: now, source: 'APP', idempotencyKey, metadata: { requestHash, expirySource: changed.expirySource,
+        freshnessPresetDays: changed.freshnessPresetDays, purchaseDate: changed.purchaseDate ? serializeCalendarDate(changed.purchaseDate) : null } } });
     return view(changed, membership.household.timezone);
   }, true);
   const batch = (identity: VerifiedIdentity, input: PantryBatchInput, action: 'consume' | 'waste' | 'restore', key: string) => run(async tx => {
@@ -186,14 +197,18 @@ export function createPantryService(db: PrismaClient = prisma) {
         if ((prior.metadata as { requestHash?: string } | null)?.requestHash !== fingerprint) throw new PantryFailure('IDEMPOTENCY_CONFLICT');
         return view(prior.pantryItem, membership.household.timezone);
       }
-      const item = await tx.pantryItem.create({ data: { ...input, expiresOn: new Date(`${input.expiresOn}T00:00:00Z`),
-        householdId: membership.householdId, normalizedName: input.name.toLowerCase(), expirySource: 'USER_ENTERED',
+      const { expirySelection, ...fields } = input;
+      const expiry = expirySelection ? resolveExpiry(expirySelection) : null;
+      const item = await tx.pantryItem.create({ data: { ...fields,
+        freshnessPresetDays: expiry?.freshnessPresetDays ?? null, purchaseDate: expiry?.purchaseDate ? new Date(`${expiry.purchaseDate}T00:00:00Z`) : null, expiresOn: new Date(`${expiry?.expiresOn ?? input.expiresOn}T00:00:00Z`),
+        householdId: membership.householdId, normalizedName: input.name.toLowerCase(), expirySource: expiry?.expirySource ?? 'USER_ENTERED',
         costSource: input.totalCostMinor === null ? 'UNKNOWN' : 'PURCHASE', currencyCode: 'INR', source: 'MANUAL' } });
       await tx.pantryItemEvent.create({ data: { householdId: membership.householdId, pantryItemId: item.id,
         eventType: 'CREATED', previousStatus: null, newStatus: 'ACTIVE', quantity: item.quantity,
         totalCostMinor: item.totalCostMinor, costSource: item.costSource, currencyCode: item.currencyCode,
         category: item.category, expiresOn: item.expiresOn, timezone: membership.household.timezone,
-        source: 'APP', idempotencyKey, metadata: { requestHash: fingerprint } } });
+        source: 'APP', idempotencyKey, metadata: { requestHash: fingerprint, expirySource: item.expirySource,
+          freshnessPresetDays: item.freshnessPresetDays, purchaseDate: item.purchaseDate ? serializeCalendarDate(item.purchaseDate) : null } } });
       return view(item, membership.household.timezone);
     }, true),
   };

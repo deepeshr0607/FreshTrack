@@ -23,13 +23,20 @@ export type PantryStatus = 'ACTIVE' | 'CONSUMED' | 'WASTED' | 'ASSUMED_CONSUMED'
 export type CostSource = 'PURCHASE' | 'ESTIMATE' | 'UNKNOWN';
 export interface EntryCost { currencyCode: 'INR'; unitCostMinor: number | null; totalCostMinor: number | null; costSource: CostSource }
 export type PantryCategory = 'PRODUCE' | 'DAIRY' | 'BAKERY' | 'SNACKS' | 'MEAT' | 'FROZEN' | 'OTHER';
+export interface ExpirySelection {
+  packageDate: string | null; userDate: string | null;
+  preset: { baseDate: string; days: number } | null;
+}
 export interface PantryCreateInput {
   name: string; category: PantryCategory; quantity: string; unit: string;
   expiresOn: string; totalCostMinor: number | null;
+  /** Explicit choices; precedence is package > user > estimate. Omitted by legacy clients. */
+  expirySelection?: ExpirySelection;
 }
 export interface PantryItemDto extends PantryCreateInput {
   id: string; currencyCode: 'INR'; status: PantryStatus; source: 'MANUAL' | 'BARCODE' | 'RECEIPT';
   expirySource: 'PACKAGE_DATE' | 'PRESET_ESTIMATE' | 'USER_ENTERED';
+  purchaseDate?: string | null; freshnessPresetDays?: number | null;
   daysLeft: number; freshness: 'expired' | 'critical' | 'caution' | 'fresh';
   createdAt: string; updatedAt: string;
 }
