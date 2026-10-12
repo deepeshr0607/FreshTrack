@@ -1,19 +1,17 @@
 import React, { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { AppState, Linking, Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { nativeReminderPreferences } from '@/features/notifications/nativePreferences';
-import { readNativeReminderChoice } from '@/features/notifications/nativePreferences';
 import { nativeExpiryScheduler, notificationScope } from '@/features/notifications/nativeScheduler';
 import { useRealPantry } from '@/context/RealPantryContext';
 import useAuthRequest from '@/features/auth/useAuthRequest';
-import { NeonAuthError } from '@/lib/neonAuth';
 import PrimaryButton from './PrimaryButton';
 import FormInput from './FormInput';
 import { ui } from './PrototypeScreen';
 
 /** Uses the existing Settings card/form styles; no separate Settings design was supplied. */
 export default function ReminderPreferencesCard({ userId }: { userId: string }) {
-  const { session, state: authState } = useAuth();
+  const { session } = useAuth();
   const pantry = useRealPantry();
   const scheduler = nativeExpiryScheduler!; // Parent only renders this card on native.
   const schedule = useSyncExternalStore(scheduler.subscribe, scheduler.getSnapshot, scheduler.getSnapshot);
@@ -27,11 +25,12 @@ export default function ReminderPreferencesCard({ userId }: { userId: string }) 
   const syncRequest = useAuthRequest(setSettingsError);
   useEffect(() => { setHour(state.hour); }, [state.hour]);
   useEffect(() => {
-    void model.refresh();
-    void scheduler.inspect(scope);
-    const subscription = AppState.addEventListener('change', next => { if (next === 'active') void model.refresh(); });
-    return () => { subscription.remove(); };
-  }, [model, authState.checking, scheduler, scope]);
+    const changed = () => {
+      const current = session.getSnapshot();
+      if (!current.checking && current.user?.id === userId) { void model.refresh(); void scheduler.inspect(scope); }
+    };
+    changed(); return session.subscribe(changed);
+  }, [model, session, userId, scheduler, scope]);
   const enabled = state.enabled && state.permission.allowed;
   return <View style={ui.card}>
     <Text style={ui.heading}>Expiry Reminders</Text>
@@ -51,20 +50,13 @@ export default function ReminderPreferencesCard({ userId }: { userId: string }) 
     {!!(state.message || settingsError) && <Text style={ui.label} accessibilityLiveRegion="polite">{settingsError || state.message}</Text>}
     <PrimaryButton label="Sync Expiry Reminders" loading={syncRequest.loading || schedule.busy}
       disabled={!state.ready || state.busy || (enabled && pantry.readOnly)} onPress={() => {
-        setSettingsError(''); void syncRequest.run(async () => {
-          const revision = scheduler.generation();
-          const choice = await readNativeReminderChoice(scope);
-          const rows = choice.enabled ? await pantry.reminderItems() : [];
-          const current = session.getSnapshot();
-          if (current.checking || current.user?.id !== userId) throw new NeonAuthError('SESSION_CHANGED', 'Verify your session, then retry syncing reminders.');
-          await scheduler.sync(scope, rows, choice.hour, choice.enabled, revision);
-        });
+        setSettingsError(''); void syncRequest.run(async () => { await pantry.syncReminders(); });
       }} />
     {enabled && pantry.readOnly && <Text style={ui.text}>Refresh live Pantry before syncing enabled reminders.</Text>}
     <Text style={ui.label} accessibilityLiveRegion="polite">{schedule.message}</Text>
     <Text style={ui.text}>Scheduled alerts at last check: {schedule.scope === scope ? schedule.count : 0}{schedule.scope === scope && schedule.nextAt
       ? ` · Next: ${new Date(schedule.nextAt).toLocaleString()}` : ''}</Text>
-    <Text style={ui.text}>Alerts at 3 days before, 1 day before and on expiry day use your saved device-local time; past times are skipped. Up to 60 nearest alerts fit in the queue. Sync again after adding groceries or as dates advance. Editing or resolving an item cancels its old alerts; automatic rescheduling comes next.</Text>
+    <Text style={ui.text}>Alerts at 3 days before, 1 day before and on expiry day use your saved device-local time; past times are skipped. Up to 60 nearest alerts fit in the queue. Reminders refresh automatically after Pantry or preference changes and when the app opens or resumes with a verified session. Sync is available for retry.</Text>
     <Text style={ui.text}>Saved for this account on this device. Household expiry dates remain Asia/Kolkata. Delivery timing depends on device settings.</Text>
   </View>;
 }

@@ -189,7 +189,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 2 | Validate Neon Auth + Expo OTP flow | ✅ Development gate complete; Android/live release verification deferred |
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
-| 5 | Local expiry notifications + reconciliation | 🟡 Explicit scheduling delivered on iPhone; automatic lifecycle/actions/reconciliation remain |
+| 5 | Local expiry notifications + reconciliation | 🟡 Automatic lifecycle checks pass on iPhone; actions/reconciliation remain |
 | 6 | Barcode scan + receipt OCR | ⬜ Not started |
 | 7 | AI Chef (Spoonacular integration) | ⬜ Not started |
 | 8 | Waste analytics and data integrity | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 5 item 3 verified on iPhone (13 October):** reminders reconcile automatically after acknowledged Pantry/preference changes and verified startup/resume. Coalesced live reads, stale-generation guards, permission recheck and safe retry preserve account/read-only boundaries; explicit Sync shares the coordinator. Both TypeScript/build, root132/132, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [automatic reconciliation report](docs/Phase_5_Automatic_Reconciliation.md). User reports automatic add/edit, Used/Wasted cancellation and undo, time change, restart and repeated-resume checks pass without manual Sync. Next: item 4 notification actions when authorized. Items 4–8 remain incomplete.
 
 **Phase 5 item 2 verified on iPhone (12 October):** explicit live Pantry Sync schedules T−3/T−1/expiry at saved device-local time, skips past targets, preserves queue/retry identity and bounds nearest alerts to 60. User reports repeated-sync/no-duplicate, restart, actual local notification arrival and disable/zero-after-restart checks pass. Necessary preference/account/item cancellation safeguards added; automatic rescheduling is still item 3. Both TypeScript/build, root124/124, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [local scheduling report](docs/Phase_5_Local_Scheduling.md). Next: item 3 automatic lifecycle/resume reconciliation. Items 4–8, Android/standalone/failure-path QA remain incomplete.
 

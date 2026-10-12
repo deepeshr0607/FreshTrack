@@ -6,6 +6,10 @@ import { readReminderChoice } from '@/lib/reminderPreferences';
 import { nativeExpiryScheduler } from './nativeScheduler';
 
 const key = 'freshtrack.reminder.preference.v1';
+const savedListeners = new Set<() => void>();
+export function onReminderPreferenceSaved(listener: () => void) {
+  savedListeners.add(listener); return () => { savedListeners.delete(listener); };
+}
 export function interpret(value: Notifications.NotificationPermissionsStatus): ReminderPermission {
   const provisional = value.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
   return { allowed: value.granted || provisional, canAskAgain: value.canAskAgain,
@@ -22,6 +26,7 @@ export function nativeReminderPreferences(scope: string, active: () => boolean) 
     write: async value => {
       await SecureStore.setItemAsync(key, value, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
       await nativeExpiryScheduler?.cancel();
+      savedListeners.forEach(listener => listener());
     },
     permission: async () => interpret(await Notifications.getPermissionsAsync()),
     request: async () => {

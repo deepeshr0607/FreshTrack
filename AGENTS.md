@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 5 item 3 verified on iPhone (13 October):** reminders reconcile automatically after acknowledged Pantry/preference changes and verified startup/resume. Coalesced live reads, stale-generation guards, permission recheck and safe retry preserve account/read-only boundaries; explicit Sync shares the coordinator. Both TypeScript/build, root132/132, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [automatic reconciliation report](docs/Phase_5_Automatic_Reconciliation.md). User reports automatic add/edit, Used/Wasted cancellation and undo, time change, restart and repeated-resume checks pass without manual Sync. Next: item 4 notification actions when authorized. Items 4–8 remain incomplete.
+
 **Phase 5 item 2 verified on iPhone (12 October):** explicit live Pantry Sync schedules T−3/T−1/expiry at saved device-local time, skips past targets, preserves queue/retry identity and bounds nearest alerts to 60. User reports repeated-sync/no-duplicate, restart, actual local notification arrival and disable/zero-after-restart checks pass. Necessary preference/account/item cancellation safeguards added; automatic rescheduling is still item 3. Both TypeScript/build, root124/124, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [local scheduling report](docs/Phase_5_Local_Scheduling.md). Next: item 3 automatic lifecycle/resume reconciliation. Items 4–8, Android/standalone/failure-path QA remain incomplete.
 
 **Phase 5 item 1 verified on iPhone (12 October):** signed-in native Settings has contextual notification permission, blocked/retry recovery and device/account-scoped reminder On/Off and HH:MM persistence. Demo/digest preserved; this permission-only checkpoint is superseded by item 2 above. SDK-compatible expo-notifications ~57.0.22 installed. Both TypeScript checks, root111/111, health1/1, Doctor21/21 and all-platform exports pass; existing lint gaps remain. See [permission/preferences report](docs/Phase_5_Permission_Preferences.md). User reports permission/opt-in, time validation/restart and disable/restart checks pass. Optional native blocked-permission recovery remains unverified. Next: item 2 scheduling when authorized. Items 2–8 remain incomplete.
@@ -228,9 +230,9 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 5 — item 2 verified on iPhone
+### Current phase: Phase 5 — item 3 verified on iPhone
 
-See docs/Phase_5_Local_Scheduling.md for evidence and limits. Item 3 automatic rescheduling and items 4–8 remain incomplete. Phase 4 core development acceptance is recorded in docs/Phase_4_Final_Review.md.
+See docs/Phase_5_Automatic_Reconciliation.md for evidence and limits. Items 4–8 remain incomplete. Phase 4 core development acceptance is recorded in docs/Phase_4_Final_Review.md.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
