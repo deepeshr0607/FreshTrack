@@ -191,7 +191,7 @@ export default function PantryScreen() {
           <MaterialCommunityIcons name="magnify" size={24} color={Colors.outline} accessible={false} />
           <TextInput
             style={styles.searchInput}
-            placeholder={`Search ${activeCount} pantry & fridge items...`}
+            placeholder={`Search ${activeCount} ${real.enabled && real.readOnly ? 'cached pantry items' : 'pantry & fridge items'}...`}
             placeholderTextColor={Colors.onSurfaceVariant}
             value={search}
             maxLength={120}
@@ -288,7 +288,7 @@ export default function PantryScreen() {
             </View>
             <Text style={styles.bannerSub}><Text style={styles.confirmedLabel}>● {real.enabled ? 'User set' : 'Confirmed'}: </Text>{real.enabled ? 'Your entered expiry dates, tracked in Asia/Kolkata.' : 'Package date in demo fixture.'}</Text>
             <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>{real.enabled ? 'Editable shelf-life assumptions; package dates take priority.' : 'Suggested shelf life for loose produce.'}</Text>
-            <Text style={styles.bannerNote}>{real.enabled ? `Your household · INR · ${filtered.length} of ${real.total} matching items loaded. Filters search your whole pantry.` : 'Demo sources; no AI or package verification.'}</Text>
+            <Text style={styles.bannerNote}>{real.enabled ? real.readOnly ? 'Cached subset · INR · Filters search previously loaded entries only.' : `Your household · INR · ${filtered.length} of ${real.total} matching items loaded. Filters search your whole pantry.` : 'Demo sources; no AI or package verification.'}</Text>
           </View>
         </View>
 
@@ -310,16 +310,16 @@ export default function PantryScreen() {
         {/* Reference Batch Select pill; selecting is explicit and never resolves items directly. */}
         <View style={styles.batchControls}>
           <Pressable style={styles.chip} accessibilityRole="button" accessibilityLabel="Add Item Manually"
-            onPress={() => router.push('/pantry/add')}>
+            disabled={real.enabled && real.readOnly} onPress={() => router.push('/pantry/add')}>
             <Text style={styles.chipText}>＋ Add Item Manually</Text>
           </Pressable>
           <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
-            onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems || listBusy}
+            onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems || listBusy || (real.enabled && real.readOnly)}
             accessibilityRole="button" accessibilityLabel={batchMode ? 'Cancel batch selection' : 'Batch Select'}
             accessibilityState={{ expanded: batchMode }} aria-expanded={batchMode}>
             <Text style={[styles.chipText, batchMode && styles.chipTextActive]}>{batchMode ? 'Cancel Selection' : '☑ Batch Select'} ({selectedItems.length})</Text>
           </Pressable>
-          {batchMode && <Pressable style={styles.chip} disabled={!filtered.length || listBusy}
+          {batchMode && <Pressable style={styles.chip} disabled={!filtered.length || listBusy || (real.enabled && real.readOnly)}
             onPress={() => {
               if (real.enabled && filtered.length > 20 && selectedItems.length !== filtered.length) { setBatchNotice('More than 20 items are visible. Choose up to 20 individually.'); return; }
               setSelectedIds(selectedItems.length === filtered.length ? [] : filtered.map(item => item.id));
@@ -330,43 +330,49 @@ export default function PantryScreen() {
         </View>
         {batchMode && <View style={styles.batchPanel}>
           <Text style={styles.swipeHint}>{selectedItems.length} selected · {real.enabled ? '₹' : '$'}{selectedItems.reduce((total, item) => total + item.price, 0).toFixed(2)} known value. Changing filters clears selection.{real.enabled ? ' Up to 20 per batch.' : ''}</Text>
-          <PrimaryButton label="Mark Selected Used" disabled={!selectedItems.length || listBusy} onPress={() => requestBatch('CONSUMED')} />
-          <PrimaryButton label="Mark Selected Wasted" variant="ghost" disabled={!selectedItems.length || listBusy} onPress={() => requestBatch('WASTED')} />
+          <PrimaryButton label="Mark Selected Used" disabled={!selectedItems.length || listBusy || (real.enabled && real.readOnly)} onPress={() => requestBatch('CONSUMED')} />
+          <PrimaryButton label="Mark Selected Wasted" variant="ghost" disabled={!selectedItems.length || listBusy || (real.enabled && real.readOnly)} onPress={() => requestBatch('WASTED')} />
         </View>}
         {!!batchNotice && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{batchNotice}</Text>}
         {real.enabled && <>
           {!!real.lastOutcome.length && <View style={styles.batchPanel}>
             <Text style={styles.swipeHint}>{real.lastOutcome.length} groceries marked Used/Wasted in your last action.</Text>
-            <PrimaryButton label="Undo Last Outcome" variant="ghost" onPress={() => { setUndoError(''); setUndoConfirmation({ items: real.lastOutcome, key: pantryRetryKey() }); }} />
+            <PrimaryButton label="Undo Last Outcome" variant="ghost" disabled={real.readOnly} onPress={() => { setUndoError(''); setUndoConfirmation({ items: real.lastOutcome, key: pantryRetryKey() }); }} />
             <PrimaryButton label="Dismiss Undo" variant="ghost" onPress={real.dismissUndo} />
           </View>}
-          <PrimaryButton label="Refresh Pantry" variant="ghost" loading={real.loading} onPress={() => void real.reload()} />
-          {!!real.error && <Text style={[styles.swipeHint, { color: Colors.error }]} accessibilityRole="alert">{real.error} {items.length ? 'Showing previously loaded items.' : ''}</Text>}
+          {real.readOnly && <Text style={[styles.swipeHint, { color: Colors.cautionAmber }]} accessibilityLiveRegion="polite">
+            Cached Pantry · read-only · {real.cachedAt ? `Last updated ${new Date(real.cachedAt).toLocaleString()}. This subset may be incomplete.` : 'Nothing cached in this session.'} Refresh online to make changes.
+          </Text>}
+          {real.cachePreview && <Text style={styles.swipeHint}>Development cached-view test: Pantry requests are paused; authentication remains active.</Text>}
+          <PrimaryButton label={real.cachePreview ? 'End Test & Refresh' : 'Refresh Pantry'} variant="ghost" loading={real.loading}
+            onPress={() => real.cachePreview ? real.endCachePreview() : void real.reload()} />
+          {__DEV__ && !real.readOnly && !!items.length && <PrimaryButton label="Test Cached Pantry View" variant="ghost" disabled={real.loading} onPress={real.previewCache} />}
+          {!!real.error && <Text style={[styles.swipeHint, { color: Colors.error }]} accessibilityRole="alert">{real.error} {items.length && !real.readOnly ? 'Showing previously loaded items.' : ''}</Text>}
           <Text style={styles.swipeHint}>Pantry changes and batch actions are saved after confirmation. Scanner imports and other tabs remain prototypes.</Text>
         </>}
         {/* Items list */}
-        {!batchMode && !!filtered.length && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
-        {real.enabled && (pendingCriteria || (!items.length && (real.loading || real.error))) ? <Text style={styles.swipeHint}>{listBusy ? 'Loading matching pantry items…' : 'Your pantry could not be loaded. Tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
+        {!batchMode && !!filtered.length && !(real.enabled && real.readOnly) && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
+        {real.enabled && (pendingCriteria || (!items.length && (real.loading || real.error) && (!real.readOnly || !real.cachedAt))) ? <Text style={styles.swipeHint}>{listBusy ? 'Loading matching pantry items…' : 'Your pantry could not be loaded. Tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🥦</Text>
             <Text style={styles.emptyTitle}>
-              {!hasActiveItems ? 'Your pantry is empty' : search.trim() ? `No items matching "${search.trim()}" with these filters` : category !== 'All' ? `No ${category.toLowerCase()} items match these filters` : 'No items match this freshness filter'}
+              {real.enabled && real.readOnly ? 'No cached items match these filters' : !hasActiveItems ? 'Your pantry is empty' : search.trim() ? `No items matching "${search.trim()}" with these filters` : category !== 'All' ? `No ${category.toLowerCase()} items match these filters` : 'No items match this freshness filter'}
             </Text>
             <Text style={styles.emptySub}>
-              {hasActiveItems ? 'Clear the filters or try a different search or category.' : real.enabled ? 'Add your first grocery manually. It will be saved to your household.' : 'Scan a receipt or add an item manually.'}
+              {real.enabled && real.readOnly ? 'Only previously loaded entries are available. Refresh online for the full Pantry.' : hasActiveItems ? 'Clear the filters or try a different search or category.' : real.enabled ? 'Add your first grocery manually. It will be saved to your household.' : 'Scan a receipt or add an item manually.'}
             </Text>
             {filtersActive && <PrimaryButton label="Show All Items" variant="ghost" onPress={resetFilters} />}
-            <PrimaryButton label={hasActiveItems ? 'Add Item Manually' : 'Add Your First Item'} onPress={() => router.push('/pantry/add')} />
+            <PrimaryButton disabled={real.enabled && real.readOnly} label={hasActiveItems ? 'Add Item Manually' : 'Add Your First Item'} onPress={() => router.push('/pantry/add')} />
           </View>
         ) : (
           filtered.map((item) => (
             <PantryItemCard
-              hideActions={listBusy || (real.enabled && !!real.error)}
+              hideActions={listBusy || (real.enabled && (real.readOnly || !!real.error))}
               packageDateLabel={real.enabled ? 'Package date' : undefined}
               key={item.id}
               item={item}
               onPress={() => router.push({ pathname: '/pantry/[id]', params: { id: item.id } })}
-              onSelect={batchMode ? () => { if (!listBusy) toggleSelection(item.id); } : undefined}
+              onSelect={batchMode ? () => { if (!listBusy && !real.readOnly) toggleSelection(item.id); } : undefined}
               selected={batchMode && selectedIds.includes(item.id)}
               valueLabel={real.enabled ? rupeeValue(real.items.find(entry => entry.id === item.id)!.totalCostMinor) : undefined}
               onConsume={(id) => requestStatus(id, 'CONSUMED')}

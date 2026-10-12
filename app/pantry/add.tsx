@@ -52,6 +52,7 @@ export default function PantryAddScreen() {
   const cancel = () => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/pantry');
   return <PrototypeScreen back={savedId ? () => router.dismissTo({ pathname: '/(tabs)/pantry', params: { added: savedId } }) : duplicateReview ? () => { if (!request.loading) { setDuplicateReview(null); setError(null); } } : cancel}>
     <Text accessibilityRole="header" style={ui.title}>Add Pantry Item</Text>
+    {real.enabled && real.readOnly && <Text style={ui.text}>Cached Pantry is read-only. Return to Pantry and refresh online before adding.</Text>}
     {savedId ? <View style={ui.card}>
       <Text style={ui.heading}>✓ Added to your pantry</Text><Text style={ui.text}>{draft.name.trim()} is ready to track.</Text>
       <PrimaryButton label="View Pantry" onPress={() => router.dismissTo({ pathname: '/(tabs)/pantry', params: { added: savedId } })} />
@@ -66,7 +67,7 @@ export default function PantryAddScreen() {
       {duplicateReview.total > duplicateReview.matches.length && <Text style={ui.text}>Showing the five most recent matches. All existing purchases will be kept.</Text>}
       <Text style={ui.text}>Add this as a new purchase? Existing entries and their history stay unchanged.</Text>
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
-      <PrimaryButton label="Add Separately" loading={request.loading} onPress={() => {
+      <PrimaryButton label="Add Separately" disabled={real.readOnly} loading={request.loading} onPress={() => {
         if (submitted.current) return;
         setError(null);
         void request.run(async isMounted => {
@@ -99,7 +100,7 @@ export default function PantryAddScreen() {
         value={draft.price} onChangeText={(value) => change('price', value)} placeholder="Unknown" />
       <Text style={ui.text}>{real.enabled ? 'Value of this whole entry in rupees, not per unit. Leave blank for unknown; zero means free.' : 'Value of this whole entry, not per unit. Unknown values count as $0 in this prototype.'}</Text>
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
-      <PrimaryButton label="Add to Pantry" loading={request.loading} onPress={() => {
+      <PrimaryButton label="Add to Pantry" disabled={real.enabled && real.readOnly} loading={request.loading} onPress={() => {
         if (submitted.current) return;
         if (real.enabled) {
           setError(null);

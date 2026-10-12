@@ -704,6 +704,9 @@ SQL checks, target verification/live connectivity, Prisma singleton and guarded 
 
 ## Phase 4 — Pantry inventory end-to-end
 
+**Offline continuation resumed (12 October):** session-only bounded/scoped cache, cached list/details/filtering, blocked mutations and explicit online recovery implemented. Auth gate unchanged. Both TypeScript, root94/94, backend44/44, health1/1 and Doctor21/21 pass; final all-platform exports pass; native diagnostic acceptance pending. Disk persistence/restart support and final review remain. See [current report](Phase_4_Offline_Reads.md). No Phase5.
+
+
 ### Current slice — manual duplicate review verified on iPhone (12 October 2026)
 
 Verified-household name/category/date checks show up to five recent matching active purchases.

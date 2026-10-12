@@ -48,7 +48,7 @@ export default function PantryDetailScreen() {
 }
 
 function PersistedItem({ id }: { id: string }) {
-  const { find } = useRealPantry();
+  const { find, readOnly } = useRealPantry();
   const [item, setItem] = useState<PantryItemDto | null>(null);
   const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
   const [notice, setNotice] = useState('');
@@ -60,7 +60,7 @@ function PersistedItem({ id }: { id: string }) {
     return () => { mounted = false; };
   }, [id, find, attempt]);
   if (!item) return <View style={styles.card}><Text style={styles.body}>{error || 'Loading item…'}</Text>
-    {!!error && <PrimaryButton label="Retry Item" onPress={() => setAttempt(value => value + 1)} />}</View>;
+    {!!error && <PrimaryButton label={readOnly ? "Back to Pantry" : "Retry Item"} onPress={() => readOnly ? backToPantry() : setAttempt(value => value + 1)} />}</View>;
   return <>
     {!!notice && <Text style={styles.link} accessibilityLiveRegion="polite">{notice}</Text>}
     <PersistedEditor key={`${item.id}:${item.updatedAt}`} item={item} onSaved={saved => {
@@ -81,7 +81,7 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
   const saveRequest = useAuthRequest(setError); const outcomeRequest = useAuthRequest(setOutcomeError);
   const editKey = useRef(pantryRetryKey()); const outcomeKey = useRef(pantryRetryKey());
   const busy = saveRequest.loading || outcomeRequest.loading;
-  const active = item.status === 'ACTIVE';
+  const active = item.status === 'ACTIVE' && !real.readOnly;
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial) || JSON.stringify(expiry) !== JSON.stringify(initialExpiry);
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     if (busy) return;
@@ -91,8 +91,9 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
     <View style={styles.card}>
       <Text style={styles.emoji}>{pantryCardItem(item).imageEmoji}</Text>
       <Text style={styles.title}>{item.name}</Text><Text style={styles.body}>{rupeeValue(item.totalCostMinor)} · INR · Asia/Kolkata</Text>
+      {real.readOnly && <Text style={styles.body}>Cached item · read-only. Refresh Pantry online before editing or confirming an outcome.</Text>}
       <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} />
-      {!active && <Text style={styles.body}>Marked as {item.status === 'WASTED' ? 'wasted' : 'used'}. This outcome is saved to your household.</Text>}
+      {item.status !== 'ACTIVE' && <Text style={styles.body}>Marked as {item.status === 'WASTED' ? 'wasted' : 'used'}. This outcome is saved to your household.</Text>}
     </View>
     <View style={styles.card}>
       <Text style={styles.title}>Item Details</Text>
@@ -127,9 +128,9 @@ function PersistedEditor({ item, onSaved, onReload }: { item: PantryItemDto; onS
         <PrimaryButton label="Mark as Used" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('CONSUMED'); }} />
         <PrimaryButton label="Mark as Wasted" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('WASTED'); }} />
       </>}
-      {['CONSUMED', 'WASTED'].includes(item.status) && <PrimaryButton label="Undo Outcome" variant="ghost" disabled={busy}
+      {['CONSUMED', 'WASTED'].includes(item.status) && <PrimaryButton label="Undo Outcome" variant="ghost" disabled={busy || real.readOnly}
         onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('RESTORE'); }} />}
-      <PrimaryButton label="Reload Item" variant="ghost" disabled={busy} onPress={onReload} />
+      <PrimaryButton label="Reload Item" variant="ghost" disabled={busy || real.readOnly} onPress={onReload} />
       <Text style={styles.body}>Reload discards unsaved changes and fetches the latest item.</Text>
     </View>
     <PantryConfirmation item={confirmation ? pantryCardItem(item) : null} action={confirmation === 'WASTED' ? 'WASTED' : 'CONSUMED'} undo={confirmation === 'RESTORE'} loading={outcomeRequest.loading} error={outcomeError}
