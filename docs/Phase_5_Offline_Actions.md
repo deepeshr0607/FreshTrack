@@ -103,7 +103,19 @@ Open `exp://192.168.1.248:8085` in Expo Go on the Mac's Wi-Fi. Keep internet and
    stay zero. Record pass/fail for Cancel, queueing, blocked competing controls, restart, same-account
    sign-out/login retention and final Used/Wasted sync. Include only errors; never credentials.
 
-No user result is recorded yet. This diagnostic verifies native storage/UI and authenticated live
+On 14 October the user reported that the Retry Test Waste diagnostic buttons were greyed out.
+Added inline disabled-reason feedback for unsaved edits, an in-progress item request and an existing
+pending outcome. Existing guards were preserved. Both TypeScript checks, root157/157 and final
+web/iOS/Android exports (34 routes) passed again using /private/tmp/freshtrack-button-feedback-export.
+No new lint/Doctor/backend runtime suite was rerun for this text-only UI change. The exact phone
+blocker is awaiting clarification; no successful recovery or completed checklist is recorded yet.
+
+If the new explanation reports unsaved edits, Save Changes or use Reload Item to discard them
+before testing. If it reports an existing outcome, review the queue: this particular item already
+has a confirmed retry and must not be queued twice. A busy request should finish before testing.
+Keep the pause active during these checks.
+
+No complete user pass is recorded yet. This diagnostic verifies native storage/UI and authenticated live
 recovery while the network stays on. Actual transport loss, session-error recovery, foreign-account
 isolation, conflicts, storage exhaustion, cold start from an actual notification, Android and real
 development-build checks remain pending. Item 4 OS action verification in Expo Go was already
