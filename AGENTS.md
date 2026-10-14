@@ -165,7 +165,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
-**Phase 5 item 7 implemented (14 October), phone acceptance pending:** user chose to keep expired groceries ACTIVE until confirmed Used/Wasted. A coalesced, verified startup/resume and mutation-triggered live overdue check uses server household days, works with reminders Off and invalidates stale/account/cache-test reads. A development inspector supports the boxed phone checklist; item 8 release reconciliation UI remains unstarted. Both TypeScript/build, root166/166, backend48/48, health1/1 and final all-platform/34-route exports pass. Doctor20/21 and existing lint gaps remain. See [overdue-policy report](docs/Phase_5_Overdue_Policy.md). No automatic assumed-consumed/SYSTEM outcome, schema/API/dependency/deploy change or Phase 6 work.
+**Phase 5 item 7 iPhone check reported working (14 October):** user chose to keep expired groceries ACTIVE until confirmed Used/Wasted. A coalesced, verified startup/resume and mutation-triggered live overdue check uses server household days, works with reminders Off and invalidates stale/account/cache-test reads. After receiving the numbered phone checklist and empty-Pantry date guidance, the user replied “yes working”. Recorded as a broad user report without per-step numeric counts or direct agent observation. Item 8 release reconciliation UI remains unstarted. Both TypeScript/build, root166/166, backend48/48, health1/1 and final all-platform/34-route exports pass. Doctor20/21 and existing lint gaps remain. See [overdue-policy report](docs/Phase_5_Overdue_Policy.md). No automatic assumed-consumed/SYSTEM outcome, schema/API/dependency/deploy change or Phase 6 work.
 
 **Phase 5 item 6 development and iPhone diagnostic checks passed (14 October):** guarded live tests run the mobile outbox against the existing Pantry service/Neon development database. Lost-response/restart Used and Wasted, concurrent first confirmation, same-key payload-change rejection, superseded/stale/foreign requests and transaction rollback pass with authoritative event counts. Final live7/7 and fixture cleanup pass; both TypeScript/build, root157/157, backend48/48 and health1/1 pass. Doctor20/21 and existing lint gaps remain. See [retry validation report](docs/Phase_5_Retry_Validation.md). User answered “All checks passed” to the boxed iPhone checklist: single-entry submit guard, repeated retries, restart, Undo cancellation/restoration and Wasted persistence. Recorded as user report, separate from authoritative database counts. Items 7–8 and real-build/Android/failure-path QA remain; no Phase 6 work.
 
@@ -240,9 +240,9 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 5 — item 7 implemented, phone acceptance pending
+### Current phase: Phase 5 — item 7 iPhone check reported working
 
-See docs/Phase_5_Overdue_Policy.md for evidence and limits. Item 7 phone acceptance, item 8 and real-build/Android/failure-path QA remain. User selected manual confirmed outcomes; no automatic assumed consumption. Next: boxed phone checks, then item 8 when authorized. Phase 4 core development acceptance is recorded in docs/Phase_4_Final_Review.md.
+See docs/Phase_5_Overdue_Policy.md for evidence and limits. Item 8 and real-build/Android/failure-path QA remain. User selected manual confirmed outcomes; no automatic assumed consumption. Next: item 8 reconciliation UI when authorized. Phase 4 core development acceptance is recorded in docs/Phase_4_Final_Review.md.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
