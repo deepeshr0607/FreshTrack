@@ -79,7 +79,7 @@ The authenticated app has four primary tabs: Pantry, Scanner, AI Chef, and Analy
 - Sort active pantry inventory by nearest expiry.
 - Planned local notification milestones: 3 days before expiry, 1 day before expiry, and on expiry day.
 - Avoid assuming the mobile operating system will execute arbitrary background code at an exact time. Reconcile overdue records when the app opens/resumes and when relevant APIs are called.
-- The original concept proposes automatically archiving expired items as “Assumed Consumed” and asking users to reconcile their outcome. Preserve the concept, but make the behavior explicit, reversible, and tested. Prefer a clear assumed/unknown status rather than silently recording an unconfirmed item as definitely consumed or wasted.
+- The original concept proposed automatically archiving expired items as “Assumed Consumed”. **MVP decision confirmed by the user on 14 October 2026:** expired groceries remain ACTIVE awaiting explicit Consumed/Wasted confirmation. Discover overdue groceries on verified startup/resume using the household calendar. Do not automatically archive them, create assumed-consumed/SYSTEM outcome records, or count an unconfirmed expiry as definitely consumed or wasted. The existing assumed-consumed schema status is reserved for a future explicitly approved policy.
 - The original concept proposes automatically consuming a near-expiry item when a fresh scanned item matches it. This can cause false matches. Before implementing automatic consumption, define a safe matching threshold and confirm the behavior; the safer default is to ask the user to confirm a match.
 
 ## 6. Notifications
