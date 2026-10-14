@@ -90,6 +90,7 @@ function SessionNavigation() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="pantry/[id]" />
           <Stack.Screen name="pantry/add" />
+          <Stack.Screen name="pantry/reconcile" />
           <Stack.Screen name="recipe/[id]" />
           <Stack.Screen name="recipe/shopping-list" />
           <Stack.Screen name="analytics/financial" />
