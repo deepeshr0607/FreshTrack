@@ -21,6 +21,7 @@ import PantryItemCard from '@/components/PantryItemCard';
 import PrimaryButton from '@/components/PrimaryButton';
 import NotificationQueuePanel from '@/components/NotificationQueuePanel';
 import OverdueReviewCheck from '@/components/OverdueReviewCheck';
+import ReconciliationBanner from '@/components/ReconciliationBanner';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 import type { ItemCategory, PantryItem } from '@/lib/mock';
 import { PANTRY_CATEGORIES } from '@/lib/pantry';
@@ -310,6 +311,7 @@ export default function PantryScreen() {
         </View>
 
         {/* Reference Batch Select pill; selecting is explicit and never resolves items directly. */}
+        <ReconciliationBanner />
         <View style={styles.batchControls}>
           <Pressable style={styles.chip} accessibilityRole="button" accessibilityLabel="Add Item Manually"
             disabled={real.enabled && real.readOnly} onPress={() => router.push('/pantry/add')}>

@@ -166,3 +166,11 @@ preferences/receipt/barcode/reconciliation/report-preview checks pass. User repo
 launch, recipe/shopping/preferences/share-sheet cancellation and Scanner/duplicate/reconciliation
 checks passing. Android unavailable. [Platform evidence and repeatable sequence](Phase_1_End_to_End_Checks.md)
 separates browser observations, user-reported iOS and unverified Android. Phase 1 remains in progress.
+
+## Phase 5 real-data continuation — 14 October 2026
+
+Protected /pantry/reconcile extends the existing Pantry batch controls and financial reconciliation
+card/confirmation patterns. Pantry and /analytics/financial share its live banner. Real-account
+financial reconciliation uses persisted household items; Demo keeps the Phase 1 mock controls.
+The remaining financial metrics are still samples pending Phase 8. See Phase_5_Reconciliation_UI.md
+for tests, route mapping and native acceptance limits. No supplied design or original route removed.

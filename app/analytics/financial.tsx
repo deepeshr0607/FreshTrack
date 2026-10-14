@@ -9,8 +9,11 @@ import { MOCK_ANALYTICS_SUMMARY, MOCK_WASTE_EVENTS, type PantryItem } from '@/li
 import { sessionOutcomes } from '@/lib/analytics';
 import { useMockPantry } from '@/context/MockPantryContext';
 import { Colors } from '@/constants/Theme';
+import { useRealPantry } from '@/context/RealPantryContext';
+import ReconciliationBanner from '@/components/ReconciliationBanner';
 
 export default function FinancialAnalytics() {
+  const real = useRealPantry();
   const [month, setMonth] = useState('2025-06');
   const [chooseMonth, setChooseMonth] = useState(false);
   const [report, setReport] = useState<string | null>(null);
@@ -60,13 +63,13 @@ export default function FinancialAnalytics() {
       {summary.heroRescues.map((entry) => <View key={entry.id} style={ui.row}><Text style={{ fontSize: 32 }}>{entry.imageEmoji}</Text>
         <View style={{ flex: 1 }}><Text style={ui.text}>{entry.name}</Text><Text style={ui.text}>{entry.note}</Text></View><Text style={ui.label}>+${entry.saved.toFixed(2)}</Text></View>)}
       <PrimaryButton label="Download Full Monthly Eco-Statement" variant="ghost" onPress={showReport} /></View>
-    <View style={ui.card}><Text style={ui.heading}>Inventory Reconciliation</Text>
+    {real.enabled ? <ReconciliationBanner /> : <View style={ui.card}><Text style={ui.heading}>Inventory Reconciliation</Text>
       {overdue.length ? <><Text style={ui.text}>{overdue.length} expired entries need a confirmed outcome.</Text>
         {overdue.map((item) => <View key={item.id} style={{ gap: 8 }}><Text style={ui.text}>{item.name}</Text>
           <View style={ui.row}>{(['CONSUMED', 'WASTED'] as const).map((status) => <Pressable key={status} style={ui.pill}
             onPress={() => setConfirm({ item, status })} accessibilityRole="button"><Text style={ui.label}>{status === 'CONSUMED' ? 'Used' : 'Wasted'}</Text></Pressable>)}</View></View>)}</> :
         <Text style={ui.text}>No expired entries are waiting for reconciliation.</Text>}
-    </View>
+    </View>}
     <PantryConfirmation item={confirm?.item ?? null} action={confirm?.status ?? 'CONSUMED'} onCancel={() => setConfirm(null)} onConfirm={() => {
       if (!confirm) return; dispatch({ type: 'status', id: confirm.item.id, status: confirm.status }); setConfirm(null);
     }} />
