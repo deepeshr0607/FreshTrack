@@ -1,7 +1,7 @@
 # Phase 5 item 6 — notification retry/event-history verification
 
-Development database checks completed on 14 October 2026 after user authorization. The boxed
-iPhone checklist has been requested; its result is pending. Phase 5 remains incomplete.
+Development database checks completed on 14 October 2026 after user authorization. The user answered “All checks passed” to the boxed
+iPhone checklist on 14 October. This is user-reported Expo Go diagnostic evidence. Phase 5 remains incomplete.
 
 ## What changed
 
@@ -85,7 +85,11 @@ Keep mobile data and Metro running. Open exp://bm4ingq-deepesh_r-8086.exp.direct
    Refresh Pantry: the item remains absent from active Pantry and pending stays zero.
 
 Phone checks verify presentation, submit guards and persistence. Database event counts were checked
-by the automated suite above. No phone result is recorded yet, and no direct agent native observation
-is claimed. Actual transport loss, different-account native recovery, standalone/Android and OS action
+by the automated suite above. The user answered “All checks passed”, recorded for the single-entry confirmation guard, repeated
+retry, remembered restart, Undo cancellation/restoration and Wasted retry/restart. No additional
+per-step counts or native event-table observation were supplied; database counts come from the
+automated suite. No direct agent native observation is claimed. Actual transport loss, different-account native recovery, standalone/Android and OS action
 delivery checks remain pending. Items 7–8 need the overdue/assumed-consumed product decision and real
-reconciliation UI/service implementation; no Phase 6 work. Next: collect the boxed phone result.
+reconciliation UI/service implementation; no Phase 6 work. Next: item 7 overdue handling and the assumed-consumed product decision when authorized.
+This acceptance update changes documentation only; root TypeScript and diff checks passed again.
+Prior runtime/database test results above were not rerun for the documentation update.
