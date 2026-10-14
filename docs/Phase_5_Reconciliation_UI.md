@@ -1,7 +1,7 @@
 # Phase 5 item 8 — live overdue reconciliation
 
-Implemented on 14 October 2026 after user authorization. Phone acceptance and final Phase 5 review
-are pending. No Phase 6 work.
+Implemented on 14 October 2026 after user authorization. The user reported the iPhone checklist passed. Final Phase 5 review
+and broader native QA remain pending. No Phase 6 work.
 
 ## Screens and behavior
 
@@ -89,6 +89,10 @@ reminders Off. Expect zero pending notification actions before testing this flow
    the banner disappears; otherwise original overdue groceries remain untouched. Insights → Impact &
    Financial Analytics uses the same live banner/count while its sample metrics remain unchanged.
 
-No phone result is recorded yet. Empty/all-caught-up, larger-list/20-cap, cached/failure/conflict,
+On 14 October the user answered “All checks passed” to the short question box after receiving
+the eleven numbered phone steps. Recorded as user-reported passes for banner/search, single
+and bulk cancellation/confirmation, Undo, restart and Financial Analytics entry. No individual
+numeric counts or direct agent observation were supplied. Empty/all-caught-up, larger-list/20-cap, cached/failure/conflict,
 pending-notification, sign-out/direct-link, Android/standalone and full visual/accessibility QA
-remain separate native checks. Next: phone verification, then final Phase 5 review when authorized.
+remain separate native checks. Next: final Phase 5 review when authorized. This acceptance update changes documentation only;
+root TypeScript and diff checks passed again. Prior runtime/live suites were not rerun.
