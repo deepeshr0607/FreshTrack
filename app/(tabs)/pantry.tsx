@@ -19,6 +19,7 @@ import PantryConfirmation from '@/components/PantryConfirmation';
 import ScreenHeader from '@/components/ScreenHeader';
 import PantryItemCard from '@/components/PantryItemCard';
 import PrimaryButton from '@/components/PrimaryButton';
+import NotificationQueuePanel from '@/components/NotificationQueuePanel';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 import type { ItemCategory, PantryItem } from '@/lib/mock';
 import { PANTRY_CATEGORIES } from '@/lib/pantry';
@@ -345,6 +346,7 @@ export default function PantryScreen() {
           </Text>}
           {!!real.diskStatus && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{real.diskStatus}</Text>}
           {real.cachePreview && <Text style={styles.swipeHint}>Development cached-view test: Pantry requests are paused; authentication remains active.</Text>}
+          <NotificationQueuePanel />
           <PrimaryButton label={real.cachePreview ? 'End Test & Refresh' : 'Refresh Pantry'} variant="ghost" loading={real.loading}
             onPress={() => real.cachePreview ? real.endCachePreview() : void real.reload()} />
           {__DEV__ && !real.readOnly && !!items.length && <PrimaryButton label="Test Cached Pantry View" variant="ghost" disabled={real.loading} onPress={real.previewCache} />}
@@ -368,7 +370,7 @@ export default function PantryScreen() {
         ) : (
           filtered.map((item) => (
             <PantryItemCard
-              hideActions={listBusy || (real.enabled && (real.readOnly || !!real.error))}
+              hideActions={listBusy || (real.enabled && (real.readOnly || !!real.error || real.pendingNotificationIds.includes(item.id)))}
               packageDateLabel={real.enabled ? 'Package date' : undefined}
               key={item.id}
               item={item}
