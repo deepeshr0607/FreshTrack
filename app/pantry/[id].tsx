@@ -151,6 +151,11 @@ function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: P
       <PrimaryButton label="Reload Item" variant="ghost" disabled={busy || real.readOnly} onPress={onReload} />
       <Text style={styles.body}>Reload discards unsaved changes and fetches the latest item.</Text>
       {__DEV__ && item.status === 'ACTIVE' && real.notificationOutbox && !requestedAction && <>
+        {(pendingNotification || busy || dirty) && <Text style={styles.body} accessibilityLiveRegion="polite">
+          {pendingNotification ? 'Notification test unavailable: this item already has a saved outcome. Review it in Notification actions above; another confirmation would duplicate the test.'
+            : busy ? 'Notification test unavailable: wait for this item’s current request to finish.'
+            : 'Notification test unavailable: this form has unsaved changes. Save Changes, or tap Reload Item to discard those edits, then test the saved item.'}
+        </Text>}
         <PrimaryButton label="Test Notification Used" variant="ghost" disabled={dirty || busy || pendingNotification} onPress={() => router.setParams({ notificationAction: 'consume', notificationKey: pantryRetryKey() })} />
         <PrimaryButton label="Test Notification Wasted" variant="ghost" disabled={dirty || busy || pendingNotification} onPress={() => router.setParams({ notificationAction: 'waste', notificationKey: pantryRetryKey() })} />
       </>}
