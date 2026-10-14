@@ -1,6 +1,7 @@
 # Phase 5 item 5 — durable notification outcome retries
 
-Implemented on 14 October 2026 after user authorization. Phone acceptance is pending.
+Implemented on 14 October 2026 after user authorization. The user later reported this item’s
+phone test complete; broader native failure/development-build acceptance remains pending.
 No Phase 6, schema, backend service, dependency, deployment or environment change was made.
 
 ## Behavior and boundaries
@@ -107,15 +108,15 @@ On 14 October the user reported that the Retry Test Waste diagnostic buttons wer
 Added inline disabled-reason feedback for unsaved edits, an in-progress item request and an existing
 pending outcome. Existing guards were preserved. Both TypeScript checks, root157/157 and final
 web/iOS/Android exports (34 routes) passed again using /private/tmp/freshtrack-button-feedback-export.
-No new lint/Doctor/backend runtime suite was rerun for this text-only UI change. The exact phone
-blocker is awaiting clarification; no successful recovery or completed checklist is recorded yet.
+No new lint/Doctor/backend runtime suite was rerun for this text-only UI change. The user later identified an already-saved outcome as the blocker and reported item completion,
+as documented below. No direct agent observation was made.
 
 If the new explanation reports unsaved edits, Save Changes or use Reload Item to discard them
 before testing. If it reports an existing outcome, review the queue: this particular item already
 has a confirmed retry and must not be queued twice. A busy request should finish before testing.
 Keep the pause active during these checks.
 
-No complete user pass is recorded yet. This diagnostic verifies native storage/UI and authenticated live
+The subsequent user completion report is recorded below. This diagnostic verifies native storage/UI and authenticated live
 recovery while the network stays on. Actual transport loss, session-error recovery, foreign-account
 isolation, conflicts, storage exhaustion, cold start from an actual notification, Android and real
 development-build checks remain pending. Item 4 OS action verification in Expo Go was already
@@ -123,7 +124,16 @@ reported separately before this change; its changed confirmation path needs anot
 
 ## Remaining work
 
-Item 6 still needs final live retry/event-history verification for the durable notification path;
-existing server idempotency and this queue's same-key behavior are partial evidence. Items 7–8,
+Item 6 live retry/event-history verification now passes (7/7 with cleanup); its phone checklist
+remains pending. See Phase_5_Retry_Validation.md for the authoritative evidence. Items 7–8,
 the assumed-consumed product decision, real-build/Android/failure-path QA and final Phase 5 review
-remain incomplete. Next: run the iPhone diagnostic, then item 6 validation when authorized.
+remain incomplete. Next: collect the boxed item 6 phone result.
+
+## Subsequent user report and item 6 checkpoint
+
+On 14 October the user reported the disabled-button message: this particular item already had a
+saved outcome. This was the intended duplicate-confirmation guard. The user then stated the item
+test was complete and authorized item 6. Recorded as a user-reported diagnostic completion; no
+per-step numeric results, direct observation or additional offline/failure-path pass was supplied.
+Item 6 live retry/event-history checks now pass with cleanup as recorded in
+[retry validation](Phase_5_Retry_Validation.md). Its boxed phone checklist remains pending.

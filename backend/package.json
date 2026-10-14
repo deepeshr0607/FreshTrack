@@ -24,6 +24,7 @@
     "test:foundation": "npm run build && node --test tests/foundation.test.cjs",
     "test:households": "npm run build && node --test tests/households.test.mjs",
     "test:households:integration": "npm run build && node --env-file=.env --test tests/households.integration.test.cjs",
+    "test:notification-retries:integration": "npm run build && node --env-file=.env --experimental-strip-types --test tests/notification-retries.integration.test.cjs",
     "db:studio": "prisma studio",
     "test:auth": "npm run build && node --test tests/auth.test.mjs",
     "build:vercel": "node scripts/deployment.cjs && prisma generate && tsc",
