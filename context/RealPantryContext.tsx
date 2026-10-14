@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createNotificationOutbox } from '@/lib/notificationOutbox';
 import { notificationOutboxStorage } from '@/features/notifications/nativeOutbox';
+import { createOverdueReview } from '@/lib/overdueReview';
 import { useAuth } from './AuthContext';
 import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
@@ -12,7 +13,7 @@ import { createPantryReadCache, cacheablePantryFailure } from '@/lib/pantryReadC
 import { NeonAuthError } from '@/lib/neonAuth';
 import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryItemDto, PantryListFilters, PantryInventoryCounts } from '@/types/api';
 
-type Value = { pendingNotificationIds: string[]; notificationOutbox: ReturnType<typeof createNotificationOutbox> | null; enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
+type Value = { overdueReview: ReturnType<typeof createOverdueReview> | null; pendingNotificationIds: string[]; notificationOutbox: ReturnType<typeof createNotificationOutbox> | null; enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
   diskStatus: string; restoreSavedPreview: () => Promise<void>;
   readOnly: boolean; cachedAt: number | null; cachePreview: boolean; previewCache: () => void; endCachePreview: () => void;
   filters: PantryListFilters; inventory: PantryInventoryCounts; setFilters: (filters: PantryListFilters) => void;
@@ -57,6 +58,17 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const [inventory, setInventory] = useState<PantryInventoryCounts>({ active: 0, categories: {} });
   const loadingRef = useRef(false); const hasMoreRef = useRef(false);
   const page = useRef(0); const generation = useRef(0); const mounted = useRef(true);
+  const overdueReview = useMemo(() => enabled ? createOverdueReview({
+    active: () => { const current = session.getSnapshot(); return mounted.current && !previewRef.current && !current.checking &&
+      current.status === 'authenticated' && current.user?.id === state.user?.id; },
+    read: async () => {
+      // Separate live discovery works with reminders Off; cached/diagnostic rows never supply outcomes.
+      if (previewRef.current) throw Error('PANTRY_CACHED');
+      await api.setup(); const rows = await api.reminderItems();
+      if (previewRef.current) throw Error('PANTRY_CACHED');
+      return rows;
+    },
+  }) : null, [api, enabled, session, state.user?.id]);
   const outcomeAcknowledged = useRef<(id: string) => Promise<void>>(async () => undefined);
   const [pendingNotificationIds, setPendingNotificationIds] = useState<string[]>([]);
   const notificationOutbox = useMemo(() => enabled ? createNotificationOutbox(scope, {
@@ -94,14 +106,16 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       notice: message => scheduler.notice(scope, message),
     });
   }, [api, enabled, scope, session, state.user?.id]);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current++; cache.clear(); automatic?.invalidate(); }; }, [cache, automatic]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current++; cache.clear(); automatic?.invalidate(); overdueReview?.invalidate(); }; }, [cache, automatic, overdueReview]);
   useEffect(() => {
     const stop = onReminderPreferenceSaved(() => { void automatic?.request(); });
     // Observe every session publication, even if React batches checking/verified renders on resume.
     const stopSession = automatic ? bindAutomaticReminderSession(session, automatic,
       id => id === state.user?.id && !previewRef.current) : () => undefined;
-    return () => { stop(); stopSession(); };
-  }, [automatic, session, state.user?.id, cachePreview]);
+    const stopOverdue = overdueReview ? bindAutomaticReminderSession(session, overdueReview,
+      id => id === state.user?.id && !previewRef.current) : () => undefined;
+    return () => { stop(); stopSession(); stopOverdue(); };
+  }, [automatic, overdueReview, session, state.user?.id, cachePreview]);
   const hydrateDisk = useCallback(() => {
     if (hydrated.current) return hydrated.current;
     const verified = session.getSnapshot();
@@ -188,7 +202,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     if (readOnlyRef.current) { loadingRef.current = false; setLoading(false); showCached(next); return; }
     void load(false);
   }, [load, showCached]);
-  const reload = useCallback(async () => { await load(false); if (!previewRef.current && mounted.current) { void automatic?.request(); void notificationOutbox?.flush(); } }, [load, automatic, notificationOutbox]);
+  const reload = useCallback(async () => { await load(false); if (!previewRef.current && mounted.current) { void automatic?.request(); void notificationOutbox?.flush(); void overdueReview?.request(); } }, [load, automatic, notificationOutbox, overdueReview]);
   const loadMore = useCallback(() => load(true), [load]);
   const find = useCallback(async (id: string) => {
     const verified = session.getSnapshot();
@@ -225,12 +239,13 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     requireLive();
     if (!mounted.current) throw new NeonAuthError('PANTRY_CANCELLED', 'The pantry session changed.');
     const item = (await api.add(input, key)).data.item;
-    if (mounted.current) { automatic?.invalidate(); generation.current++; cache.remember(scope, [item]); persistDisk(); }
+    if (mounted.current) { automatic?.invalidate(); overdueReview?.invalidate(); void overdueReview?.request(); generation.current++; cache.remember(scope, [item]); persistDisk(); }
     if (mounted.current) { await load(false); if (mounted.current) void automatic?.request(); } // Saved detail is returned; list refresh failures display a retry notice.
     return item;
   };
   const reconcileMany = async (changed: PantryItemDto[], rememberOutcome = false) => {
     automatic?.invalidate();
+    overdueReview?.invalidate(); if (mounted.current) void overdueReview?.request();
     await nativeExpiryScheduler?.cancel(null, changed.map(item => item.id));
     if (mounted.current) {
       cache.remove(scope, changed.map(item => item.id)); cache.remember(scope, changed.filter(item => item.status === 'ACTIVE')); persistDisk();
@@ -244,6 +259,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     return changed;
   };
   outcomeAcknowledged.current = async id => {
+    overdueReview?.invalidate(); if (mounted.current) void overdueReview?.request();
     automatic?.invalidate(); await nativeExpiryScheduler?.cancel(null, [id]);
     if (!mounted.current) return;
     generation.current++; cache.remove(scope, [id]); persistDisk(); setItems(current => current.filter(item => item.id !== id));
@@ -272,16 +288,17 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     await requireNoPending(input.items.map(item => item.id));
     const changed = (await api.batchUndo(input, key)).data.items; requirePantryStatus(changed, 'ACTIVE'); return reconcileMany(changed);
   };
-  return <Context.Provider value={{ pendingNotificationIds, notificationOutbox, enabled, items, loading, error, total, hasMore, diskStatus,
+  return <Context.Provider value={{ overdueReview, pendingNotificationIds, notificationOutbox, enabled, items, loading, error, total, hasMore, diskStatus,
     restoreSavedPreview: async () => {
       if (!__DEV__ || !enabled) return;
       generation.current++; loadingRef.current = false; setLoading(false);
       automatic?.invalidate();
+      overdueReview?.invalidate();
       previewRef.current = true; setCachePreview(true); readOnlyRef.current = true; setReadOnly(true);
       cache.clear(); hydrated.current = null;
       await hydrateDisk(); showCached(filtersRef.current);
     }, readOnly, cachedAt, cachePreview,
-    previewCache: () => { if (__DEV__ && enabled) { automatic?.invalidate(); previewRef.current = true; setCachePreview(true); void reload(); } },
+    previewCache: () => { if (__DEV__ && enabled) { automatic?.invalidate(); overdueReview?.invalidate(); previewRef.current = true; setCachePreview(true); void reload(); } },
     endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, add, edit, outcome, undo,
     reminderItems: async () => { requireLive(); await api.setup(); requireLive(); const rows = await api.reminderItems(); requireLive(); return rows; },
     syncReminders: async () => { await automatic?.flush(); },

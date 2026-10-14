@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 5 item 7 implemented (14 October), phone acceptance pending:** user chose to keep expired groceries ACTIVE until confirmed Used/Wasted. A coalesced, verified startup/resume and mutation-triggered live overdue check uses server household days, works with reminders Off and invalidates stale/account/cache-test reads. A development inspector supports the boxed phone checklist; item 8 release reconciliation UI remains unstarted. Both TypeScript/build, root166/166, backend48/48, health1/1 and final all-platform/34-route exports pass. Doctor20/21 and existing lint gaps remain. See [overdue-policy report](docs/Phase_5_Overdue_Policy.md). No automatic assumed-consumed/SYSTEM outcome, schema/API/dependency/deploy change or Phase 6 work.
+
 **Phase 5 item 6 development and iPhone diagnostic checks passed (14 October):** guarded live tests run the mobile outbox against the existing Pantry service/Neon development database. Lost-response/restart Used and Wasted, concurrent first confirmation, same-key payload-change rejection, superseded/stale/foreign requests and transaction rollback pass with authoritative event counts. Final live7/7 and fixture cleanup pass; both TypeScript/build, root157/157, backend48/48 and health1/1 pass. Doctor20/21 and existing lint gaps remain. See [retry validation report](docs/Phase_5_Retry_Validation.md). User answered “All checks passed” to the boxed iPhone checklist: single-entry submit guard, repeated retries, restart, Undo cancellation/restoration and Wasted persistence. Recorded as user report, separate from authoritative database counts. Items 7–8 and real-build/Android/failure-path QA remain; no Phase 6 work.
 
 **Phase 5 item 5 iPhone diagnostic reported complete (14 October):** confirmed notification outcomes persist before sending in account/branch-scoped SecureStore, retain the original version/key across retries/restart, and resume only after matching verified authentication. Pending/review UI, competing-write guards and a persisted development sync-pause diagnostic are implemented. Both TypeScript/build, root157/157, backend40/40, health1/1 and all-platform/34-route exports pass. Doctor20/21 still recommends three existing Expo patch updates; lint setup gaps remain. See [offline action report](docs/Phase_5_Offline_Actions.md). User reported the item test complete after identifying the grey buttons as an existing pending-outcome guard; per-step counts were not supplied. Actual native transport-loss/development-build/Android checks and item 6 final live retry verification remain; items 7–8 are unstarted. No Phase 6 work.
@@ -238,9 +240,9 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 5 — item 6 development and iPhone diagnostic checks passed
+### Current phase: Phase 5 — item 7 implemented, phone acceptance pending
 
-See docs/Phase_5_Retry_Validation.md for evidence and limits. Items 7–8 remain incomplete; real-build/Android/failure-path QA is pending. Next: item 7 overdue handling and the assumed-consumed product decision when authorized. Phase 4 core development acceptance is recorded in docs/Phase_4_Final_Review.md.
+See docs/Phase_5_Overdue_Policy.md for evidence and limits. Item 7 phone acceptance, item 8 and real-build/Android/failure-path QA remain. User selected manual confirmed outcomes; no automatic assumed consumption. Next: boxed phone checks, then item 8 when authorized. Phase 4 core development acceptance is recorded in docs/Phase_4_Final_Review.md.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
@@ -437,6 +439,7 @@ See docs/Phase_5_Retry_Validation.md for evidence and limits. Items 7–8 remain
 | Neon Auth OTP + Expo native SDK compatibility | Lower-level native API sign-up/OTP/password/session flow passes iPhone user checks; published Expo adapter, Android and production release verification remain open |
 | Barcode catalog provider | **Not selected** — decide in Phase 6 |
 | Receipt OCR accuracy | **Known limitation** — return editable candidates only; never auto-import |
+| Expired-grocery outcomes | User chose ACTIVE awaiting confirmed Used/Wasted on 14 October; no automatic assumed-consumed or SYSTEM outcome writes |
 | Auto-consuming item on rescan | **Deferred** — require user confirmation in MVP |
 | Notification lock-screen actions differ by OS | **Known** — use supported categories/actions and test on real builds |
 | Background cleanup not guaranteed at exact time | **Known** — reconcile on app open/resume instead |
