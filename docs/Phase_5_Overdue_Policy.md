@@ -1,7 +1,7 @@
 # Phase 5 item 7 — overdue groceries await confirmed outcomes
 
 Implemented on 14 October 2026 after the user chose “Keep it active and awaiting Used/Wasted
-confirmation.” The boxed iPhone checklist has been requested; native acceptance is pending.
+confirmation.” The user subsequently reported the numbered iPhone check working; broader native QA remains pending.
 
 ## Product decision
 
@@ -76,13 +76,18 @@ The checklist then tests Yesterday Used cancellation/confirmation, Undo restorat
 cancellation/confirmation and corresponding N+1/N changes. Editing Today to yesterday adds one
 overdue entry while keeping it active; editing it to tomorrow removes it from overdue review.
 Final restart should leave Today/Tomorrow active and Yesterday absent only because the user
-confirmed Waste. The full steps are in the asynchronous question box. No user result is recorded
-yet. Calendar rollover can legitimately change the baseline during the test.
+confirmed Waste. At the user’s request the full checklist was also provided as fourteen numbered
+steps directly in chat. The user then noted that no household date was displayed; the inspector
+only derives a date from active rows, so empty Pantry has no server-derived date. They were given
+Asia/Kolkata calendar guidance and asked to proceed only if a live count was shown. The user then
+replied “yes working” on 14 October. Recorded as a broad user-reported iPhone result, without
+per-step counts or direct observation. Calendar rollover can legitimately change the baseline.
 
 ## Remaining work
 
-Item 7 phone acceptance is pending. Item 8 reconciliation banner/list/bulk-confirm interaction is
+Item 7 has a broad user-reported phone pass. Item 8 reconciliation banner/list/bulk-confirm interaction is
 not implemented. The existing 1,000-item live-read limit, API availability, auth gating and response
 calendar coherence are explicit bounds; unavailable counts are not treated as zero. No continuous
 midnight/background update is promised. Real-build/Android/actual transport-loss QA and final Phase
-5 review remain incomplete. Next: collect the boxed phone result, then item 8 when authorized.
+5 review remain incomplete. Next: item 8 when authorized. This acceptance update changes
+documentation only; root TypeScript and diff checks passed again. Runtime suites were not rerun.
