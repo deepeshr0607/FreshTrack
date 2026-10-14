@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
+import NotificationQueuePanel from '@/components/NotificationQueuePanel';
 import ExpiryBadge from '@/components/ExpiryBadge';
 import PantryConfirmation from '@/components/PantryConfirmation';
 import { useMockPantry } from '@/context/MockPantryContext';
@@ -49,10 +50,19 @@ export default function PantryDetailScreen() {
 }
 
 function PersistedItem({ id, requestedAction }: { id: string; requestedAction?: 'consume' | 'waste' }) {
-  const { find, readOnly } = useRealPantry();
+  const { find, readOnly, notificationOutbox } = useRealPantry();
   const [item, setItem] = useState<PantryItemDto | null>(null);
   const [error, setError] = useState(''); const [attempt, setAttempt] = useState(0);
   const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (!notificationOutbox) return;
+    let wasPending = notificationOutbox.getSnapshot().entries.some(row => row.id === id);
+    return notificationOutbox.subscribe(() => {
+      const pending = notificationOutbox.getSnapshot().entries.some(row => row.id === id);
+      if (wasPending && !pending) { setItem(null); setAttempt(value => value + 1); }
+      wasPending = pending;
+    });
+  }, [id, notificationOutbox]);
   useEffect(() => {
     let mounted = true; setError('');
     void find(id).then(value => { if (mounted) setItem(value); }).catch(error => {
@@ -63,7 +73,8 @@ function PersistedItem({ id, requestedAction }: { id: string; requestedAction?: 
   if (!item) return <View style={styles.card}><Text style={styles.body}>{error || 'Loading item…'}</Text>
     {!!error && <PrimaryButton label={readOnly ? "Back to Pantry" : "Retry Item"} onPress={() => readOnly ? backToPantry() : setAttempt(value => value + 1)} />}</View>;
   return <>
-    {requestedAction && <Text style={styles.body}>Opened from an expiry reminder. {readOnly ? 'Refresh Pantry online and reload this item before confirming.'
+    <NotificationQueuePanel item={item} />
+    {requestedAction && <Text style={styles.body}>Opened from an expiry reminder. {readOnly ? 'The item is cached. A confirmed notification outcome can be saved pending online version checks; editing remains unavailable.'
       : item.status !== 'ACTIVE' ? 'This item already has a confirmed outcome. No notification action was applied.' : 'Review the current item before confirming the outcome.'}</Text>}
     {!!notice && <Text style={styles.link} accessibilityLiveRegion="polite">{notice}</Text>}
     <PersistedEditor key={`${item.id}:${item.updatedAt}`} item={item} requestedAction={requestedAction} onSaved={saved => {
@@ -80,13 +91,14 @@ function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: P
   const [expiry, setExpiry] = useState(initialExpiry);
   const [draft, setDraft] = useState(initial); const [error, setError] = useState('');
   const [message, setMessage] = useState(''); const [confirmation, setConfirmation] = useState<'CONSUMED' | 'WASTED' | 'RESTORE' | null>(
-    item.status === 'ACTIVE' && !real.readOnly && requestedAction ? requestedAction === 'consume' ? 'CONSUMED' : 'WASTED' : null);
+    item.status === 'ACTIVE' && requestedAction ? requestedAction === 'consume' ? 'CONSUMED' : 'WASTED' : null);
   const clearNotification = () => { if (requestedAction) router.setParams({ notificationAction: undefined }); };
   const [outcomeError, setOutcomeError] = useState('');
   const saveRequest = useAuthRequest(setError); const outcomeRequest = useAuthRequest(setOutcomeError);
   const editKey = useRef(pantryRetryKey()); const outcomeKey = useRef(pantryRetryKey());
   const busy = saveRequest.loading || outcomeRequest.loading;
-  const active = item.status === 'ACTIVE' && !real.readOnly;
+  const pendingNotification = real.pendingNotificationIds.includes(item.id);
+  const active = item.status === 'ACTIVE' && !real.readOnly && !pendingNotification;
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial) || JSON.stringify(expiry) !== JSON.stringify(initialExpiry);
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     if (busy) return;
@@ -97,6 +109,7 @@ function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: P
       <Text style={styles.emoji}>{pantryCardItem(item).imageEmoji}</Text>
       <Text style={styles.title}>{item.name}</Text><Text style={styles.body}>{rupeeValue(item.totalCostMinor)} · INR · Asia/Kolkata</Text>
       {real.readOnly && <Text style={styles.body}>Cached item · read-only. Refresh Pantry online before editing or confirming an outcome.</Text>}
+      {pendingNotification && <Text style={styles.body}>A notification outcome is pending. Sync or review that action before changing this item.</Text>}
       <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} />
       {item.status !== 'ACTIVE' && <Text style={styles.body}>Marked as {item.status === 'WASTED' ? 'wasted' : 'used'}. This outcome is saved to your household.</Text>}
     </View>
@@ -133,16 +146,25 @@ function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: P
         <PrimaryButton label="Mark as Used" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('CONSUMED'); }} />
         <PrimaryButton label="Mark as Wasted" variant="ghost" disabled={dirty || busy} onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('WASTED'); }} />
       </>}
-      {['CONSUMED', 'WASTED'].includes(item.status) && <PrimaryButton label="Undo Outcome" variant="ghost" disabled={busy || real.readOnly}
+      {['CONSUMED', 'WASTED'].includes(item.status) && <PrimaryButton label="Undo Outcome" variant="ghost" disabled={busy || real.readOnly || pendingNotification}
         onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('RESTORE'); }} />}
       <PrimaryButton label="Reload Item" variant="ghost" disabled={busy || real.readOnly} onPress={onReload} />
       <Text style={styles.body}>Reload discards unsaved changes and fetches the latest item.</Text>
+      {__DEV__ && item.status === 'ACTIVE' && real.notificationOutbox && !requestedAction && <>
+        <PrimaryButton label="Test Notification Used" variant="ghost" disabled={dirty || busy || pendingNotification} onPress={() => router.setParams({ notificationAction: 'consume', notificationKey: pantryRetryKey() })} />
+        <PrimaryButton label="Test Notification Wasted" variant="ghost" disabled={dirty || busy || pendingNotification} onPress={() => router.setParams({ notificationAction: 'waste', notificationKey: pantryRetryKey() })} />
+      </>}
     </View>
     <PantryConfirmation item={confirmation ? pantryCardItem(item) : null} action={confirmation === 'WASTED' ? 'WASTED' : 'CONSUMED'} undo={confirmation === 'RESTORE'} loading={outcomeRequest.loading} error={outcomeError}
       onCancel={() => { clearNotification(); setConfirmation(null); setOutcomeError(''); }} onConfirm={() => {
         if (!confirmation) return; setOutcomeError('');
         void outcomeRequest.run(async isMounted => {
           const input = { confirmed: true as const, expectedUpdatedAt: item.updatedAt };
+          if (requestedAction && confirmation !== 'RESTORE' && real.notificationOutbox) {
+            await real.notificationOutbox.confirm({ id: item.id, action: confirmation === 'CONSUMED' ? 'consume' : 'waste', expectedUpdatedAt: item.updatedAt, key: outcomeKey.current });
+            if (isMounted()) { clearNotification(); setConfirmation(null); setMessage('Outcome saved pending sync. Check Notification actions for server acknowledgement.'); }
+            return;
+          }
           const saved = confirmation === 'RESTORE' ? await real.undo(item.id, input, outcomeKey.current)
             : await real.outcome(item.id, confirmation === 'CONSUMED' ? 'consume' : 'waste', input, outcomeKey.current);
           if (isMounted()) { clearNotification(); setConfirmation(null); onSaved(saved); }

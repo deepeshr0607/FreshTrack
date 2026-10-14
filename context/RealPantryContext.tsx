@@ -1,4 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createNotificationOutbox } from '@/lib/notificationOutbox';
+import { notificationOutboxStorage } from '@/features/notifications/nativeOutbox';
 import { useAuth } from './AuthContext';
 import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
@@ -10,7 +12,7 @@ import { createPantryReadCache, cacheablePantryFailure } from '@/lib/pantryReadC
 import { NeonAuthError } from '@/lib/neonAuth';
 import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryItemDto, PantryListFilters, PantryInventoryCounts } from '@/types/api';
 
-type Value = { enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
+type Value = { pendingNotificationIds: string[]; notificationOutbox: ReturnType<typeof createNotificationOutbox> | null; enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
   diskStatus: string; restoreSavedPreview: () => Promise<void>;
   readOnly: boolean; cachedAt: number | null; cachePreview: boolean; previewCache: () => void; endCachePreview: () => void;
   filters: PantryListFilters; inventory: PantryInventoryCounts; setFilters: (filters: PantryListFilters) => void;
@@ -55,6 +57,25 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const [inventory, setInventory] = useState<PantryInventoryCounts>({ active: 0, categories: {} });
   const loadingRef = useRef(false); const hasMoreRef = useRef(false);
   const page = useRef(0); const generation = useRef(0); const mounted = useRef(true);
+  const outcomeAcknowledged = useRef<(id: string) => Promise<void>>(async () => undefined);
+  const [pendingNotificationIds, setPendingNotificationIds] = useState<string[]>([]);
+  const notificationOutbox = useMemo(() => enabled ? createNotificationOutbox(scope, {
+    ...notificationOutboxStorage(scope),
+    active: () => { const current = session.getSnapshot(); return mounted.current && !previewRef.current && !current.checking &&
+      current.status === 'authenticated' && current.user?.id === state.user?.id; },
+    send: async row => {
+      const item = (await api.outcome(row.id, row.action, { confirmed: true, expectedUpdatedAt: row.expectedUpdatedAt }, row.key)).data.item;
+      requirePantryStatus([item], row.action === 'consume' ? 'CONSUMED' : 'WASTED');
+    },
+    acknowledged: id => outcomeAcknowledged.current(id),
+  }, __DEV__) : null, [api, enabled, scope, session, state.user?.id]);
+  useEffect(() => {
+    if (!notificationOutbox) return;
+    const retry = () => { const current = session.getSnapshot(); if (!current.checking && current.status === 'authenticated' && current.user?.id === state.user?.id) void notificationOutbox.flush(); };
+    const inspect = () => setPendingNotificationIds(notificationOutbox.getSnapshot().entries.map(row => row.id));
+    const stopOutbox = notificationOutbox.subscribe(inspect);
+    inspect(); retry(); const stop = session.subscribe(retry); return () => { stop(); stopOutbox(); };
+  }, [notificationOutbox, session, state.user?.id]);
   const automatic = useMemo(() => {
     const scheduler = nativeExpiryScheduler;
     if (!scheduler || !enabled) return null;
@@ -119,6 +140,12 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   const requireLive = () => {
     if (readOnlyRef.current || previewRef.current) throw new NeonAuthError('PANTRY_CACHED', 'Cached Pantry is read-only. Refresh online before making changes.');
   };
+  const requireNoPending = async (ids: string[]) => {
+    await notificationOutbox?.restore();
+    requireLive();
+    if (notificationOutbox && !notificationOutbox.getSnapshot().ready) throw new NeonAuthError('OUTBOX_STORAGE', 'Saved actions could not be checked. Retry before changing this item.');
+    if (notificationOutbox?.getSnapshot().entries.some(row => ids.includes(row.id))) throw new NeonAuthError('OUTBOX_PENDING', 'A notification outcome is awaiting sync for this item. Review it before making another change.');
+  };
   const load = useCallback(async (more: boolean) => {
     if (!enabled || !mounted.current || (more && (loadingRef.current || !hasMoreRef.current))) return;
     const version = ++generation.current;
@@ -161,7 +188,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     if (readOnlyRef.current) { loadingRef.current = false; setLoading(false); showCached(next); return; }
     void load(false);
   }, [load, showCached]);
-  const reload = useCallback(async () => { await load(false); if (!previewRef.current && mounted.current) void automatic?.request(); }, [load, automatic]);
+  const reload = useCallback(async () => { await load(false); if (!previewRef.current && mounted.current) { void automatic?.request(); void notificationOutbox?.flush(); } }, [load, automatic, notificationOutbox]);
   const loadMore = useCallback(() => load(true), [load]);
   const find = useCallback(async (id: string) => {
     const verified = session.getSnapshot();
@@ -216,26 +243,36 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     }
     return changed;
   };
-  const edit = async (id: string, input: PantryEditInput, key: string) => { requireLive(); return (await reconcileMany([(await api.edit(id, input, key)).data.item]))[0]!; };
+  outcomeAcknowledged.current = async id => {
+    automatic?.invalidate(); await nativeExpiryScheduler?.cancel(null, [id]);
+    if (!mounted.current) return;
+    generation.current++; cache.remove(scope, [id]); persistDisk(); setItems(current => current.filter(item => item.id !== id));
+    await load(false); if (mounted.current) void automatic?.request();
+  };
+  const edit = async (id: string, input: PantryEditInput, key: string) => { requireLive(); await requireNoPending([id]); return (await reconcileMany([(await api.edit(id, input, key)).data.item]))[0]!; };
   const outcome = async (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => {
     requireLive();
+    await requireNoPending([id]);
     const item = (await api.outcome(id, action, input, key)).data.item;
     requirePantryStatus([item], action === 'consume' ? 'CONSUMED' : 'WASTED'); return (await reconcileMany([item], true))[0]!;
   };
   const undo = async (id: string, input: PantryOutcomeInput, key: string) => {
     requireLive();
+    await requireNoPending([id]);
     const item = (await api.undo(id, input, key)).data.item; requirePantryStatus([item], 'ACTIVE'); return (await reconcileMany([item]))[0]!;
   };
   const batchOutcome = async (input: PantryBatchOutcomeInput, key: string) => {
     requireLive();
+    await requireNoPending(input.items.map(item => item.id));
     const changed = (await api.batchOutcome(input, key)).data.items;
     requirePantryStatus(changed, input.action === 'consume' ? 'CONSUMED' : 'WASTED'); return reconcileMany(changed, true);
   };
   const batchUndo = async (input: PantryBatchInput, key: string) => {
     requireLive();
+    await requireNoPending(input.items.map(item => item.id));
     const changed = (await api.batchUndo(input, key)).data.items; requirePantryStatus(changed, 'ACTIVE'); return reconcileMany(changed);
   };
-  return <Context.Provider value={{ enabled, items, loading, error, total, hasMore, diskStatus,
+  return <Context.Provider value={{ pendingNotificationIds, notificationOutbox, enabled, items, loading, error, total, hasMore, diskStatus,
     restoreSavedPreview: async () => {
       if (!__DEV__ || !enabled) return;
       generation.current++; loadingRef.current = false; setLoading(false);
