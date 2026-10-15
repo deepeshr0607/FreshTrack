@@ -79,3 +79,17 @@ export interface ChefSuggestionsData extends ChefExpiringData {
   state: 'NO_NEAR_EXPIRY' | 'NO_RESULTS' | 'READY';
 }
 export type ChefSuggestionsResponse = ApiSuccess<ChefSuggestionsData>;
+
+/** Provider recipe values, not Pantry quantities or confirmed inventory outcomes. */
+export interface ChefRecipeDetail {
+  id: number; title: string; imageUrl: string | null;
+  servings: number | null; readyInMinutes: number | null;
+  preparationMinutes: number | null; cookingMinutes: number | null;
+  ingredients: { providerIngredientId: number | null; name: string; description: string; amount: number | null; unit: string }[];
+  instructionGroups: { name: string | null; steps: { number: number; text: string }[] }[];
+  instructions: string | null;
+  instructionStatus: 'AVAILABLE' | 'UNAVAILABLE';
+  source: { name: string | null; url: string | null; credits: string | null; license: string | null };
+  provider: 'spoonacular'; providerUrl: string;
+}
+export type ChefRecipeDetailResponse = ApiSuccess<{ recipe: ChefRecipeDetail }>;
