@@ -19,8 +19,8 @@ export default function LiveRecipeCard({ recipe, featured, saved, onSave, onPres
   if (!featured) return <View style={[styles.compactCard, { alignItems: 'flex-start' }]}>
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${recipe.title}, ${recipe.match.pantryNameMatchPercent}% name match`} style={{ flexDirection: 'row', gap: 12, flex: 1, minWidth: 0 }}>
       <View style={styles.compactThumb}><LiveRecipeImage uri={recipe.imageUrl} height={60} /></View>
-      <View style={[styles.compactInfo, { minWidth: 0 }]}><Text style={styles.rescueLabel}>{recipe.usedIngredients.length} rescue ingredients suggested</Text>
-        <Text style={styles.compactTitle}>{recipe.title}</Text><Text style={styles.compactMeta}>{recipe.match.pantryNameMatchPercent}% name match · review amounts</Text>
+      <View style={[styles.compactInfo, { minWidth: 0 }]}><Text style={styles.rescueLabel}>{recipe.rescueIngredientCount ?? recipe.usedIngredients.length} rescue names matched</Text>
+        <Text style={styles.compactTitle}>{recipe.title}</Text><Text style={styles.compactMeta}>{recipe.match.pantryNameMatchPercent}% name match · {recipe.metadata?.readyInMinutes ? `${recipe.metadata.readyInMinutes} min total` : 'time unverified'}</Text>
         <Text style={styles.needSmall}>{missing ? `${missing} shopping/check-first candidates` : 'Review full ingredients and quantities'}</Text>
       </View>
     </Pressable>
@@ -31,9 +31,10 @@ export default function LiveRecipeCard({ recipe, featured, saved, onSave, onPres
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={recipe.title}><LiveRecipeImage uri={recipe.imageUrl} /></Pressable>
       <View style={[styles.heroBadges, { right: 64, flexWrap: 'wrap' }]}><View style={styles.matchBadge}><Text style={styles.matchText}>{recipe.match.pantryNameMatchPercent}% name match</Text></View></View>
       <Pressable onPress={onSave} accessibilityRole="button" accessibilityLabel={saved ? 'Unsave recipe' : 'Save recipe'} style={styles.saveButton}><Text style={{ fontSize: 24, color: Colors.primary }}>{saved ? '♥' : '♡'}</Text></Pressable>
-      <View style={styles.heroMeta}><Text style={styles.heroMetaText}>Review details for time & servings</Text></View>
+      <View style={styles.heroMeta}><Text style={styles.heroMetaText}>{recipe.metadata?.readyInMinutes ? `${recipe.metadata.readyInMinutes} min total` : 'Review details for time & servings'}</Text></View>
     </View>
     <View style={styles.featuredContent}><Pressable onPress={onPress} accessibilityRole="button"><Text style={styles.featuredTitle}>{recipe.title}</Text></Pressable>
+      {recipe.metadata && <Text style={ui.label}>{recipe.metadata.vegan === true ? 'Provider tag: Vegan' : recipe.metadata.vegetarian === true ? 'Provider tag: Vegetarian' : 'Review provider ingredients for preferences'}</Text>}
       <Text style={styles.featuredDesc}>Suggested using ingredients that need attention today or tomorrow.</Text>
       <View style={styles.pantryRow}>{recipe.match.ingredients.filter(row => row.status === 'PANTRY').slice(0, 4).map((row, index) => <View key={`${row.name}-${index}`} style={styles.pantryPill}><Text style={styles.pantryPillText}>✓ {row.name}</Text></View>)}</View>
       <Text style={styles.needText}>{missing ? `${missing} shopping/check-first candidates` : 'Check full ingredients and amounts before cooking.'}</Text>

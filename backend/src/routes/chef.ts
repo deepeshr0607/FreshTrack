@@ -28,11 +28,12 @@ export function createChefRouter(verify: VerifyIdentity, service: ChefService = 
       sendFailure(req, res, error.code === 'HOUSEHOLD_REQUIRED' ? 409 : 503, error.code, message);
     }
   });
-  router.post('/chef/suggestions', suggestionLimit, async (req, res, next) => {
+  for (const filters of [false, true]) router.post(filters ? '/chef/filters' : '/chef/suggestions', suggestionLimit, async (req, res, next) => {
     try {
       if (req.originalUrl.includes('?') || !req.is('application/json') || !req.body || Array.isArray(req.body) ||
           typeof req.body !== 'object' || Object.keys(req.body).length) throw new InvalidApiInput('Send an empty JSON object.');
-      res.json(success(await recommendations.suggest(res.locals.identity as VerifiedIdentity)));
+      const identity = res.locals.identity as VerifiedIdentity;
+      res.json(success(await (filters ? recommendations.filters(identity) : recommendations.suggest(identity))));
     } catch (error) { next(error); }
   });
   router.get('/chef/recipes/:recipeId', suggestionLimit, async (req, res, next) => {
