@@ -919,6 +919,8 @@ Phase 5 has not started.
 
 ## Phase 7 — AI Chef with Spoonacular
 
+**Phase 7 server recipe search implemented (15 October), mobile/hosted connection pending.** The locally saved key loaded and one generic live search returned five parsed Spoonacular summaries. POST /api/v1/chef/suggestions derives only current scoped rescue names; header-only provider credentials, bounded responses, safe errors, process-local rate/coalescing and five-minute cache are implemented. Both TypeScript/build, root172/172, backend66/66 and health1/1 pass. No instructions/detail endpoint, full-household missing matching, mobile UI connection or deployment yet. Next: server recipe details then shared ingredient matching/UI. See [search report](Phase_7_Recipe_Search.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
+
 **Phase 7 started (15 October); Phase 6 deferred by user.** First local backend slice adds authenticated, read-only /api/v1/chef/expiring with household-scoped ACTIVE ingredients and explicit today/tomorrow calendar semantics (not exact 48-hour precision). No provider calls or mobile UI connection yet. Both TypeScript/build, root172/172, backend54/54 and health1/1 pass. No Spoonacular key yet; next: direct Free account/key setup and server-only integration. No deployment, schema/dependency/data change. See [ingredient slice](Phase_7_Expiring_Ingredients.md). Phase 5 native QA remains recorded in its final review.
 
 **Goal:** Recommend meals that use ingredients expiring in the next 48 hours.
