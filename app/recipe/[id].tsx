@@ -1,3 +1,5 @@
+import { useAuth } from '@/context/AuthContext';
+import LiveRecipeDetailScreen from '@/features/chef/LiveRecipeDetailScreen';
 import React, { useState } from 'react';
 import { Image, Modal, Text, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -10,7 +12,7 @@ import { useMockRecipes } from '@/context/MockRecipeContext';
 import { useMockPantry } from '@/context/MockPantryContext';
 import { Colors, Radius } from '@/constants/Theme';
 
-export default function RecipeDetail() {
+function DemoRecipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const recipe = MOCK_RECIPES.find((entry) => entry.id === id);
   const { items, dispatch: pantryDispatch } = useMockPantry();
@@ -54,4 +56,9 @@ export default function RecipeDetail() {
       </View>
     </Modal>
   </PrototypeScreen>;
+}
+
+export default function RecipeDetail() {
+  const { state } = useAuth();
+  return state.demo ? <DemoRecipeDetail /> : <LiveRecipeDetailScreen />;
 }

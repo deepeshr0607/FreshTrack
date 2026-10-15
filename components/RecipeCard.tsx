@@ -326,3 +326,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
 });
+
+// Shared visual styles preserve the supplied card design for real provider data.
+export { styles as recipeCardStyles };

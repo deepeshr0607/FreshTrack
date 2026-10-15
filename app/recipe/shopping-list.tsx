@@ -1,3 +1,5 @@
+import { useAuth } from '@/context/AuthContext';
+import LiveShoppingListScreen from '@/features/chef/LiveShoppingListScreen';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -5,7 +7,7 @@ import PrototypeScreen, { backToRecipes, ui } from '@/components/PrototypeScreen
 import PrimaryButton from '@/components/PrimaryButton';
 import { useMockRecipes } from '@/context/MockRecipeContext';
 
-export default function ShoppingList() {
+function DemoShoppingList() {
   const { state, dispatch } = useMockRecipes();
   return <PrototypeScreen back={() => router.canGoBack() ? router.back() : backToRecipes()}>
     <Text style={ui.title}>Shopping List</Text><Text style={ui.text}>Missing ingredients from your selected recipes.</Text>
@@ -18,4 +20,9 @@ export default function ShoppingList() {
     {!!state.shopping.length && <PrimaryButton label="Clear Purchased Items" disabled={!state.shopping.some((item) => item.checked)}
       onPress={() => dispatch({ type: 'clear-checked' })} />}
   </PrototypeScreen>;
+}
+
+export default function ShoppingList() {
+  const { state } = useAuth();
+  return state.demo ? <DemoShoppingList /> : <LiveShoppingListScreen />;
 }

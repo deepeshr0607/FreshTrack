@@ -1,3 +1,5 @@
+import { useAuth } from '@/context/AuthContext';
+import LiveRecipesScreen from '@/features/chef/LiveRecipesScreen';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
@@ -12,7 +14,7 @@ import { filterRecipes, recipeInventory } from '@/lib/recipes';
 import { useMockRecipes } from '@/context/MockRecipeContext';
 import { useMockPantry } from '@/context/MockPantryContext';
 
-export default function RecipesScreen() {
+function DemoRecipesScreen() {
   const { items } = useMockPantry();
   const { state, dispatch } = useMockRecipes();
   const [query, setQuery] = useState('');
@@ -86,4 +88,9 @@ export default function RecipesScreen() {
       {!!notice && <Text accessibilityLiveRegion="polite" style={[ui.text, { color: Colors.white }]}>{notice}</Text>}
     </View>
   </PrototypeScreen>;
+}
+
+export default function RecipesScreen() {
+  const { state } = useAuth();
+  return state.demo ? <DemoRecipesScreen /> : <LiveRecipesScreen />;
 }

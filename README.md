@@ -191,13 +191,15 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
 | 6 | Barcode scan + receipt OCR | ⏸ Deferred by user |
-| 7 | AI Chef (Spoonacular integration) | 🟡 Local search/details/matching verified; mobile/hosted pending |
+| 7 | AI Chef (Spoonacular integration) | 🟡 Mobile/hosted connection implemented; iPhone verification pending |
 | 8 | Waste analytics and data integrity | ⬜ Not started |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
 
 ---
 
 ## Project Status
+
+**Phase 7 mobile Recipes/details/shopping connected (15 October), phone verification pending.** Real accounts use authenticated Chef APIs and shared matching, actual instructions/source links, explicit error/empty/retry states and account/session-isolated save/shopping controls. Demo is preserved; cooking opens Pantry review without automatic outcomes. Both TypeScript/build, root185/185, backend94/94, health1/1 and all-platform/35-route exports pass. Doctor20/21 and lint gaps remain. Development Preview is Ready, health200/tokenless Chef401; Preview-only key configured and ignored public API URL updated. Next: iPhone verification, then remaining filters/ranking/final review. See [mobile report](docs/Phase_7_Mobile_Recipes.md). Phase6 deferred; Phase5 native QA limits remain.
 
 **Phase 7 full-Pantry matching implemented (15 October), mobile/hosted pending.** Suggestions/details now match a fresh scoped non-expired active inventory with exact names/curated aliases, check-first staples, conservative quantity checks and deduplicated name-only shopping candidates. Only rescue names go to Spoonacular; account matches never enter provider cache. Both TypeScript/build, root172/172, backend94/94 and health1/1 pass. No live provider/DB calls, mobile, deployment, schema or dependency changes in this slice. Next: supplied Recipes/details/shopping UI connection. See [matching report](docs/Phase_7_Ingredient_Matching.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
 
