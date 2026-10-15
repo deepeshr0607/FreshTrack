@@ -67,3 +67,15 @@ export interface ChefExpiringData {
   ingredients: { pantryItemId: string; name: string; quantity: string; unit: string; expiresOn: string }[];
 }
 export type ChefExpiringResponse = ApiSuccess<ChefExpiringData>;
+
+export interface ChefRecipeSummary {
+  id: number; title: string; imageUrl: string | null;
+  usedIngredients: { name: string; description: string }[];
+  missingIngredients: { name: string; description: string }[];
+  provider: 'spoonacular'; providerUrl: string;
+}
+export interface ChefSuggestionsData extends ChefExpiringData {
+  recipes: ChefRecipeSummary[];
+  state: 'NO_NEAR_EXPIRY' | 'NO_RESULTS' | 'READY';
+}
+export type ChefSuggestionsResponse = ApiSuccess<ChefSuggestionsData>;
