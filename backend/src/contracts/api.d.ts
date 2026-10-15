@@ -75,7 +75,7 @@ export interface ChefRecipeSummary {
   provider: 'spoonacular'; providerUrl: string;
 }
 export interface ChefSuggestionsData extends ChefExpiringData {
-  recipes: ChefRecipeSummary[];
+  recipes: (ChefRecipeSummary & { match: ChefIngredientMatch })[];
   state: 'NO_NEAR_EXPIRY' | 'NO_RESULTS' | 'READY';
 }
 export type ChefSuggestionsResponse = ApiSuccess<ChefSuggestionsData>;
@@ -92,4 +92,22 @@ export interface ChefRecipeDetail {
   source: { name: string | null; url: string | null; credits: string | null; license: string | null };
   provider: 'spoonacular'; providerUrl: string;
 }
-export type ChefRecipeDetailResponse = ApiSuccess<{ recipe: ChefRecipeDetail }>;
+export type ChefRecipeDetailResponse = ApiSuccess<{ recipe: ChefMatchedRecipeDetail }>;
+
+export interface ChefInventorySnapshot extends ChefExpiringData {
+  /** Server-only matching input. Never forward this full list to the recipe provider. */
+  pantryIngredients: ChefExpiringData['ingredients'];
+}
+export interface ChefIngredientMatch {
+  basis: 'SUMMARY' | 'FULL_RECIPE';
+  pantryNameMatchPercent: number;
+  ingredients: {
+    name: string; canonicalName: string; description: string;
+    status: 'PANTRY' | 'CHECK_STAPLE' | 'NO_MATCH';
+    pantryItemIds: string[];
+    quantityStatus: 'SUFFICIENT' | 'INSUFFICIENT' | 'CHECK_AMOUNT' | 'NOT_AVAILABLE';
+  }[];
+  /** Name-only candidates; amounts are never invented or copied as a claimed shortfall. */
+  shoppingItems: { name: string; reason: 'NO_MATCH' | 'CHECK_STAPLE' | 'INSUFFICIENT'; checkFirst: boolean }[];
+}
+export type ChefMatchedRecipeDetail = ChefRecipeDetail & { match: ChefIngredientMatch };

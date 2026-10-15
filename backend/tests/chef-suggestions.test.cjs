@@ -84,7 +84,7 @@ test('schema validation and ranking require real used ingredients and safe image
 });
 test('each suggestion request reads current scoped ingredients; an empty window skips provider calls', async () => {
   let reads = 0, searches = 0;
-  const service = createChefSuggestionsService({ expiring: async user => { reads++; assert.equal(user.id, identity.id); return reads === 1 ? window : { ...window, ingredients: [] }; } },
+  const service = createChefSuggestionsService({ inventory: async user => { reads++; assert.equal(user.id, identity.id); return { ...(reads === 1 ? window : { ...window, ingredients: [] }), pantryIngredients: window.ingredients }; } },
     { search: async names => { searches++; assert.deepEqual(names, ['Tomato']); return []; } });
   assert.equal((await service.suggest(identity)).state, 'NO_RESULTS'); assert.equal((await service.suggest(identity)).state, 'NO_NEAR_EXPIRY'); assert.equal(searches, 1);
 });
