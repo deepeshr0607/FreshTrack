@@ -88,8 +88,8 @@ test('provider missing recipe and malformed detail failures expose safe codes on
 });
 test('service authorizes details against freshly read account shortlist before provider information calls', async () => {
   let reads = 0, details = 0, offered = true;
-  const service = createChefSuggestionsService({ expiring: async user => { assert.equal(user.id, identity.id); reads++; return window; } },
-    { search: async names => { assert.deepEqual(names, ['tomato']); return offered ? [{ id: 123 }] : []; }, detail: async id => { details++; return { id }; } });
+  const service = createChefSuggestionsService({ inventory: async user => { assert.equal(user.id, identity.id); reads++; return { ...window, pantryIngredients: window.ingredients }; } },
+    { search: async names => { assert.deepEqual(names, ['tomato']); return offered ? [{ id: 123, usedIngredients: [{ name: 'tomato', description: '1 tomato' }], missingIngredients: [] }] : []; }, detail: async id => { details++; return parseRecipeDetail(raw(), id); } });
   assert.equal((await service.detail(identity, 123)).id, 123);
   await assert.rejects(service.detail(identity, 456), { code: 'RECIPE_NOT_AVAILABLE' });
   offered = false; await assert.rejects(service.detail(identity, 123), { code: 'RECIPE_NOT_AVAILABLE' });
@@ -97,7 +97,7 @@ test('service authorizes details against freshly read account shortlist before p
 });
 test('empty or missing household prevents recipe details regardless of a cached provider ID', async () => {
   let calls = 0;
-  const service = createChefSuggestionsService({ expiring: async () => ({ ...window, ingredients: [] }) },
+  const service = createChefSuggestionsService({ inventory: async () => ({ ...window, ingredients: [], pantryIngredients: window.ingredients }) },
     { search: async () => { calls++; return [{ id: 123 }]; }, detail: async () => { calls++; } });
   await assert.rejects(service.detail(identity, 123), { code: 'RECIPE_NOT_AVAILABLE' }); assert.equal(calls, 0);
 });

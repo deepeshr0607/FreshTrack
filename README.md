@@ -191,13 +191,15 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
 | 6 | Barcode scan + receipt OCR | ⏸ Deferred by user |
-| 7 | AI Chef (Spoonacular integration) | 🟡 Local search/details verified; ingredient matching/mobile/hosted pending |
+| 7 | AI Chef (Spoonacular integration) | 🟡 Local search/details/matching verified; mobile/hosted pending |
 | 8 | Waste analytics and data integrity | ⬜ Not started |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
 
 ---
 
 ## Project Status
+
+**Phase 7 full-Pantry matching implemented (15 October), mobile/hosted pending.** Suggestions/details now match a fresh scoped non-expired active inventory with exact names/curated aliases, check-first staples, conservative quantity checks and deduplicated name-only shopping candidates. Only rescue names go to Spoonacular; account matches never enter provider cache. Both TypeScript/build, root172/172, backend94/94 and health1/1 pass. No live provider/DB calls, mobile, deployment, schema or dependency changes in this slice. Next: supplied Recipes/details/shopping UI connection. See [matching report](docs/Phase_7_Ingredient_Matching.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
 
 **Phase 7 recipe details implemented (15 October), mobile/hosted connection pending.** Protected /api/v1/chef/recipes/:recipeId rechecks current household suggestions before fetching real provider ingredients, instructions, servings/times and attribution. Missing instructions are explicit; details/search share bounded transport, five-minute cache and rate/quota protection. Live generic search/detail passed (9 ingredients/4 structured steps); both TypeScript/build, root172/172, backend80/80 and health1/1 pass. No mobile/deployment/schema/dependency change. Next: full-Pantry ingredient/staple matching, then supplied UI connection. See [detail report](docs/Phase_7_Recipe_Details.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
 

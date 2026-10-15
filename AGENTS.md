@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 7 full-Pantry matching implemented (15 October), mobile/hosted pending.** Suggestions/details now match a fresh scoped non-expired active inventory with exact names/curated aliases, check-first staples, conservative quantity checks and deduplicated name-only shopping candidates. Only rescue names go to Spoonacular; account matches never enter provider cache. Both TypeScript/build, root172/172, backend94/94 and health1/1 pass. No live provider/DB calls, mobile, deployment, schema or dependency changes in this slice. Next: supplied Recipes/details/shopping UI connection. See [matching report](docs/Phase_7_Ingredient_Matching.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
+
 **Phase 7 recipe details implemented (15 October), mobile/hosted connection pending.** Protected /api/v1/chef/recipes/:recipeId rechecks current household suggestions before fetching real provider ingredients, instructions, servings/times and attribution. Missing instructions are explicit; details/search share bounded transport, five-minute cache and rate/quota protection. Live generic search/detail passed (9 ingredients/4 structured steps); both TypeScript/build, root172/172, backend80/80 and health1/1 pass. No mobile/deployment/schema/dependency change. Next: full-Pantry ingredient/staple matching, then supplied UI connection. See [detail report](docs/Phase_7_Recipe_Details.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
 
 **Phase 7 server recipe search implemented (15 October), mobile/hosted connection pending.** The locally saved key loaded and one generic live search returned five parsed Spoonacular summaries. POST /api/v1/chef/suggestions derives only current scoped rescue names; header-only provider credentials, bounded responses, safe errors, process-local rate/coalescing and five-minute cache are implemented. Both TypeScript/build, root172/172, backend66/66 and health1/1 pass. No instructions/detail endpoint, full-household missing matching, mobile UI connection or deployment yet. Next: server recipe details then shared ingredient matching/UI. See [search report](docs/Phase_7_Recipe_Search.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
@@ -250,12 +252,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 7 — local search/details; matching/mobile/hosted pending
+### Current phase: Phase 7 — local search/details/matching; mobile/hosted pending
 
-See docs/Phase_7_Recipe_Details.md. Generic live search and shortlisted detail passed; instructions,
-servings/times and attribution are provider-backed. Existing mobile recipe screens remain prototypes.
-Next: full-Pantry ingredient/staple matching, then supplied UI connection and hosted/device checks.
-Phase 6 explicitly deferred; prior Phase 5 native QA limits remain. No Phase 8/9 work.
+See docs/Phase_7_Ingredient_Matching.md. Current full-Pantry matching stays on the backend, with
+check-first staples, amount uncertainty and deduplicated shopping candidates. Existing mobile
+recipe screens still use prototypes. Next: supplied Recipes/details/shopping UI connection before
+hosted integration/phone checks. Phase 6 deferred; Phase 5 native QA limits remain. No Phase 8/9.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
