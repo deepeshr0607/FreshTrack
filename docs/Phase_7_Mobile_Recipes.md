@@ -1,7 +1,6 @@
 # Phase 7 — mobile Recipes, details and shopping connection
 
-Implemented/deployed to the dedicated development API on 15 October 2026. Phone verification is
-pending. Phase 6 remains deferred. No real cooking outcome, schema/migration or dependency change.
+Implemented/deployed to the dedicated development API on 15 October 2026. The user reported all numbered iPhone checks passed on 15 October. Phase 6 remains deferred. No real cooking outcome, schema/migration or dependency change.
 
 ## Screens and references
 
@@ -93,7 +92,7 @@ Expo LAN runs on exp://192.168.1.7:8086. The initial sandbox IP lookup failed; n
 returned the address. Native auth base/origin settings were preserved. Transport failures do not
 mean the app checks or deployment failed. Keep laptop/Metro awake during phone tests. Direct LAN /status returned packager-status:running.
 
-## Numbered iPhone checklist (pending)
+## Numbered iPhone checklist (reported passed)
 
 1. Open exp://192.168.1.7:8086 in Expo Go on the same Wi-Fi and reload. Sign into the real account,
    not Preview Demo. Keep credentials private.
@@ -118,10 +117,17 @@ mean the app checks or deployment failed. Keep laptop/Metro awake during phone t
 9. Sign Out and sign in again. Shopping should start empty and saved IDs should be reset; Back
    must not expose the old account. Preview Demo must still show its separate sample recipes.
 
-These named samples persist only in the development household. No phone acceptance is recorded yet.
+These named samples persist only in the development household. On 15 October the user answered
+“All checks passed” after receiving the eleven numbered chat steps (the nine grouped steps above).
+Recorded as user-reported success for real suggestions/details, search/save filtering, ingredient
+and staple labels, repeated shopping additions/check/clear, source return, unchanged Pantry outcomes,
+sign-out/session reset and Demo separation. No per-step counts, provider recipe IDs, screenshots or
+direct agent observation were supplied. Automated test evidence above remains separate.
+
+This acceptance update changes documentation only. Root TypeScript and git diff --check passed again;
+runtime/provider/deployment/exports were not rerun for the documentation change.
 Actual blocked-provider/native network failure, cross-account device checks, large-text/320-width
 visual QA, Android/development builds and persistent shopping/save features remain unverified or
-outside this slice. Next: record phone results/fix issues, then finish ranking/prep/preference
-filters and Phase7 final review. No Phase6/8/9 work.
+outside this slice. Next: finish ranking/prep/preference filters and Phase7 final review. No Phase6/8/9 work.
 
 Official focused-route reference checked: https://docs.expo.dev/versions/latest/sdk/router/#usefocuseffecteffect-do_not_pass_a_second_prop
