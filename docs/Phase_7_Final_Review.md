@@ -1,8 +1,9 @@
 # Phase 7 — final development review
 
 Reviewed 15 October 2026 against checkpoint 0229950. Implementation review and regression checks
-are complete. Final phone acceptance remains pending for the latest ranking/filter slice. This
-review does not mark those phone checks passed and does not start Phase8. Phase6 remains deferred.
+are complete. At review time, the latest ranking/filter phone checks were pending. On 16 October the user
+reported all ten checks passed, completing development acceptance. Broader native QA remains
+pending; this does not start Phase8. Phase6 remains deferred.
 
 ## Acceptance evidence
 
@@ -72,10 +73,21 @@ existing development Preview with no credentials.
 
 ## Remaining acceptance and exact next step
 
-The user reported all core Recipes/details/shopping iPhone checks passed on 15 October. Latest
-Quick/Vegetarian/Vegan, metadata loading, clearing/composed filters and shopping-regression phone
-checks are explicitly not tested yet, as confirmed by the user during this review. Complete the existing ten-step checklist and record its actual
-result before calling full Phase7 phone acceptance complete.
+The user reported all core Recipes/details/shopping iPhone checks passed on 15 October. On
+16 October they answered “All checks passed” to the latest ten-step checklist: ingredient refresh/
+suggestions, provider metadata loading, <=15-minute Quick, Vegetarian/Vegan, combined filters,
+no-match search, clear/reset, real details, repeated-add shopping deduplication and return navigation.
+This records user-reported iPhone evidence, not direct observation or newly rerun automated tests.
+No individual recipe IDs, result counts or screenshots were supplied. The earlier “Not tested yet”
+answer is superseded by this report. Development acceptance is complete.
+
+Documentation-only acceptance update: README, AGENTS, implementation plan and this report plus
+Phase_7_Ranking_Filters.md updated. Both TypeScript checks rerun successfully; no runtime files,
+provider requests, database writes, environment/deployment or dependency changes. Existing final
+regression/export results above were not rerun for this documentation-only update.
+
+Exact next proposed implementation step, when authorized: Phase8 item1, inspect event/cost/Undo
+semantics and implement the first authenticated household-scoped monthly analytics endpoint.
 
 Broader native failure-path, account-transition, accessibility/visual edge cases, Android and signed
 iOS build checks remain unverified. Exports establish bundling, not native runtime acceptance.
