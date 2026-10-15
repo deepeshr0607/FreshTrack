@@ -1,6 +1,7 @@
 # Phase 7 — rescue ranking and recipe filters
 
-15 October 2026. Implemented and deployed to development Preview; phone acceptance pending.
+15 October 2026: implemented and deployed to development Preview. On 16 October the user reported
+“All checks passed” for the complete ten-step phone checklist. See the final review for remaining QA limits.
 
 Recipes now rank by weighted distinct rescue names (today 2, tomorrow 1), rescue-name count,
 Pantry name coverage, fewer shopping candidates, known total time, then stable provider ID.
@@ -65,3 +66,11 @@ Deployment: dpl_67s12vyZDFLnRmTRdnebieijgk6N. Ignored mobile public API URL upda
 Next: numbered iPhone verification of metadata loading, Quick/diet composition, clear/recovery and
 existing details/shopping behavior, then final Phase7 acceptance review. Native Android/signed-build
 and wider failure-path checks remain unverified; exports do not establish native runtime acceptance.
+
+## iPhone acceptance — 16 October
+
+User reported “All checks passed” after the numbered ten-step checklist: metadata loading, Quick,
+Vegetarian/Vegan, combined filters, no-match/clear, actual details and deduplicated shopping/return
+navigation. This is user-reported evidence; the agent did not directly observe the device. The prior
+pending status above is historical and superseded. Development review is complete in
+[the final report](Phase_7_Final_Review.md). Broader Android/signed-build and failure-path QA remain.

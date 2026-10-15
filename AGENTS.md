@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 7 — development acceptance complete (16 October).** Final development review and core Recipes/details/shopping checks are recorded; the user now answered “All checks passed” to the latest ten-step iPhone checklist covering metadata loading, Quick/Vegetarian/Vegan composition, filter clearing, recipe details, shopping deduplication and return navigation. This is user-reported evidence, not direct agent observation. Prior final automated results: root189/189, backend100/100, health1/1, both TypeScript/build and all-platform/35-route exports pass. Broader Android/signed-build/failure-path/accessibility QA, Doctor20/21 and existing lint gaps remain. See [final review](docs/Phase_7_Final_Review.md). Phase6 remains deferred. Next proposed phase: Phase8 event-based waste analytics, only when authorized; Phase8/9 have not started.
+
 **Phase 7 final development review complete (15 October); latest filter phone acceptance pending.** All implementation items were reviewed against the five plan criteria. Fresh reruns pass: mobile/backend TypeScript and backend build, root189/189, backend100/100, health1/1, all-platform/35-route exports, hosted health200 and all four tokenless Chef endpoints401. Core Recipes/details/shopping passed prior user-reported iPhone checks; the user explicitly confirmed the latest ten-step Quick/Vegetarian/Vegan checklist is not tested yet. Existing Doctor20/21 and lint setup gaps remain. No runtime/schema/dependency/environment/deployment changes in this review. See [final review](docs/Phase_7_Final_Review.md). Exact next step: complete and record the outstanding filter phone checklist. Phase6 deferred; Phase8/9 not started.
 
 **Phase 7 ranking and time/diet filters implemented (15 October), iPhone verification pending.** Rescue ranking prioritizes today over tomorrow, distinct rescue names, Pantry name coverage, fewer shopping candidates, known total time and stable recipe ID. Explicit metadata loading enables 15-minute Quick and provider-tagged Vegetarian/Vegan filters on the current five-result shortlist; unknown values are excluded. Preferences are session-only. Normal suggestions make no extra metadata call; failures preserve ordinary suggestions and shopping. Both TypeScript/build, root189/189, backend100/100, health1/1 and all-platform/35-route exports pass; a generic live search/bulk metadata probe returned five validated rows. Development Preview Ready, health200/tokenless filters401; ignored public API URL updated. Doctor20/21 (six existing patch recommendations) and lint gaps remain. See [ranking/filter report](docs/Phase_7_Ranking_Filters.md). Next: iPhone checks and final Phase7 review. Phase6 deferred; no Phase8/9.
@@ -258,12 +260,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 7 — development review complete, latest filter phone acceptance pending
+### Current phase: Phase 7 — development acceptance complete
 
-See docs/Phase_7_Final_Review.md. All implementation items and regression evidence were reviewed;
-core Recipes/details/shopping have a prior passing iPhone user report. The user confirmed the latest ten-step
-ranking/filter phone check is not tested yet. Record that result next. Broader native failure-path,
-Android/signed-build QA and Phase5 native acceptance retain their limits. Phase6 deferred; no Phase8/9.
+See docs/Phase_7_Final_Review.md. User reported all latest ten-step filter/detail/shopping phone
+checks passed on 16 October, following the final development review. Broader native failure-path,
+Android/signed-build QA, maintenance gaps and Phase5 native acceptance limits remain. Phase6 deferred.
+Next proposed phase: Phase8 event-based waste analytics, only when authorized. No Phase8/9 work yet.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
