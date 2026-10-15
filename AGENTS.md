@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 7 recipe details implemented (15 October), mobile/hosted connection pending.** Protected /api/v1/chef/recipes/:recipeId rechecks current household suggestions before fetching real provider ingredients, instructions, servings/times and attribution. Missing instructions are explicit; details/search share bounded transport, five-minute cache and rate/quota protection. Live generic search/detail passed (9 ingredients/4 structured steps); both TypeScript/build, root172/172, backend80/80 and health1/1 pass. No mobile/deployment/schema/dependency change. Next: full-Pantry ingredient/staple matching, then supplied UI connection. See [detail report](docs/Phase_7_Recipe_Details.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
+
 **Phase 7 server recipe search implemented (15 October), mobile/hosted connection pending.** The locally saved key loaded and one generic live search returned five parsed Spoonacular summaries. POST /api/v1/chef/suggestions derives only current scoped rescue names; header-only provider credentials, bounded responses, safe errors, process-local rate/coalescing and five-minute cache are implemented. Both TypeScript/build, root172/172, backend66/66 and health1/1 pass. No instructions/detail endpoint, full-household missing matching, mobile UI connection or deployment yet. Next: server recipe details then shared ingredient matching/UI. See [search report](docs/Phase_7_Recipe_Search.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
 
 **Phase 7 started (15 October); Phase 6 deferred by user.** First local backend slice adds authenticated, read-only /api/v1/chef/expiring with household-scoped ACTIVE ingredients and explicit today/tomorrow calendar semantics (not exact 48-hour precision). No provider calls or mobile UI connection yet. Both TypeScript/build, root172/172, backend54/54 and health1/1 pass. No Spoonacular key yet; next: direct Free account/key setup and server-only integration. No deployment, schema/dependency/data change. See [ingredient slice](docs/Phase_7_Expiring_Ingredients.md). Phase 5 native QA remains recorded in its final review.
@@ -248,12 +250,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 7 — local provider search; details/mobile/hosted pending
+### Current phase: Phase 7 — local search/details; matching/mobile/hosted pending
 
-See docs/Phase_7_Recipe_Search.md. User saved the direct Spoonacular key locally; one generic live
-search returned five valid summaries. Secret remains only in ignored backend/.env, not Vercel/mobile.
-Next: actual server recipe details, matching and supplied UI connection before deployment/phone QA.
-Phase 6 explicitly deferred; Phase 5 native QA limits remain. No Phase 8/9 work.
+See docs/Phase_7_Recipe_Details.md. Generic live search and shortlisted detail passed; instructions,
+servings/times and attribution are provider-backed. Existing mobile recipe screens remain prototypes.
+Next: full-Pantry ingredient/staple matching, then supplied UI connection and hosted/device checks.
+Phase 6 explicitly deferred; prior Phase 5 native QA limits remain. No Phase 8/9 work.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 

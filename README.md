@@ -191,13 +191,15 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
 | 6 | Barcode scan + receipt OCR | ⏸ Deferred by user |
-| 7 | AI Chef (Spoonacular integration) | 🟡 Local ingredient/search endpoints verified; details/mobile/hosted pending |
+| 7 | AI Chef (Spoonacular integration) | 🟡 Local search/details verified; ingredient matching/mobile/hosted pending |
 | 8 | Waste analytics and data integrity | ⬜ Not started |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
 
 ---
 
 ## Project Status
+
+**Phase 7 recipe details implemented (15 October), mobile/hosted connection pending.** Protected /api/v1/chef/recipes/:recipeId rechecks current household suggestions before fetching real provider ingredients, instructions, servings/times and attribution. Missing instructions are explicit; details/search share bounded transport, five-minute cache and rate/quota protection. Live generic search/detail passed (9 ingredients/4 structured steps); both TypeScript/build, root172/172, backend80/80 and health1/1 pass. No mobile/deployment/schema/dependency change. Next: full-Pantry ingredient/staple matching, then supplied UI connection. See [detail report](docs/Phase_7_Recipe_Details.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
 
 **Phase 7 server recipe search implemented (15 October), mobile/hosted connection pending.** The locally saved key loaded and one generic live search returned five parsed Spoonacular summaries. POST /api/v1/chef/suggestions derives only current scoped rescue names; header-only provider credentials, bounded responses, safe errors, process-local rate/coalescing and five-minute cache are implemented. Both TypeScript/build, root172/172, backend66/66 and health1/1 pass. No instructions/detail endpoint, full-household missing matching, mobile UI connection or deployment yet. Next: server recipe details then shared ingredient matching/UI. See [search report](docs/Phase_7_Recipe_Search.md). Phase 6 remains deferred; Phase 5 native QA limits remain.
 
