@@ -1,8 +1,9 @@
 import type { ChefSuggestionsData, ChefIngredientMatch } from '../types/api';
-export function filterChefRecipes(recipes: ChefSuggestionsData['recipes'], query: string, filter: string, saved: number[]) {
+export function filterChefRecipes(recipes: ChefSuggestionsData['recipes'], query: string, filter: string, saved: number[], diet: 'Any' | 'Vegetarian' | 'Vegan' = 'Any') {
   const search = query.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
   return recipes.filter(recipe => `${recipe.title} ${recipe.match.ingredients.map(row => row.name).join(' ')}`.normalize('NFC').toLowerCase().includes(search))
-    .filter(recipe => filter === 'Saved' ? saved.includes(recipe.id) : filter === 'High Match' ? recipe.match.pantryNameMatchPercent >= 80 : true);
+    .filter(recipe => filter === 'Saved' ? saved.includes(recipe.id) : filter === 'High Match' ? recipe.match.pantryNameMatchPercent >= 80 : filter === 'Quick' ? (recipe.metadata?.readyInMinutes ?? Infinity) <= 15 : true)
+    .filter(recipe => diet === 'Vegetarian' ? recipe.metadata?.vegetarian === true : diet === 'Vegan' ? recipe.metadata?.vegan === true : true);
 }
 export function matchingLabel(row: ChefIngredientMatch['ingredients'][number]) {
   if (row.status === 'CHECK_STAPLE') return 'Check your kitchen — common staple';

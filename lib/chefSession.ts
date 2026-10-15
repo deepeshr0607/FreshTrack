@@ -6,13 +6,14 @@ export interface ChefSnapshot {
   ingredients: ChefExpiringData | null; ingredientsStatus: Status; ingredientsError: string;
   suggestions: ChefSuggestionsData | null; suggestionsStatus: Status; suggestionsError: string;
   recipe: ChefMatchedRecipeDetail | null; detailId: string | null; detailStatus: Status; detailError: string;
+  filtersStatus: Status; filtersError: string;
   saved: number[]; shopping: { name: string; checked: boolean }[];
 }
 const empty = (): ChefSnapshot => ({ ingredients: null, ingredientsStatus: 'idle', ingredientsError: '', suggestions: null,
-  suggestionsStatus: 'idle', suggestionsError: '', recipe: null, detailId: null, detailStatus: 'idle', detailError: '', saved: [], shopping: [] });
+  suggestionsStatus: 'idle', suggestionsError: '', recipe: null, detailId: null, detailStatus: 'idle', detailError: '', filtersStatus: 'idle', filtersError: '', saved: [], shopping: [] });
 const nameKey = (name: string) => name.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
 const errorText = (error: unknown) => error instanceof NeonAuthError ? `${error.message} (${error.code})` : 'Recipes are unavailable. Please retry.';
-export function createChefSession(api: { ingredients(): Promise<ChefExpiringData>; suggest(): Promise<ChefSuggestionsData>; detail(id: string): Promise<ChefMatchedRecipeDetail> }, active: () => boolean) {
+export function createChefSession(api: { ingredients(): Promise<ChefExpiringData>; suggest(): Promise<ChefSuggestionsData>; filters(): Promise<ChefSuggestionsData>; detail(id: string): Promise<ChefMatchedRecipeDetail> }, active: () => boolean) {
   let state = empty(), generation = 0, detailRequest = 0, disposed = false;
   let expiry: ReturnType<typeof setTimeout> | null = null;
   const listeners = new Set<() => void>();
@@ -44,6 +45,15 @@ export function createChefSession(api: { ingredients(): Promise<ChefExpiringData
       invalidate(); const revision = generation; publish({ suggestionsStatus: 'loading' });
       try { const suggestions = await api.suggest(); if (valid(revision)) { publish({ suggestions, suggestionsStatus: 'ready', ingredients: suggestions, ingredientsStatus: 'ready' }); expireProviderData(); } }
       catch (error) { if (valid(revision)) publish({ suggestionsStatus: 'error', suggestionsError: errorText(error) }); }
+    },
+    async loadFilters() {
+      if (!active() || disposed || state.filtersStatus === 'loading' || state.suggestionsStatus === 'loading') return;
+      const revision = generation;
+      publish({ filtersStatus: 'loading', filtersError: '' });
+      try { const suggestions = await api.filters(); if (valid(revision)) {
+        publish({ suggestions, suggestionsStatus: 'ready', ingredients: suggestions, ingredientsStatus: 'ready', filtersStatus: 'ready' }); expireProviderData();
+      } }
+      catch (error) { if (valid(revision)) publish({ filtersStatus: 'error', filtersError: errorText(error) }); }
     },
     async loadDetail(id: string) {
       if (!active() || disposed || state.detailStatus === 'loading' && state.detailId === id) return;

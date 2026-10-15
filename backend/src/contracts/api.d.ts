@@ -73,6 +73,9 @@ export interface ChefRecipeSummary {
   usedIngredients: { name: string; description: string }[];
   missingIngredients: { name: string; description: string }[];
   provider: 'spoonacular'; providerUrl: string;
+  metadata?: ChefRecipeMetadata;
+  rescuePriority?: number;
+  rescueIngredientCount?: number;
 }
 export interface ChefSuggestionsData extends ChefExpiringData {
   recipes: (ChefRecipeSummary & { match: ChefIngredientMatch })[];
@@ -111,3 +114,8 @@ export interface ChefIngredientMatch {
   shoppingItems: { name: string; reason: 'NO_MATCH' | 'CHECK_STAPLE' | 'INSUFFICIENT'; checkFirst: boolean }[];
 }
 export type ChefMatchedRecipeDetail = ChefRecipeDetail & { match: ChefIngredientMatch };
+
+export interface ChefRecipeMetadata {
+  id: number; readyInMinutes: number | null;
+  vegetarian: boolean | null; vegan: boolean | null;
+}

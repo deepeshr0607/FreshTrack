@@ -42,7 +42,11 @@ export function recipeExternalUrl(value: unknown): string | null {
 function presentation(value: Record<string, any>) {
   return id(value.id) && string(value.title, 240) && (value.imageUrl === null || !!recipeExternalUrl(value.imageUrl))
     && value.provider === 'spoonacular' && typeof value.providerUrl === 'string' && value.providerUrl.startsWith('https://spoonacular.com/')
-    && matching(value.match);
+    && matching(value.match)
+    && (value.metadata === undefined || record(value.metadata) && value.metadata.id === value.id
+      && (value.metadata.readyInMinutes === null || typeof value.metadata.readyInMinutes === 'number' && Number.isFinite(value.metadata.readyInMinutes) && value.metadata.readyInMinutes > 0)
+      && ['vegetarian', 'vegan'].every(key => value.metadata[key] === null || typeof value.metadata[key] === 'boolean'))
+    && ['rescuePriority', 'rescueIngredientCount'].every(key => value[key] === undefined || Number.isInteger(value[key]) && value[key] >= 0);
 }
 function suggestions(value: unknown): value is ChefSuggestionsData {
   if (!record(value)) return false;
@@ -85,6 +89,7 @@ export function createChefApi(baseUrl: string | undefined, getToken: () => Promi
   return {
     ingredients: () => request('/api/v1/chef/expiring', 'GET', ingredientWindow),
     suggest: () => request('/api/v1/chef/suggestions', 'POST', suggestions),
+    filters: () => request('/api/v1/chef/filters', 'POST', (value): value is ChefSuggestionsData => suggestions(value) && value.recipes.every(row => !!row.metadata)),
     detail: (recipeId: string) => {
       if (!/^[1-9]\d{0,9}$/.test(recipeId) || !id(Number(recipeId))) return Promise.reject(new NeonAuthError('RECIPE_NOT_AVAILABLE', messages.RECIPE_NOT_AVAILABLE));
       return request(`/api/v1/chef/recipes/${recipeId}`, 'GET', (value): value is ChefMatchedRecipeDetail => details(value) && value.id === Number(recipeId), 'recipe');

@@ -1,9 +1,9 @@
-import type { ChefRecipeDetail, ChefRecipeSummary } from '../contracts/api';
+import type { ChefRecipeDetail, ChefRecipeSummary, ChefRecipeMetadata } from '../contracts/api';
 
 export class RecipeProviderFailure extends Error {
   constructor(readonly code: 'RECIPE_NOT_CONFIGURED' | 'RECIPE_QUOTA_EXHAUSTED' | 'RECIPE_RATE_LIMITED' | 'RECIPE_TIMEOUT' | 'RECIPE_UNAVAILABLE' | 'RECIPE_INGREDIENT_LIMIT' | 'RECIPE_NOT_AVAILABLE') { super(code); }
 }
-export interface RecipeProvider { search(names: string[]): Promise<ChefRecipeSummary[]>; detail(id: number): Promise<ChefRecipeDetail> }
+export interface RecipeProvider { search(names: string[]): Promise<ChefRecipeSummary[]>; detail(id: number): Promise<ChefRecipeDetail>; metadata(ids: number[]): Promise<ChefRecipeMetadata[]> }
 const normalize = (value: string) => value.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
 /** Names only: this endpoint does not accept quantities, identity, purchase values or the full Pantry. */
 export function recipeSearchNames(names: string[]) {
@@ -122,6 +122,19 @@ export function parseRecipeDetail(value: unknown, expectedId: number): ChefRecip
     source: { name: displayText(row['sourceName'], 500), url: sourceUrl(row['sourceUrl']), credits: displayText(row['creditsText'], 1000),
       license: displayText(row['license'], 300) }, provider: 'spoonacular', providerUrl: presentation.providerUrl };
 }
+export function parseRecipeMetadata(value: unknown, ids: number[]): ChefRecipeMetadata[] {
+  if (!Array.isArray(value) || value.length !== ids.length) throw invalid();
+  const found = new Set<number>();
+  const rows = value.map(row => {
+    if (!row || !ids.includes(row.id) || found.has(row.id)) throw invalid();
+    found.add(row.id);
+    const ready = nullableNumber(row.readyInMinutes, 100000);
+    const flag = (value: unknown) => { if (value === undefined || value === null) return null;
+      if (typeof value !== 'boolean') throw invalid(); return value; };
+    return { id: row.id as number, readyInMinutes: ready === 0 ? null : ready, vegetarian: flag(row.vegetarian), vegan: flag(row.vegan) };
+  });
+  return rows.sort((a, b) => a.id - b.id);
+}
 /** Bounded process-local caching/rate protection; serverless instances do not share this state. */
 export function createSpoonacularProvider(options: { key?: () => string | undefined; fetch?: typeof fetch; now?: () => number } = {}): RecipeProvider {
   const getKey = options.key ?? (() => process.env['SPOONACULAR_API_KEY']);
@@ -188,6 +201,14 @@ export function createSpoonacularProvider(options: { key?: () => string | undefi
       const names = recipeSearchNames(input); if (!names.length) return [];
       return request(`search:${JSON.stringify(names)}`, '/recipes/findByIngredients',
         { ingredients: names.join(','), number: '5', ranking: '1', ignorePantry: 'true' }, parseRecipeSummaries);
+    },
+    async metadata(input) {
+      const ids = [...input].sort((a, b) => a - b);
+      if (!ids.length) return [];
+      if (ids.length > 5 || new Set(ids).size !== ids.length) throw new RecipeProviderFailure('RECIPE_NOT_AVAILABLE');
+      ids.forEach(validRecipeId);
+      return request(`metadata:${ids.join(',')}`, '/recipes/informationBulk',
+        { ids: ids.join(','), includeNutrition: 'false' }, value => parseRecipeMetadata(value, ids));
     },
     async detail(id) {
       validRecipeId(id);
