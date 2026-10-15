@@ -57,3 +57,13 @@ export interface PantryBatchInput {
 }
 export interface PantryBatchOutcomeInput extends PantryBatchInput { action: 'consume' | 'waste' }
 export type PantryBatchResponse = ApiSuccess<{ items: PantryItemDto[] }>;
+
+/** Date-only rescue window: today and tomorrow in the household timezone, not an exact-hour timer. */
+export interface ChefExpiringData {
+  householdDate: string;
+  throughDate: string;
+  timezone: string;
+  window: 'HOUSEHOLD_TODAY_AND_TOMORROW';
+  ingredients: { pantryItemId: string; name: string; quantity: string; unit: string; expiresOn: string }[];
+}
+export type ChefExpiringResponse = ApiSuccess<ChefExpiringData>;

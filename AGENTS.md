@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 7 started (15 October); Phase 6 deferred by user.** First local backend slice adds authenticated, read-only /api/v1/chef/expiring with household-scoped ACTIVE ingredients and explicit today/tomorrow calendar semantics (not exact 48-hour precision). No provider calls or mobile UI connection yet. Both TypeScript/build, root172/172, backend54/54 and health1/1 pass. No Spoonacular key yet; next: direct Free account/key setup and server-only integration. No deployment, schema/dependency/data change. See [ingredient slice](docs/Phase_7_Expiring_Ingredients.md). Phase 5 native QA remains recorded in its final review.
+
 **Phase 5 final development review complete (15 October); full native acceptance pending.** All eight implementation items have recorded regression evidence and iPhone user reports. Final reruns: both TypeScript checks/build, root172/172, backend48/48, health1/1, all-platform/35-route exports and hosted health200/tokenless Pantry401 pass. Doctor20/21 now recommends six patch updates; existing lint setup gaps remain. Actual iOS/Android development-build actions and broader native failure/capacity/accessibility QA remain unverified. No runtime/schema/dependency/deploy change; no Phase 6 work. See [final review](docs/Phase_5_Final_Review.md). Historical checkpoints below are superseded by this status.
 
 **Phase 5 item 8 iPhone diagnostic passed by user report (14 October):** live overdue banners in Pantry and Financial Analytics open protected /pantry/reconcile. Search, single/bulk confirmed Used/Wasted (cap20), exact INR/unknown values, selection/pending/read-only guards, frozen-version/same-key retries and existing Undo integration are connected. Demo is preserved; real analytics metrics remain Phase 8. Both TypeScript/build, root172/172, backend48/48, health1/1, live Pantry17/17 with cleanup and final all-platform/35-route exports pass. Doctor20/21 and existing lint gaps remain. See [reconciliation UI report](docs/Phase_5_Reconciliation_UI.md). User answered “All checks passed” for banner/search, single/bulk Cancel/Confirm, Undo, restart and Financial Analytics entry. Recorded as user report, separate from database tests. Broader native checks and final Phase 5 review remain; no Phase 6 work.
@@ -244,12 +246,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 5 — final development review complete; full native acceptance pending
+### Current phase: Phase 7 — local ingredient endpoint; provider/UI pending
 
-See docs/Phase_5_Final_Review.md for acceptance evidence, current checks and remaining native QA.
-All eight implementation items have recorded iPhone reports; actual development-build/Android
-and broader failure-path checks remain. No automatic assumed consumption. Phase 6 requires
-explicit authorization; its first preparation step is barcode provider/service prerequisite review.
+Phase 6 explicitly deferred by user. See docs/Phase_7_Expiring_Ingredients.md. The endpoint is not
+deployed or connected to recipe UI; date-only today/tomorrow semantics are explicit. Next: direct
+Spoonacular Free account/key setup then server-only search integration. Phase 5 development review
+is complete with native QA limits in docs/Phase_5_Final_Review.md. No Phase 8/9 work.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
