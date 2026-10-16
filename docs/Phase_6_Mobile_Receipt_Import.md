@@ -1,6 +1,6 @@
 # Phase 6 — reviewed receipt import on mobile
 
-16 October 2026. Mobile connection and development deployment complete; iPhone acceptance pending.
+16 October 2026. Core import/restart passed by user report; duplicate and sign-out phone checks pending.
 This follows the independently tested atomic receipt backend in Phase_6_Receipt_Import_Backend.md.
 
 ## Behavior and boundaries
@@ -90,7 +90,8 @@ restarted after verifying its process/cwd; unrelated servers were not stopped.
 | `git diff --check` and content/logging review | Passed |
 | Development Preview | Ready; health200, tokenless receipt-review/import401 |
 | Actual iOS manifest and development bundle | HTTP200, FreshTrack Dev; bundle contains new public API URL |
-| iPhone confirmation/duplicates/restart/cleanup UI | Pending; no native acceptance claimed |
+| iPhone core confirmation/cancel/paused retry/restart/exact values | User reported “All checks passed” to the 15-step checklist; not directly observed |
+| iPhone duplicate choices/sign-out retry cleanup | Pending |
 | Android/native accessibility/real transport-loss UI | Not verified |
 
 The new tests cover field privacy/unknown/free values; isolated chunked persistence; partial-write
@@ -142,8 +143,19 @@ Launcher: http://172.20.10.2:8087. No authenticated hosted receipt writes were m
 
 ## Next step
 
-Numbered iPhone acceptance: real two-row import with Cancel, persisted paused-retry/restart, exact
-values and one purchase each after restart; then household duplicate Skip/Add Separately and
-sign-out retry cleanup. Keep per-check evidence distinct. Normal scanner entry integration,
+Core two-row import/Cancel/paused-retry/restart/value checks passed by user report. Next verify
+household duplicate Skip/Add Separately and sign-out retry cleanup on iPhone. Keep per-check evidence distinct. Normal scanner entry integration,
 expiry presets during receipt review, barcode scanning/catalog decision and broader native/failure
 QA remain incomplete. Phase6 is not complete; Phase9 has not started.
+
+## Core iPhone acceptance — 16 October 2026
+
+User answered “All checks passed” to the 15-step checklist covering real-account FreshTrack Dev
+loading, two named development groceries, reviewed known/unknown costs, duplicate-check cancellation
+and retained preview, confirmed paused retry with repeated no-send retries, restoration after app
+restart, explicit End Retry Test & Import, two saved groceries with exact quantities/value/expiry,
+and one purchase each after another restart. Recorded as a broad user report without direct screen
+observation, per-step screenshots or receipt contents. Duplicate-choice and sign-out cleanup were
+explicitly deferred to separate checklists; this result does not mark those passed.
+No runtime/environment/dependency/data change by the agent in this documentation update. Prior
+automated results were not rerun; git diff --check passed.
