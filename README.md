@@ -190,7 +190,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
-| 6 | Barcode scan + receipt OCR | 🟡 Resumed: local device-build preparation; OCR not integrated |
+| 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; candidate review pending phone checks, import/barcode incomplete |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 6 local receipt candidate parsing/review implemented (16 October); iPhone verification pending.** Same-line item/amount heuristics preserve original OCR and unassigned lines; quantities, units and expiry require explicit review. Editable candidates, Add Missing/remove/include, validation and haul preview are local only; no Pantry import or backend changes. Both TypeScript checks, root215/215 and all-platform/36-route exports pass. Existing Expo server manifest returns200; no native rebuild required. See [candidate review report](docs/Phase_6_Receipt_Candidate_Review.md). Next: phone review checks, then authenticated atomic/idempotent import and household duplicate handling. Barcode and broader native QA remain; no Phase9.
 
 **Phase 6 on-device OCR proof passed iPhone checks by user report (16 October).** Development-only Scanner check captures/selects a bounded local image, previews it and explicitly reads raw text with Apple Vision/iOS or ML Kit/Android through expo-text-extractor2.0.0. No upload, parsing or Pantry import. Generation/account guards, retry/cancel/empty states and best-effort cache cleanup are implemented. Both TypeScript checks, root212/212 and all-platform/36-route export pass; Doctor20/21 retains five patch recommendations. Native pods113, iOS build/sign/install/launch and manifest200 pass. User answered “All checks passed” to the numbered capture/library, cancellation, recognition/re-read, no-text, clear/navigation and unchanged-Pantry checklist. This is user-reported evidence, not direct observation or a receipt-accuracy benchmark. See [OCR proof report](docs/Phase_6_On_Device_OCR_Proof.md). Next: deterministic receipt candidates, editable review and confirmed import. Barcode and broader native QA remain; no Phase9.
 

@@ -1,0 +1,83 @@
+import React, { useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import FormInput from '@/components/FormInput';
+import PrimaryButton from '@/components/PrimaryButton';
+import { ui } from '@/components/PrototypeScreen';
+import { Colors } from '@/constants/Theme';
+import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
+import { manualReceiptCandidate, parseReceiptCandidates, receiptCandidateIssue, receiptReviewSummary, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
+
+/** In-memory review only. Never sends OCR text, images or groceries to the backend. */
+export default function LocalReceiptReview({ lines }: { lines: string[] }) {
+  const [parsed] = useState(() => parseReceiptCandidates(lines));
+  const [rows, setRows] = useState(parsed.candidates);
+  const [editor, setEditor] = useState<LocalReceiptCandidate | null>(null);
+  const [error, setError] = useState('');
+  const [summary, setSummary] = useState(false);
+  const [showRemaining, setShowRemaining] = useState(false);
+  const next = useRef(0);
+  const plan = receiptReviewSummary(rows);
+  const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
+    setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null); setError('');
+  };
+  const add = (original = '') => { if (rows.length >= 20) return; setEditor(manualReceiptCandidate(`manual-${++next.current}`, original)); setError(''); };
+  if (editor) return <View style={ui.card}>
+    <Text accessibilityRole="header" style={ui.heading}>Review Grocery</Text>
+    {!!editor.original && <Text selectable style={ui.text}>Original OCR: {editor.original}</Text>}
+    <Text style={ui.text}>Verify every field. Quantity, unit and expiry are not read from the receipt. Category starts as Other. Value applies to the whole entry in INR; blank means unknown, zero means free.</Text>
+    {editor.detectedPrice && <Text style={ui.text}>Detected amount: {editor.detectedPrice} ({editor.currency === 'INR' ? 'INR marker detected' : editor.currency === 'unsupported' ? 'foreign currency — not converted or copied' : 'currency not detected — confirm INR before keeping this value'}). This may be a unit price rather than the entry total.</Text>}
+    <FormInput label="Item name" accessibilityLabel="Reviewed item name" value={editor.draft.name} maxLength={120} onChangeText={v => change('name', v)} />
+    <Text style={ui.heading}>Category</Text>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{PANTRY_CATEGORIES.map(category => <Pressable key={category.name}
+      accessibilityRole="radio" accessibilityLabel={category.name} accessibilityState={{ checked: category.name === editor.draft.category }}
+      style={[ui.pill, category.name === editor.draft.category && { backgroundColor: Colors.primary }]} onPress={() => change('category', category.name)}>
+      <Text style={[ui.label, category.name === editor.draft.category && { color: Colors.white }]}>{category.emoji} {category.name}</Text></Pressable>)}</View>
+    <FormInput label="Quantity" accessibilityLabel="Reviewed quantity" keyboardType="decimal-pad" value={editor.draft.quantity} onChangeText={v => change('quantity', v)} />
+    <FormInput label="Unit (e.g. piece, bag, kg)" accessibilityLabel="Reviewed unit" maxLength={32} value={editor.draft.unit} onChangeText={v => change('unit', v)} />
+    <FormInput label="Whole-entry purchase value (₹, optional)" accessibilityLabel="Reviewed purchase value" keyboardType="decimal-pad" value={editor.draft.price} onChangeText={v => change('price', v)} />
+    <FormInput label="Manual expiry (YYYY-MM-DD)" accessibilityLabel="Reviewed expiry date" placeholder="YYYY-MM-DD" maxLength={10} value={editor.draft.expiresOn} onChangeText={v => change('expiresOn', v)} />
+    <Text style={ui.text}>Use a date you confirm. A receipt does not verify the package use-by date; this slice does not estimate expiry.</Text>
+    {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
+    <PrimaryButton label="Save Grocery Review" onPress={() => {
+      const issue = receiptCandidateIssue(editor.draft); if (issue) { setError(issue); return; }
+      const saved = { ...editor, reviewed: true, selected: true };
+      setRows(previous => previous.some(row => row.id === saved.id) ? previous.map(row => row.id === saved.id ? saved : row) : [...previous, saved]);
+      setEditor(null); setError('');
+    }} />
+    <PrimaryButton label="Cancel Edit" variant="ghost" onPress={() => { setEditor(null); setError(''); }} />
+  </View>;
+  return <View style={ui.card}>
+    <Text accessibilityRole="header" style={ui.title}>{summary ? 'Reviewed Haul Preview' : 'Haul Detected'}</Text>
+    <Text style={ui.text}>Local review only · no Pantry import yet. Leaving this screen or reading another photo discards edits.</Text>
+    {summary ? <>
+      <Text style={ui.heading}>{plan.rows.length} reviewed groceries</Text>
+      {plan.rows.map(row => <View key={row.id} style={ui.card}><Text style={ui.heading}>{row.draft.name}</Text>
+        <Text style={ui.text}>{row.draft.category} · {row.draft.quantity} {row.draft.unit} · {row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · User set: {row.draft.expiresOn}</Text></View>)}
+      {!!plan.repeated.length && <Text style={ui.text}>Repeated names in this haul: {plan.repeated.join(', ')}. These rows remain separate. Household duplicate checks will be added with import.</Text>}
+      <Text style={ui.text}>Nothing has been saved to Pantry. Confirmed bulk import is the next implementation step.</Text>
+      <PrimaryButton label="Back to Review" variant="ghost" onPress={() => setSummary(false)} />
+    </> : <>
+      <Text style={ui.text}>{rows.length} candidates · {rows.filter(row => row.selected).length} reviewed and selected · no accuracy score inferred</Text>
+      {!rows.length && <Text style={ui.text}>No supported item/price pairs found. Review unassigned lines or add a missing grocery.</Text>}
+      {rows.map(row => <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
+        <Text style={ui.heading}>{row.draft.name || 'Unnamed grocery'}</Text>
+        <Text style={ui.text}>{row.reviewed ? `${row.draft.quantity} ${row.draft.unit} · ${row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · ${row.draft.expiresOn}` : 'Needs review · quantity, unit, category, value and expiry unverified'}</Text>
+        <Text selectable style={ui.text}>Original OCR: {row.original || 'Added manually'}</Text>
+        <PrimaryButton label={row.reviewed ? 'Edit Grocery' : 'Review Grocery'} variant="ghost" onPress={() => { setEditor({ ...row, draft: { ...row.draft } }); setError(''); }} />
+        {row.reviewed && <Pressable accessibilityRole="checkbox" accessibilityLabel={`Include ${row.draft.name}`} accessibilityState={{ checked: row.selected }} style={ui.pill}
+          onPress={() => setRows(previous => previous.map(item => item.id === row.id ? { ...item, selected: !item.selected } : item))}>
+          <Text style={ui.label}>{row.selected ? '☑ Included' : '☐ Excluded'}</Text></Pressable>}
+        <PrimaryButton label="Remove Grocery" variant="ghost" onPress={() => { setRows(previous => previous.filter(item => item.id !== row.id)); setError(''); }} />
+      </View>)}
+      <PrimaryButton label="＋ Add Missing" variant="ghost" disabled={rows.length >= 20} onPress={() => add()} />
+      <Text style={ui.text}>Up to 20 review rows. Unassigned lines remain available below, including likely totals and unsupported layouts. No lines are silently imported.</Text>
+      <PrimaryButton label={`${showRemaining ? 'Hide' : 'Show'} Unassigned Lines (${parsed.remaining.length})`} variant="ghost" onPress={() => setShowRemaining(previous => !previous)} />
+      {showRemaining && parsed.remaining.map(line => <View key={line.id} style={ui.card}><Text selectable style={ui.text}>{line.original}</Text><Text style={ui.text}>{line.reason}</Text>
+        <PrimaryButton label="Review as Grocery" variant="ghost" disabled={rows.length >= 20} onPress={() => add(line.original)} /></View>)}
+      {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
+      <PrimaryButton label="Preview Reviewed Haul" disabled={!rows.some(row => row.selected)} onPress={() => {
+        if (plan.error) { setError(plan.error); return; } setError(''); setSummary(true);
+      }} />
+    </>}
+  </View>;
+}

@@ -3,6 +3,7 @@ import { Image, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import PrototypeScreen, { ui } from '@/components/PrototypeScreen';
 import PrimaryButton from '@/components/PrimaryButton';
+import LocalReceiptReview from '@/features/scanner/LocalReceiptReview';
 import { useAuth } from '@/context/AuthContext';
 import { createReceiptOcrProbe } from '@/lib/receiptOcrProbe';
 import { chooseOcrImage, disposeOcrImage, ocrProbeSupported, recognizeOcrImage } from '@/features/scanner/ocrProbeDevice';
@@ -25,7 +26,7 @@ function Probe({ subject }: { subject: string }) {
     <Text style={ui.title}>Receipt OCR Check</Text>
     <View style={ui.card}><Text style={ui.heading}>Read a receipt on this phone</Text>
       <Text style={ui.text}>Development proof of concept. Apple Vision on iPhone; ML Kit on Android. Images stay on this device. No upload or Pantry import occurs.</Text>
-      <Text style={ui.text}>Leaving this screen clears the result and attempts to delete temporary image copies. Text recognition can be wrong; grocery parsing and review come later.</Text>
+      <Text style={ui.text}>Leaving this screen clears the result and attempts to delete temporary image copies. Text recognition can be wrong. Review detected groceries below; confirmed Pantry import comes later.</Text>
     </View>
     {!supported && <Text accessibilityRole="alert" style={ui.text}>OCR is unavailable in this build. Use the updated FreshTrack Dev app, not Expo Go.</Text>}
     <PrimaryButton label="Photograph Receipt" disabled={!supported || state.busy} onPress={() => void store.choose('camera')} />
@@ -40,6 +41,7 @@ function Probe({ subject }: { subject: string }) {
       <Text style={ui.text}>{state.lines.length ? 'Raw OCR text — not verified groceries or confidence scores.' : 'Use a well-lit, upright receipt and retry or choose another photo.'}</Text>
       <Text selectable style={ui.text}>{state.lines.join('\n')}</Text>
     </View>}
+    {state.read && state.lines.length > 0 && <LocalReceiptReview lines={state.lines} />}
     <PrimaryButton label="Clear Photo & Text" variant="ghost" disabled={state.busy || !state.image} onPress={() => store.clear()} />
     <PrimaryButton label="Enter Grocery Manually" variant="ghost" disabled={state.busy} onPress={() => router.push('/pantry/add')} />
   </PrototypeScreen>;
