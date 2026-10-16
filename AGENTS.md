@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 8 real Insights/Financial views connected and deployed (16 October), iPhone verification pending.** Existing routes preserve Demo and use a scoped shared six-month analytics provider for real accounts. Exact INR values/coverage, month navigation, consumed/waste charts, previous-month deltas, report preview/share, retry/empty states and existing reconciliation are connected. Unsupported scores/carbon/category/individual-rescue metrics remain unavailable; no fake savings. Both TypeScript/build, root199/199, backend115/115, health1/1, HTTPS SQL6/6 and all-platform/35-route exports pass. Preview Ready, health200/tokenless analytics401; ignored API URL updated with Auth preserved. Doctor20/21 (six patch recommendations) and lint gaps remain; local Prisma unresolved. See [mobile report](docs/Phase_8_Mobile_Analytics.md). Next: numbered iPhone acceptance, then remaining design/data/QA/final review. Phase6 deferred; no Phase9.
+
 **Phase 8 hosted Prisma diagnostic passed by user report (16 October).** User reported “Backend database verified” using the existing Settings control against the already-hosted development API. This establishes reported hosted database reachability, not new analytics endpoint acceptance. Six synthetic analytics SQL tests passed over test-only Neon HTTPS; the laptop's local Prisma failure remains unresolved. Prior root189/backend115/health1, both TypeScript/build pass. No runtime/deployment change. See [verification report](docs/Phase_8_SQL_Transport_Verification.md). Next: connect supplied Analytics/Insights screens to summary/series, deploy development Preview and verify the new authenticated analytics flow. Existing native/maintenance gaps remain; Phase6 deferred, no Phase9.
 
 **Phase 8 live SQL verified via Neon HTTPS (16 October); local Prisma connectivity unresolved.** Six synthetic read-only PostgreSQL cases now pass, including summary/series reconciliation and Undo/timezone boundaries, using an explicit test-only HTTPS transport. The API still uses Prisma; its local integration run and longer-timeout probes fail to connect, so runtime/transaction acceptance is not claimed. Both TypeScript/build, root189/189, backend115/115 and health1/1 pass. No runtime/schema/dependency/environment/deployment or mobile changes. See [transport verification](docs/Phase_8_SQL_Transport_Verification.md). Next: existing Settings → Check Backend Database phone diagnostic for hosted Prisma, then supplied Analytics/Insights connection. Existing maintenance/native gaps remain; Phase6 deferred, no Phase9.
@@ -268,12 +270,13 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 8 — analytics SQL verified, hosted database diagnostic reported passed
+### Current phase: Phase 8 — real mobile analytics deployed, iPhone verification pending
 
-See docs/Phase_8_SQL_Transport_Verification.md. User reported the existing hosted Backend Database
-check passed on 16 October. SQL6/6 pass through test-only HTTPS; local Prisma connectivity remains
-unresolved. Next connect supplied Analytics/Insights to summary/series, deploy and verify new endpoints.
-No analytics mobile/deployment acceptance yet. Native/maintenance gaps remain; Phase6 deferred, no Phase9.
+See docs/Phase_8_Mobile_Analytics.md. Real Insights and Financial routes share authenticated monthly
+series, exact INR coverage, charts, selection/report/retry states and existing reconciliation. Demo
+preserved; category/individual-rescue/unsupported impact metrics remain unavailable. Preview Ready;
+root199/backend115/health1/HTTPS SQL6 and all-platform exports pass. Next numbered phone checks,
+remaining design/data QA and final review. Local Prisma/native/maintenance gaps remain; Phase6 deferred.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 

@@ -19,6 +19,7 @@ import { MockPantryProvider } from '@/context/MockPantryContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MockRecipeProvider } from '@/context/MockRecipeContext';
 import { MockPreferencesProvider } from '@/context/MockPreferencesContext';
+import { RealAnalyticsProvider } from '@/context/RealAnalyticsContext';
 import { RealChefProvider } from '@/context/RealChefContext';
 import { RealPantryProvider } from '@/context/RealPantryContext';
 import NotificationResponseBridge from '@/components/NotificationResponseBridge';
@@ -81,7 +82,7 @@ function SessionNavigation() {
     <NotificationResponseBridge />
     <View style={{ flex: 1 }} pointerEvents={state.checking ? 'none' : 'auto'}
       accessibilityElementsHidden={state.checking} importantForAccessibility={state.checking ? 'no-hide-descendants' : 'auto'}>
-    <MockPreferencesProvider><MockPantryProvider key={scope}><RealPantryProvider key={scope}><MockRecipeProvider><RealChefProvider key={scope}>
+    <MockPreferencesProvider><MockPantryProvider key={scope}><RealPantryProvider key={scope}><MockRecipeProvider><RealChefProvider key={scope}><RealAnalyticsProvider key={scope}>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={!access}>
@@ -102,7 +103,7 @@ function SessionNavigation() {
         <Stack.Screen name="settings/privacy" />
         <Stack.Screen name="+not-found" />
       </Stack>
-    </RealChefProvider></MockRecipeProvider></RealPantryProvider></MockPantryProvider></MockPreferencesProvider>
+    </RealAnalyticsProvider></RealChefProvider></MockRecipeProvider></RealPantryProvider></MockPantryProvider></MockPreferencesProvider>
     </View>
     {state.checking && <View style={StyleSheet.absoluteFill}><SessionLoading /></View>}
   </View>;

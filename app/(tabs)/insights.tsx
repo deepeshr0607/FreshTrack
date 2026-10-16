@@ -1,3 +1,5 @@
+import { useAuth } from '@/context/AuthContext';
+import LiveAnalyticsScreen from '@/features/analytics/LiveAnalyticsScreen';
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -14,7 +16,7 @@ import { impactReport, sessionOutcomes } from '@/lib/analytics';
 import { useMockPantry } from '@/context/MockPantryContext';
 import { Colors, Radius } from '@/constants/Theme';
 
-export default function InsightsScreen() {
+function DemoInsightsScreen() {
   const [period, setPeriod] = useState<InsightPeriod>('This Month');
   const [report, setReport] = useState<string | null>(null);
   const [week, setWeek] = useState<string | null>(null);
@@ -94,4 +96,9 @@ export default function InsightsScreen() {
           <PrimaryButton label="Close" onPress={() => setCategories(false)} /></ScrollView></View>
     </Modal>
   </PrototypeScreen>;
+}
+
+export default function InsightsScreen() {
+  const { state } = useAuth();
+  return state.demo ? <DemoInsightsScreen /> : <LiveAnalyticsScreen />;
 }
