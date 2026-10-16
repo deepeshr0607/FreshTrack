@@ -35,6 +35,7 @@ function applyReleaseConfig(config, env) {
         throw new Error('Local build configuration: APP_LOCAL_NATIVE_IDENTIFIER must be a valid reverse-domain identifier.');
       }
       return { ...config, extra, name: `${config.name} Dev`, scheme: 'freshtrack-dev',
+        plugins: [...(config.plugins || []), './plugins/withLocalDevelopmentBuild.cjs'],
         ios: { ...config.ios, bundleIdentifier: localIdentifier },
         android: { ...config.android, package: localIdentifier } };
     }

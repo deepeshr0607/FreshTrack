@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 6 local iPhone build compiled/signed/installed (16 October); phone launch pending.** Repaired the missing Apple WWDR G3 intermediate without trust overrides/private-key export. Local-only config removes unsupported APNs entitlement and quotes the generated bundle script; SDK-recommended Constants57.0.22 fixes its path quoting. Fresh Expo regeneration verifies both fixes. Xcode reports Build Succeeded/0errors/2warnings; codesign verification passes and the device lists FreshTrack Dev installed. Expo CLI exits1 at launch because iOS rejects the profile until user trust/security verification; successful app opening is not claimed. Both TypeScript checks, root209/209 and all-platform/35-route export pass; Metro iOS bundle200. Doctor20/21 has five existing patch recommendations. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: trust the developer profile on iPhone, open the local app on port8087 and verify baseline sign-in/navigation before OCR. ML Kit is not installed; Phase9 not started.
+
 **Phase 6 local native dependencies installed (16 October); signing setup pending.** Homebrew7.0.9/CocoaPods1.17.0 verified; pod install passed with110 pods. Both TypeScript checks and root207/207 pass. Doctor20/21 leaves only existing six Expo patch mismatches. The local iPhone build command stops before compilation because no code-signing certificate is available. No app installed or OCR tested. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: create an Apple Development certificate in Xcode using the user's Personal Team, then retry the baseline build. No paid cloud build or Google billing setup; Phase9 not started.
 
 **Phase 6 resumed — local development-build preparation (16 October).** User selected the free on-device OCR direction; ML Kit remains proposed/unverified and no cloud OCR is configured. Xcode26.6 is selected; prior iPhone diagnostics report iOS26.6.1, Developer Mode and development services available. Installed expo-dev-client~57.0.20 and added an optional local-only native identity; Expo generated ignored iOS files. Both TypeScript checks, root207/207 and all-platform/35-route exports pass. Doctor19/21: CocoaPods absent plus existing six patch mismatches. Native dependency installation, signed device build and OCR remain incomplete. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: resolve CocoaPods, then verify a baseline device build before OCR integration. Phase8 development review is closed; Phase9 not started.
@@ -282,12 +284,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 6 — local device-build preparation
+### Current phase: Phase 6 — local app installed, phone trust/launch pending
 
-See docs/Phase_6_Local_Development_Build.md. Xcode/dev-client/prebuild preparation complete;
-CocoaPods installation passed; Apple Development signing certificate setup and a baseline build
-are next. On-device OCR is proposed, not verified.
-Phase8 development review is closed with recorded QA limits; Phase9 has not started.
+See docs/Phase_6_Local_Development_Build.md. Xcode build/signature verification and installation
+succeeded; iOS denied launch pending profile trust/security verification. Next: user trusts own
+developer profile, verifies launch/sign-in/navigation on8087, then evaluate OCR integration.
+No OCR is installed. Phase8 development review is closed; Phase9 not started.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
