@@ -166,7 +166,7 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
-**Phase 6 reviewed receipt import connected/deployed (16 October); iPhone checks pending.** Real-account development OCR review now reaches household duplicate Skip/Add Separately choices and explicit atomic import. Confirmed fields/key are saved in account/branch-scoped SecureStore before sending; restart restores an immutable explicit retry, with sign-out cleanup and no saved photos/raw OCR. Both TypeScript/build, root227/227, live mobile-controller2/2 with fixture cleanup and all-platform/36-route exports pass; Doctor20/21 retains five patches. Preview Ready, health200/tokenless receipt endpoints401; ignored API URL updated with Auth preserved. See [mobile receipt report](docs/Phase_6_Mobile_Receipt_Import.md). Next: numbered import/restart/duplicate phone checks. Barcode/normal scanner integration and wider native QA remain; no Phase9.
+**Phase 6 core receipt import/restart passed iPhone checks by user report (16 October).** Real-account development OCR review now reaches household duplicate Skip/Add Separately choices and explicit atomic import. Confirmed fields/key are saved in account/branch-scoped SecureStore before sending; restart restores an immutable explicit retry, with sign-out cleanup and no saved photos/raw OCR. Both TypeScript/build, root227/227, live mobile-controller2/2 with fixture cleanup and all-platform/36-route exports pass; Doctor20/21 retains five patches. Preview Ready, health200/tokenless receipt endpoints401; ignored API URL updated with Auth preserved. See [mobile receipt report](docs/Phase_6_Mobile_Receipt_Import.md). User answered “All checks passed” to the 15-step core checklist: Cancel, persisted paused retry/restart, explicit import, exact known/unknown values and single purchases after restart. This is user-reported evidence, not direct observation. Next: duplicate-choice and sign-out-cleanup phone checks. Barcode/normal scanner integration and wider native QA remain; no Phase9.
 
 **Phase 6 atomic receipt-import backend verified locally (16 October); mobile connection pending.** Added protected bounded receipt duplicate-review/import endpoints using the existing schema. One Serializable transaction records receipt/items/CREATED snapshots; unchanged retries and concurrent confirmations create no duplicates, changed payloads conflict, and failures roll back the haul. Both TypeScript/build, root215/215, backend125+1 regression tests, health1/1 and live8+1 capacity cases with fixture cleanup pass. Existing backend lint is unavailable; no mobile/runtime environment, deployment or user-grocery change. See [import backend report](docs/Phase_6_Receipt_Import_Backend.md). Next: phone confirmation/duplicate UI with a durable frozen retry record, then development deployment and iPhone checks. Receipt Save is not connected yet; barcode/native QA remain, no Phase9.
 
@@ -297,12 +297,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 6 — mobile receipt import deployed, iPhone acceptance pending
+### Current phase: Phase 6 — core receipt import passed by user report
 
 See docs/Phase_6_Mobile_Receipt_Import.md. Both TypeScript/build, root227, live controller2/2
 with cleanup and export36 pass. Doctor20/21 retains five patches. Development Preview Ready,
-health200/tokenless receipt endpoints401; no production/Auth change. Next: numbered iPhone
-import/restart/duplicates/sign-out checks. Normal scanner entry/presets, barcode and broader
+health200/tokenless receipt endpoints401; no production/Auth change. Core import/restart passed
+by user report. Next: numbered duplicate-choice and sign-out-cleanup iPhone checks. Normal scanner entry/presets, barcode and broader
 native QA remain. Phase8 development review closed; Phase9 not started.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
