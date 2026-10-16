@@ -960,6 +960,8 @@ Phase 5 has not started.
 
 ## Phase 8 — Waste analytics and data integrity
 
+**Phase 8 started — first monthly summary backend slice tested locally (16 October).** Added authenticated GET /api/v1/analytics/summary with strict optional household month, grouped immutable event snapshots and latest-effective-outcome/Undo rules. Purchase/estimate/unknown values and unconfirmed outcomes remain separate; exact paise strings and snapshot expiry-day classification avoid invented savings/partial quantities. Both TypeScript/build, root189/189, backend107/107, health1/1 and read-only synthetic Neon SQL4/4 pass. No application records read/written by integration fixtures, schema/dependency/environment/deploy or mobile UI changes. Existing Doctor/lint/native QA gaps remain. See [monthly summary report](Phase_8_Monthly_Summary.md). Next: monthly series/previous-month comparison, then supplied Analytics/Insights UI connection. Phase6 deferred; Phase9 unstarted.
+
 **Goal:** Show understandable household costs without pretending estimates are exact.
 
 ### Metric definitions

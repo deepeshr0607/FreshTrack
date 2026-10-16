@@ -3,6 +3,24 @@ export interface ApiSuccess<T> { data: T }
 export interface ApiFailure { error: { code: string; message: string; requestId: string } }
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 export interface ApiIdentity { id: string; email: string; name: string }
+export interface AnalyticsAmount {
+  count: number;
+  purchaseCount: number;
+  /** Exact integer paise strings; unknown costs are excluded, estimates remain separate. */
+  purchaseCostMinor: string;
+  estimatedCount: number;
+  estimatedCostMinor: string;
+  unknownCount: number;
+}
+export interface AnalyticsSummary {
+  month: string; timezone: string; currencyCode: 'INR'; asOf: string;
+  basis: 'LATEST_EFFECTIVE_OUTCOME';
+  wasted: AnalyticsAmount;
+  consumedBeforeOrOnExpiry: AnalyticsAmount;
+  consumedAfterExpiry: AnalyticsAmount;
+  /** Assumed outcomes and SYSTEM-sourced outcomes never enter confirmed totals. */
+  unconfirmed: AnalyticsAmount;
+}
 export interface HouseholdDto {
   id: string;
   name: string;

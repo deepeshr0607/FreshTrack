@@ -16,6 +16,8 @@ import { healthRouter } from './routes/health';
 import { createAuthRouter } from './routes/auth';
 import { createHouseholdRouter } from './routes/households';
 import { createChefRouter } from './routes/chef';
+import { createAnalyticsRouter } from './routes/analytics';
+import type { AnalyticsService } from './services/analytics';
 import type { ChefSuggestionsService } from './services/chefSuggestions';
 import type { ChefService } from './services/chef';
 import { createPantryRouter } from './routes/pantry';
@@ -27,7 +29,7 @@ import { createIdentityVerifier, type VerifyIdentity } from './services/auth';
 
 // ── App factory ──────────────────────────────────────────────────────────────
 
-export function createApp(options: { verifyIdentity?: VerifyIdentity; householdService?: HouseholdService; pantryService?: PantryService; chefService?: ChefService; chefSuggestionsService?: ChefSuggestionsService } = {}): express.Application {
+export function createApp(options: { verifyIdentity?: VerifyIdentity; householdService?: HouseholdService; pantryService?: PantryService; chefService?: ChefService; chefSuggestionsService?: ChefSuggestionsService; analyticsService?: AnalyticsService } = {}): express.Application {
   const app = express();
   const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '').split(',').map((o) => o.trim()).filter(Boolean);
 
@@ -81,6 +83,7 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity; householdS
   app.use('/api/v1', createHouseholdRouter(verifyIdentity, options.householdService));
   app.use('/api/v1', createPantryRouter(verifyIdentity, options.pantryService));
   app.use('/api/v1', createChefRouter(verifyIdentity, options.chefService, options.chefSuggestionsService));
+  app.use('/api/v1', createAnalyticsRouter(verifyIdentity, options.analyticsService));
 
   // ── 404 handler ──────────────────────────────────────────────────────────
   app.use((req: Request, res: Response) => {
