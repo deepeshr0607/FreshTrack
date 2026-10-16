@@ -26,6 +26,7 @@ export interface AnalyticsSeries {
   months: (AnalyticsSummary & { period: 'COMPLETE' | 'MONTH_TO_DATE' | 'FUTURE' })[];
   /** Selected-month outcome-time categories, from the same snapshot as monthly totals. */
   categories: AnalyticsCategory[];
+  usedBeforeExpiry: { total: number; nameBasis: 'CURRENT_PANTRY_NAME'; items: AnalyticsUsedItem[] };
   comparison: {
     basis: 'PURCHASE_VALUES_ONLY';
     period: 'COMPLETE_PERIODS' | 'MONTH_TO_DATE' | 'FUTURE_PERIOD';
@@ -34,6 +35,11 @@ export interface AnalyticsSeries {
   };
 }
 export type AnalyticsCategory = Pick<AnalyticsSummary, 'wasted' | 'consumedBeforeOrOnExpiry' | 'consumedAfterExpiry' | 'unconfirmed'> & { category: PantryCategory };
+export interface AnalyticsUsedItem {
+  eventId: string; pantryItemId: string; name: string; category: PantryCategory;
+  occurredAt: string; expiresOn: string; outcomeTimezone: string;
+  currencyCode: 'INR'; totalCostMinor: number | null; costSource: CostSource; reviewable: boolean;
+}
 export interface HouseholdDto {
   id: string;
   name: string;

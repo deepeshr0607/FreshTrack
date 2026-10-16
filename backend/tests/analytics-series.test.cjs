@@ -10,7 +10,7 @@ const now = () => new Date('2026-09-30T18:30:00Z');
 const group = (month, bucket, amount, provenance = 'PURCHASE') => ({ month, category: 'OTHER', bucket, amount, provenance, currency: 'INR', count: '1' });
 function fixture(groups = [], membership = { householdId: '11111111-1111-4111-8111-111111111111', household: { timezone: 'Asia/Kolkata', currencyCode: 'INR' } }) {
   const calls = { queries: 0 };
-  const db = { $transaction: async (run, options) => { calls.options = options; return run({ householdMember: { findUnique: async args => { calls.member = args; return membership; } }, $queryRaw: async sql => { calls.queries++; calls.sql = sql; return groups; } }); } };
+  const db = { $transaction: async (run, options) => { calls.options = options; return run({ householdMember: { findUnique: async args => { calls.member = args; return membership; } }, $queryRaw: async sql => { calls.queries++; calls.sql ??= sql; return calls.queries === 1 ? groups : []; } }); } };
   return { db, calls };
 }
 test('series calendar windows span years/leap months and enforce bounded counts without date rollover', () => {
@@ -36,12 +36,12 @@ test('comparison uses signed exact purchase deltas only, leaving estimates/unkno
   assert.equal(result.months[1].unconfirmed.count, 1);
   for (const bad of [{ ...rows[0], month: '2025-01' }, { ...rows[0], month: undefined }]) assert.throws(() => analyticsSeries([bad], ['2026-09', '2026-10'], 'UTC', 'now', '2026-10'));
 });
-test('series reads one scoped coherent aggregate, with household month default and six ascending points', async () => {
+test('series reads scoped aggregates and individual entries in one coherent transaction, with household month default and six ascending points', async () => {
   const { db, calls } = fixture([group('2026-09', 'wasted', '6050')]);
   const result = await createAnalyticsService(db, now).series(identity);
   assert.equal(result.month, '2026-10'); assert.equal(result.previousMonth, '2026-09'); assert.equal(result.months.length, 6);
   assert.equal(result.months[0].month, '2026-05'); assert.equal(result.months[5].period, 'MONTH_TO_DATE'); assert.equal(result.comparison.wastedPurchaseDeltaMinor, '-6050');
-  assert.equal(calls.queries, 1); assert.equal(calls.options.isolationLevel, 'RepeatableRead'); assert.deepEqual(calls.member.where, { authSubject: identity.id });
+  assert.equal(calls.queries, 2); assert.equal(calls.options.isolationLevel, 'RepeatableRead'); assert.deepEqual(calls.member.where, { authSubject: identity.id });
   for (const value of ['series-fixture', '11111111-1111-4111-8111-111111111111', '2026-05', '2026-10']) assert.ok(calls.sql.values.includes(value));
   assert.equal(calls.sql.sql.includes(identity.id), false);
 });

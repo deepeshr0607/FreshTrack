@@ -7,5 +7,6 @@ export function analyticsFixture() {
   months[5].wasted = { ...emptyAmount(), count: 2, purchaseCount: 1, purchaseCostMinor: '6050', unknownCount: 1 };
   months[5].consumedBeforeOrOnExpiry = { ...emptyAmount(), count: 1, purchaseCount: 1, purchaseCostMinor: '7200' };
   return { month: '2026-10', previousMonth: '2026-09', timezone, asOf, currencyCode: 'INR', months, categories: ['PRODUCE', 'DAIRY', 'BAKERY', 'SNACKS', 'MEAT', 'FROZEN', 'OTHER'].map(category => ({ category, wasted: category === 'PRODUCE' ? structuredClone(months[5].wasted) : emptyAmount(), consumedBeforeOrOnExpiry: category === 'DAIRY' ? structuredClone(months[5].consumedBeforeOrOnExpiry) : emptyAmount(), consumedAfterExpiry: emptyAmount(), unconfirmed: emptyAmount() })),
+    usedBeforeExpiry: { total: 1, nameBasis: 'CURRENT_PANTRY_NAME', items: [{ eventId: '11111111-1111-4111-8111-111111111111', pantryItemId: '22222222-2222-4222-8222-222222222222', name: 'Fixture Milk', category: 'DAIRY', occurredAt: '2026-10-15T12:00:00.000Z', expiresOn: '2026-10-16', outcomeTimezone: timezone, currencyCode: 'INR', totalCostMinor: 7200, costSource: 'PURCHASE', reviewable: true }] },
     comparison: { basis: 'PURCHASE_VALUES_ONLY', period: 'MONTH_TO_DATE', wastedPurchaseDeltaMinor: '5050', consumedPurchaseDeltaMinor: '7200' } };
 }

@@ -10,6 +10,7 @@ function createAnalyticsHttpsQuery(transport = fetch) {
     if (!/^WITH "HouseholdMember" AS/.test(sql.text.trim()) || !sql.text.includes('"PantryItemEvent" (id,')) {
       throw Error('SYNTHETIC_ANALYTICS_QUERY_REQUIRED');
     }
+    if (sql.text.includes('JOIN "PantryItem"') && !sql.text.includes('"PantryItem" (id,')) throw Error('SYNTHETIC_ANALYTICS_QUERY_REQUIRED');
     try {
       const response = await transport(endpoint, { method: 'POST', redirect: 'error', credentials: 'omit',
         headers: { 'Content-Type': 'application/json', 'Neon-Connection-String': connection },

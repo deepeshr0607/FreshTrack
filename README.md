@@ -191,13 +191,15 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
 | 6 | Barcode scan + receipt OCR | ⏸ Deferred by user |
-| 7 | AI Chef (Spoonacular integration) | 🟡 Core mobile/hosted flow passed user iPhone checks; filters/ranking/review remain |
-| 8 | Waste analytics and data integrity | ⬜ Not started |
+| 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
+| 8 | Waste analytics and data integrity | 🟡 Implemented slices deployed; category/individual phone checks and final review pending |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
 
 ---
 
 ## Project Status
+
+**Phase 8 individual confirmed-use entries connected/deployed (16 October); phone verification pending.** Financial Analytics now lists the latest20 confirmed uses on/before expiry, with current Pantry names, immutable outcome category/value/expiry, explicit unknown/estimated/zero prices and protected detail links. Aggregate and list reads share a scoped RepeatableRead snapshot; Undo and capped coverage are validated. Both TypeScript/build, root206/206, backend122/122, health1/1, HTTPS SQL11/11 and all-platform/35-route exports pass. Development Preview Ready, health200/tokenless analytics401; ignored API URL updated, Auth preserved. See [individual-entry report](docs/Phase_8_Individual_Entries.md). Category and individual phone acceptance remain pending, followed by failure/native/accessibility QA and final Phase8 review. Existing local Prisma/Doctor/lint gaps remain; Phase6 deferred, no Phase9.
 
 **Phase 8 category breakdown connected/deployed (16 October); iPhone verification pending.** Series now includes seven selected-month outcome-time category partitions from the same scoped snapshot as totals. Insights shows consumed categories/View All; Financial shows confirmed waste/segmented shares. Estimates, unknowns, zero and unconfirmed outcomes remain separate; exact category sums are validated against headers. Both TypeScript/build, root202/202, backend118/118, health1/1, HTTPS SQL8/8 and final all-platform/35-route exports pass. Preview Ready, health200/tokenless analytics401; ignored public API URL updated, Auth preserved. Doctor20/21/lint/native/local Prisma gaps remain. See [category report](docs/Phase_8_Category_Breakdown.md). Next: numbered category phone checks, then individual rescue data and final review. Phase6 deferred; no Phase9.
 
