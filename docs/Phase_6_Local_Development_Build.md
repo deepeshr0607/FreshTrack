@@ -202,3 +202,16 @@ Server log: /private/tmp/freshtrack-native-metro-restart.log. Current port8087/L
 Exact next step: user checks FreshTrack loads, then verifies real sign-in, Pantry and Settings.
 OCR remains uninstalled. No runtime code changed; prior209 tests/exports remain prior evidence,
 not rerun in this server restart. No Phase9 work.
+
+## iPhone baseline acceptance — 16 October
+
+User answered “Loads and all checks pass” to the post-recovery checklist: FreshTrack screen loads,
+existing-account sign-in works, Pantry opens, and Settings shows the correct email. Recorded as
+user report, not direct agent observation or independent screenshots. This supersedes the pending
+baseline phone check above. Native build/install/signature and server checks are separate evidence.
+No broader notification, restart, Android, OCR or release acceptance is implied.
+
+Documentation-only checkpoint; prior209 tests, both TypeScript checks, native build and exports
+remain recorded results, not rerun here. Exact next implementation step is a bounded on-device OCR
+compatibility/proof-of-concept slice for SDK57. Full receipt capture/parser/review/import and barcode
+work remain. No Google billing setup or OCR credentials are needed for the proposed local SDK.

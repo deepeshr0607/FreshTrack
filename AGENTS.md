@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 6 local development app baseline passed by user report (16 October).** User answered “Loads and all checks pass” after the restarted launcher checklist covering app loading, existing-account sign-in, Pantry and Settings/email. This is user-reported evidence, not direct screen observation. Prior native build/signature/install, manifest/bundle200 and209 tests remain recorded evidence. No code/runtime/environment change in this acceptance update. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: select and verify SDK57-compatible on-device OCR, then implement capture/parser/review/import within Phase6. OCR and barcode integration are not complete; Phase9 not started.
+
 **Phase 6 development launcher recovered (16 October).** User reported a loading error; Metro had cached the old renamed plugin path. Restarted only port8087 with current configuration. The iOS manifest now returns200 with FreshTrack Dev and a launch asset; devicectl successfully launched the installed app using its8087 URL. Visible UI/sign-in/Pantry/Settings still require user confirmation. No source/dependency/native rebuild or account change. See [local build report](docs/Phase_6_Local_Development_Build.md). Previous209 tests/exports remain prior evidence. Next: phone baseline confirmation, then OCR compatibility/integration; no Phase9.
 
 **Phase 6 local iPhone build compiled/signed/installed (16 October); phone launch pending.** Repaired the missing Apple WWDR G3 intermediate without trust overrides/private-key export. Local-only config removes unsupported APNs entitlement and quotes the generated bundle script; SDK-recommended Constants57.0.22 fixes its path quoting. Fresh Expo regeneration verifies both fixes. Xcode reports Build Succeeded/0errors/2warnings; codesign verification passes and the device lists FreshTrack Dev installed. Expo CLI exits1 at launch because iOS rejects the profile until user trust/security verification; successful app opening is not claimed. Both TypeScript checks, root209/209 and all-platform/35-route export pass; Metro iOS bundle200. Doctor20/21 has five existing patch recommendations. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: trust the developer profile on iPhone, open the local app on port8087 and verify baseline sign-in/navigation before OCR. ML Kit is not installed; Phase9 not started.
@@ -286,12 +288,11 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 6 — local app launch command passed, phone baseline pending
+### Current phase: Phase 6 — local app baseline passed by user report
 
-See docs/Phase_6_Local_Development_Build.md. Native build/signature/installation passed.
-Restarted stale Metro; iOS manifest200 and devicectl launch succeeded. User must confirm the
-visible app/sign-in/Pantry/Settings before OCR integration. No OCR installed; Phase9 not started.
-Phase8 development review is closed with its recorded QA limits.
+See docs/Phase_6_Local_Development_Build.md. User reports launch/sign-in/Pantry/Settings pass.
+Next: verify SDK57-compatible on-device OCR, then receipt capture/parser/review/import.
+No OCR installed yet. Phase8 development review is closed; Phase9 not started.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
