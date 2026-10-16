@@ -1,6 +1,7 @@
 # Phase 8 — real monthly Insights and Financial Analytics
 
-16 October 2026. Implemented and deployed to development Preview; iPhone acceptance pending.
+16 October 2026. Implemented and deployed to development Preview; the user subsequently reported
+“All checks passed” to the 13-step iPhone checklist. Remaining Phase8 work is listed below.
 
 ## What changed
 
@@ -98,3 +99,19 @@ After phone results: category/individual rescue data if retained in the supplied
 chart/reconciliation/edge-state QA, hosted failures/retry/account checks and final Phase8 review remain.
 Local Prisma connectivity, broader Android/signed-build/accessibility QA and older maintenance gaps
 remain open. Phase6 remains deferred; Phase9 has not started.
+
+## iPhone report recorded — 16 October
+
+User answered “All checks passed” to the numbered 13-step checklist: real account month/baselines,
+three named development samples, active-item exclusion, confirmed Used/Wasted exact value/unknown
+changes, chart selection, Undo cancel/restore, reconfirmation without duplicate costs, restart,
+previous/next/current/invalid/future month controls, report values/share cancellation and sign-out/
+Demo separation. This is a broad user report, not direct observation; per-step baselines/counts and
+screenshots were not supplied. It is separate from automated SQL assertions.
+
+The pending phone status and checklist above are superseded by this report. Both TypeScript checks
+were rerun successfully for this documentation update; regression/export suites were not repeated.
+No runtime, dependency, schema, environment or deployment change was made. Phase8 category and
+individual-rescue data, broader edge/native QA and final review remain. Full Phase8 completion is
+not claimed. Next implementation slice: scoped event-backed category breakdown, preserving the
+same price provenance and effective-outcome rules. Phase6 remains deferred; Phase9 unstarted.
