@@ -25,11 +25,13 @@ import ReceiptReview from '@/features/scanner/ReceiptReview';
 import ScreenHeader from '@/components/ScreenHeader';
 import BarcodeReview from '@/features/scanner/BarcodeReview';
 import PrimaryButton from '@/components/PrimaryButton';
+import { useAuth } from '@/context/AuthContext';
 import { Colors, Elevation, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 
 type ScanMode = 'none' | 'barcode' | 'receipt';
 
 export default function ScannerScreen() {
+  const { state: auth } = useAuth();
   const [mode, setMode] = useState<ScanMode>('none');
   const { permission: permissionPreview } = useLocalSearchParams<{ permission?: string }>();
   const [permission, setPermission] = useState<MockCameraPermission>(() => initialMockCameraPermission(permissionPreview));
@@ -58,6 +60,7 @@ export default function ScannerScreen() {
           </Text>
         </View>
         <PrimaryButton label="Enter Item Manually" variant="ghost" onPress={() => router.push('/pantry/add')} />
+        {__DEV__ && auth.user && !auth.demo && <PrimaryButton label="Test On-device Receipt OCR" onPress={() => router.push('/scanner/ocr-check')} />}
 
         {/* Mode selector */}
         {mode === 'none' && (

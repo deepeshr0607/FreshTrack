@@ -15,7 +15,8 @@ FreshTrack is a cross-platform mobile application that reduces household food wa
 - Backend: Node.js + Express + TypeScript, deployed to Vercel
 - Database: Neon PostgreSQL via Prisma ORM
 - Auth: Neon Auth (Managed Better Auth) — must be verified for Expo/React Native OTP flow before using
-- Third-party APIs (server-side only): Google Cloud Vision (OCR), Spoonacular (recipes)
+- Third-party APIs (server-side only): Spoonacular (recipes); Cloud Vision is unconfigured.
+- On-device receipt OCR proof: Apple Vision/iOS, ML Kit/Android (user-selected free direction).
 
 ---
 
@@ -165,6 +166,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 6 on-device OCR proof built/installed (16 October); phone verification pending.** Development-only Scanner check captures/selects a bounded local image, previews it and explicitly reads raw text with Apple Vision/iOS or ML Kit/Android through expo-text-extractor2.0.0. No upload, parsing or Pantry import. Generation/account guards, retry/cancel/empty states and best-effort cache cleanup are implemented. Both TypeScript checks, root212/212 and all-platform/36-route export pass; Doctor20/21 retains five patch recommendations. Native pods113, iOS build/sign/install/launch and manifest200 pass. Actual recognition/permissions require the numbered iPhone check. See [OCR proof report](docs/Phase_6_On_Device_OCR_Proof.md). Next: record phone results, then deterministic receipt candidates/review/import. Barcode and broader native QA remain; no Phase9.
+
 **Phase 6 local development app baseline passed by user report (16 October).** User answered “Loads and all checks pass” after the restarted launcher checklist covering app loading, existing-account sign-in, Pantry and Settings/email. This is user-reported evidence, not direct screen observation. Prior native build/signature/install, manifest/bundle200 and209 tests remain recorded evidence. No code/runtime/environment change in this acceptance update. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: select and verify SDK57-compatible on-device OCR, then implement capture/parser/review/import within Phase6. OCR and barcode integration are not complete; Phase9 not started.
 
 **Phase 6 development launcher recovered (16 October).** User reported a loading error; Metro had cached the old renamed plugin path. Restarted only port8087 with current configuration. The iOS manifest now returns200 with FreshTrack Dev and a launch asset; devicectl successfully launched the installed app using its8087 URL. Visible UI/sign-in/Pantry/Settings still require user confirmation. No source/dependency/native rebuild or account change. See [local build report](docs/Phase_6_Local_Development_Build.md). Previous209 tests/exports remain prior evidence. Next: phone baseline confirmation, then OCR compatibility/integration; no Phase9.
@@ -288,11 +291,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 6 — local app baseline passed by user report
+### Current phase: Phase 6 — OCR proof installed, iPhone verification pending
 
-See docs/Phase_6_Local_Development_Build.md. User reports launch/sign-in/Pantry/Settings pass.
-Next: verify SDK57-compatible on-device OCR, then receipt capture/parser/review/import.
-No OCR installed yet. Phase8 development review is closed; Phase9 not started.
+See docs/Phase_6_On_Device_OCR_Proof.md. Root212 tests/TypeScript, export36routes and native
+iOS build/sign/install/launch pass; actual OCR recognition/permissions await user phone checks.
+Next: verify proof, then deterministic receipt candidates/review/import. No real imports or
+barcode implementation yet. Phase8 development review closed; Phase9 not started.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 

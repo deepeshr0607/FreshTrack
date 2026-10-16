@@ -36,7 +36,12 @@
       ],
       "expo-font",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      ["expo-image-picker", {
+        "cameraPermission": "Allow FreshTrack to photograph grocery receipts for on-device text recognition.",
+        "photosPermission": "Allow FreshTrack to read a receipt photo you select.",
+        "microphonePermission": false
+      }]
     ],
     "experiments": {
       "typedRoutes": true

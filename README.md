@@ -10,6 +10,7 @@ FreshTrack is a cross-platform mobile app (iOS + Android) that tracks grocery ex
 
 ```
 React Native / Expo app (mobile)
+    ├── On-device receipt OCR proof (Apple Vision / Android ML Kit)
     └── HTTPS API calls only
             ↓
 Node.js + Express API (backend/)
@@ -17,7 +18,6 @@ Node.js + Express API (backend/)
     └── Neon PostgreSQL
 
 Third-party APIs (server-side only):
-    ├── Google Cloud Vision  — receipt OCR
     └── Spoonacular          — recipe suggestions
 ```
 
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 6 on-device OCR proof built/installed (16 October); phone verification pending.** Development-only Scanner check captures/selects a bounded local image, previews it and explicitly reads raw text with Apple Vision/iOS or ML Kit/Android through expo-text-extractor2.0.0. No upload, parsing or Pantry import. Generation/account guards, retry/cancel/empty states and best-effort cache cleanup are implemented. Both TypeScript checks, root212/212 and all-platform/36-route export pass; Doctor20/21 retains five patch recommendations. Native pods113, iOS build/sign/install/launch and manifest200 pass. Actual recognition/permissions require the numbered iPhone check. See [OCR proof report](docs/Phase_6_On_Device_OCR_Proof.md). Next: record phone results, then deterministic receipt candidates/review/import. Barcode and broader native QA remain; no Phase9.
 
 **Phase 6 local development app baseline passed by user report (16 October).** User answered “Loads and all checks pass” after the restarted launcher checklist covering app loading, existing-account sign-in, Pantry and Settings/email. This is user-reported evidence, not direct screen observation. Prior native build/signature/install, manifest/bundle200 and209 tests remain recorded evidence. No code/runtime/environment change in this acceptance update. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: select and verify SDK57-compatible on-device OCR, then implement capture/parser/review/import within Phase6. OCR and barcode integration are not complete; Phase9 not started.
 
