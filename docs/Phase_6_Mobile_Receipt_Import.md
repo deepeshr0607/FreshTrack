@@ -1,6 +1,6 @@
 # Phase 6 — reviewed receipt import on mobile
 
-16 October 2026. Core import/restart passed by user report; duplicate and sign-out phone checks pending.
+16 October 2026. Core import/restart and duplicate choices passed by user report; sign-out phone check pending.
 This follows the independently tested atomic receipt backend in Phase_6_Receipt_Import_Backend.md.
 
 ## Behavior and boundaries
@@ -91,7 +91,8 @@ restarted after verifying its process/cwd; unrelated servers were not stopped.
 | Development Preview | Ready; health200, tokenless receipt-review/import401 |
 | Actual iOS manifest and development bundle | HTTP200, FreshTrack Dev; bundle contains new public API URL |
 | iPhone core confirmation/cancel/paused retry/restart/exact values | User reported “All checks passed” to the 15-step checklist; not directly observed |
-| iPhone duplicate choices/sign-out retry cleanup | Pending |
+| iPhone duplicate choices | User reported “All checks passed” to the 12-step checklist; not directly observed |
+| iPhone sign-out retry cleanup | Pending |
 | Android/native accessibility/real transport-loss UI | Not verified |
 
 The new tests cover field privacy/unknown/free values; isolated chunked persistence; partial-write
@@ -143,8 +144,8 @@ Launcher: http://172.20.10.2:8087. No authenticated hosted receipt writes were m
 
 ## Next step
 
-Core two-row import/Cancel/paused-retry/restart/value checks passed by user report. Next verify
-household duplicate Skip/Add Separately and sign-out retry cleanup on iPhone. Keep per-check evidence distinct. Normal scanner entry integration,
+Core import/restart and household duplicate-choice checks passed by user report. Next verify
+sign-out retry cleanup on iPhone. Keep per-check evidence distinct. Normal scanner entry integration,
 expiry presets during receipt review, barcode scanning/catalog decision and broader native/failure
 QA remain incomplete. Phase6 is not complete; Phase9 has not started.
 
@@ -159,3 +160,13 @@ observation, per-step screenshots or receipt contents. Duplicate-choice and sign
 explicitly deferred to separate checklists; this result does not mark those passed.
 No runtime/environment/dependency/data change by the agent in this documentation update. Prior
 automated results were not rerun; git diff --check passed.
+
+## Duplicate-choice iPhone acceptance — 16 October 2026
+
+User answered “All checks passed” to the 12-step duplicate checklist: reviewed the same Milk/Bread
+labels/category/expiry, saw original purchases, canceled without importing or losing reviewed values,
+chose Skip Bread and Add Milk Separately, confirmed one import and checked exactly three purchases
+after restart (original Milk0.5l/₹60.50, new Milk2l/₹80.00, original Bread1loaf/unknown). This is user
+report, not direct observation or per-step numeric evidence. Sign-out retry cleanup remains pending.
+Documentation-only update; no source/runtime/environment change or repeated automated checks.
+git diff --check passed.
