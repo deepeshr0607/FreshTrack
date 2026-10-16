@@ -54,10 +54,22 @@ repeat-safe idempotency, duplicate review and exact replay/failure tests before 
 - `git diff --check`: passed. Source review found no added receipt logging, secrets or network calls.
 - No native rebuild required: only TypeScript/React UI changed. Android/native accessibility and
   receipt-layout accuracy are not verified. Existing lint setup gaps remain; no lint pass claimed.
-- Phone review checklist: pending. Previous OCR-only phone acceptance does not cover this new UI.
+- Phone review checklist: user answered “All passed” to the clarified 19-step checklist.
+  This is user-reported evidence, not direct screen observation or receipt-accuracy measurement.
 
 ## Next step
 
-Verify the numbered candidate/edit/preview/reset iPhone checklist, then implement protected atomic,
+Implement protected atomic,
 idempotent receipt bulk import with server household duplicate review and confirmed fields only.
 Barcode integration and wider native/failure QA remain incomplete. Phase 9 has not started.
+
+## iPhone acceptance — 16 October 2026
+
+After requesting clearer instructions, the user answered “All passed” to the revised 19-step
+checklist: capture/read/navigation to Haul Detected, Add Missing, zero-quantity validation and
+correction, saved review, editing cancellation, second grocery with unknown value, exact two-row
+preview, exclusion/one-row preview, clear and unchanged Pantry. The revised checklist did not
+cover unassigned-line recovery or row deletion; those controls remain without specific phone
+acceptance. No per-step screenshots, receipt contents or direct observation were supplied.
+No runtime, dependency, environment or application-data change in this documentation checkpoint.
+Previous automated checks above were not rerun; git diff --check passed for this update.
