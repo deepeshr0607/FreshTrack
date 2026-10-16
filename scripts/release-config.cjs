@@ -27,7 +27,19 @@ function applyReleaseConfig(config, env) {
     throw new Error('Release configuration: APP_EAS_PROJECT_ID must be the EAS project UUID.');
   }
   const extra = projectId ? { ...config.extra, eas: { ...config.extra?.eas, projectId } } : config.extra;
-  if (variant === 'development') return projectId ? { ...config, extra } : config;
+  if (variant === 'development') {
+    const localIdentifier = env.APP_LOCAL_NATIVE_IDENTIFIER?.trim();
+    if (localIdentifier) {
+      if (!/^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*){2,}$/.test(localIdentifier)
+        || /yourcompany|example|placeholder/i.test(localIdentifier)) {
+        throw new Error('Local build configuration: APP_LOCAL_NATIVE_IDENTIFIER must be a valid reverse-domain identifier.');
+      }
+      return { ...config, extra, name: `${config.name} Dev`, scheme: 'freshtrack-dev',
+        ios: { ...config.ios, bundleIdentifier: localIdentifier },
+        android: { ...config.android, package: localIdentifier } };
+    }
+    return projectId ? { ...config, extra } : config;
+  }
 
   const identifier = required(env, 'APP_NATIVE_IDENTIFIER');
   if (!/^[a-zA-Z][a-zA-Z0-9]*(\.[a-zA-Z][a-zA-Z0-9]*){2,}$/.test(identifier)

@@ -190,7 +190,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
-| 6 | Barcode scan + receipt OCR | ⏸ Deferred by user |
+| 6 | Barcode scan + receipt OCR | 🟡 Resumed: local device-build preparation; OCR not integrated |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 6 resumed — local development-build preparation (16 October).** User selected the free on-device OCR direction; ML Kit remains proposed/unverified and no cloud OCR is configured. Xcode26.6 is selected; prior iPhone diagnostics report iOS26.6.1, Developer Mode and development services available. Installed expo-dev-client~57.0.20 and added an optional local-only native identity; Expo generated ignored iOS files. Both TypeScript checks, root207/207 and all-platform/35-route exports pass. Doctor19/21: CocoaPods absent plus existing six patch mismatches. Native dependency installation, signed device build and OCR remain incomplete. See [local build report](docs/Phase_6_Local_Development_Build.md). Next: resolve CocoaPods, then verify a baseline device build before OCR integration. Phase8 development review is closed; Phase9 not started.
 
 **Phase 8 final development review complete (16 October).** Fresh checks pass: mobile/backend TypeScript and backend build, root206/206, backend122/122, health1/1, read-only HTTPS SQL11/11 and all-platform/35-route exports. Hosted health200/tokenless analytics401 pass. User explicitly skipped category and individual-entry phone checks; they remain unverified, not passed. Earlier core monthly iPhone checks passed by user report. Existing Doctor20/21, lint/local Prisma and broader native/accessibility/performance gaps remain. Native bar charts are a documented alternative to the plan's chart libraries; unsupported impact metrics remain unavailable. See [final review](docs/Phase_8_Final_Review.md). Phase8 development checkpoint is closed with these limitations. Next: Phase9 prerequisites/first incomplete slice only when authorized; Phase6 deferred. No next-phase work started.
 

@@ -13,6 +13,18 @@ const env = {
 test('Expo Go configuration stays unchanged without release variables', () => {
   assert.equal(applyReleaseConfig(config, {}), config);
 });
+test('local native identity needs no EAS account and does not bypass release guards', () => {
+  const local = applyReleaseConfig(config, { APP_LOCAL_NATIVE_IDENTIFIER: 'com.fixture.freshtrack.dev' });
+  assert.equal(local.name, 'FreshTrack Dev');
+  assert.equal(local.scheme, 'freshtrack-dev');
+  assert.equal(local.ios.bundleIdentifier, 'com.fixture.freshtrack.dev');
+  assert.equal(local.android.package, local.ios.bundleIdentifier);
+  assert.deepEqual(local.plugins, config.plugins);
+  for (const id of ['bad', 'com.example.app', 'com.fixture.bad-id']) {
+    assert.throws(() => applyReleaseConfig(config, { APP_LOCAL_NATIVE_IDENTIFIER: id }));
+  }
+  assert.throws(() => applyReleaseConfig(config, { APP_VARIANT: 'production', APP_LOCAL_NATIVE_IDENTIFIER: 'com.fixture.freshtrack.dev' }));
+});
 test('production preserves SDK/plugins/assets and adds matching native identity and EAS project', () => {
   const release = applyReleaseConfig(config, env);
   assert.equal(release.ios.bundleIdentifier, env.APP_NATIVE_IDENTIFIER);
