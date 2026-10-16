@@ -46,7 +46,7 @@ The authenticated app has four primary tabs: Pantry, Scanner, AI Chef, and Analy
 ### Tab 2 — Scanner
 - Provide entry options for Scan Barcode and Scan Full Receipt.
 - Use the device camera to scan a barcode or capture a receipt image.
-- For receipts, upload the image securely to the backend; the backend calls Google Cloud Vision OCR and processes the returned text.
+- Phase6 decision (16 October): recognize receipt text on-device using Apple Vision on iOS / ML Kit on Android, avoiding cloud OCR billing. Parse/review locally; the backend validates reviewed imports. The first slice is a development proof, not completed ingestion.
 - Clean retailer abbreviations and messy line-item descriptions using deterministic normalization and fuzzy matching (for example, a retailer abbreviation such as `MKL LOPFT 1L` may map to `Low-Fat Milk`). Treat inferred matches as suggestions, not guaranteed facts.
 - Estimate expiry dates using a local/backend freshness-preset dictionary for common foods (example defaults: milk = 7 days, spinach = 5 days); allow edits and prefer an explicitly printed package expiry date whenever available.
 - Show a review sheet with detected products, quantities/prices where available, proposed expiry dates, and confidence/uncertainty where useful. The user can edit the entries before tapping Add to Pantry.
@@ -115,17 +115,17 @@ The authenticated app has four primary tabs: Pantry, Scanner, AI Chef, and Analy
 - Do not recreate or directly modify provider-managed Neon Auth internal tables.
 
 ### Third-party APIs
-- Google Cloud Vision API for OCR, called only from the backend.
+- On-device OCR uses native SDKs. Google Cloud Vision is not configured; any future remote OCR provider must be server-side.
 - Spoonacular API for recipe matching, called only from the backend.
 
 ## 8. End-to-end system workflow
 
 ### Receipt ingestion
 1. User opens Scanner and captures a receipt image with the mobile camera.
-2. App uploads the image over HTTPS to a protected backend endpoint.
-3. The backend sends the image to Google Cloud Vision OCR.
-4. Server-side parsing normalizes text, finds likely item descriptions and prices, and matches them to known product/freshness rules.
-5. The backend returns suggested line items and expiry dates for user review.
+2. App normalizes the selected image and recognizes text on-device; no cloud OCR upload.
+3. Local/shared deterministic parsing proposes item lines, flags uncertainty and suggests freshness rules.
+4. User reviews and edits candidate names, quantities, values and dates; OCR is never treated as verified inventory.
+5. App submits only reviewed fields over authenticated HTTPS; backend validates fields, ownership, duplicates and import identity.
 6. After confirmation, the backend stores valid items in Neon PostgreSQL through Prisma.
 7. The app refreshes pantry state and schedules/reschedules local notifications.
 

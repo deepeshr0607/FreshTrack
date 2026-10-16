@@ -878,6 +878,8 @@ Phase 5 has not started.
 
 ## Phase 6 — Scanner: barcode and receipt OCR
 
+**Phase 6 on-device OCR proof built/installed (16 October); phone verification pending.** Development-only Scanner check captures/selects a bounded local image, previews it and explicitly reads raw text with Apple Vision/iOS or ML Kit/Android through expo-text-extractor2.0.0. No upload, parsing or Pantry import. Generation/account guards, retry/cancel/empty states and best-effort cache cleanup are implemented. Both TypeScript checks, root212/212 and all-platform/36-route export pass; Doctor20/21 retains five patch recommendations. Native pods113, iOS build/sign/install/launch and manifest200 pass. Actual recognition/permissions require the numbered iPhone check. See [OCR proof report](Phase_6_On_Device_OCR_Proof.md). Next: record phone results, then deterministic receipt candidates/review/import. Barcode and broader native QA remain; no Phase9.
+
 **Phase 6 local development app baseline passed by user report (16 October).** User answered “Loads and all checks pass” after the restarted launcher checklist covering app loading, existing-account sign-in, Pantry and Settings/email. This is user-reported evidence, not direct screen observation. Prior native build/signature/install, manifest/bundle200 and209 tests remain recorded evidence. No code/runtime/environment change in this acceptance update. See [local build report](Phase_6_Local_Development_Build.md). Next: select and verify SDK57-compatible on-device OCR, then implement capture/parser/review/import within Phase6. OCR and barcode integration are not complete; Phase9 not started.
 
 **Phase 6 development launcher recovered (16 October).** User reported a loading error; Metro had cached the old renamed plugin path. Restarted only port8087 with current configuration. The iOS manifest now returns200 with FreshTrack Dev and a launch asset; devicectl successfully launched the installed app using its8087 URL. Visible UI/sign-in/Pantry/Settings still require user confirmation. No source/dependency/native rebuild or account change. See [local build report](Phase_6_Local_Development_Build.md). Previous209 tests/exports remain prior evidence. Next: phone baseline confirmation, then OCR compatibility/integration; no Phase9.
@@ -899,6 +901,8 @@ Phase 5 has not started.
 5. Barcode scan must navigate to the same review form used by manual and receipt entry.
 
 ### B. Receipt image capture and OCR
+
+**16 October architecture update:** user chose free on-device OCR after Cloud Vision prepayment requirements. Apple Vision/iOS and ML Kit/Android replace the cloud extraction in tasks2–3 below; keep images/text local, parse/review locally and submit only reviewed fields to authenticated backend import. Cloud Vision steps below are the original design and are not current setup prerequisites. See [OCR proof](Phase_6_On_Device_OCR_Proof.md). No real ingestion acceptance is implied by the first diagnostic.
 
 1. Implement receipt camera capture, retake, cropping/rotation if practical, compression, preview, and upload progress.
 2. Send image bytes through authenticated HTTPS to the backend. Avoid unnecessarily embedding large base64 payloads in JSON; compress and enforce upload size/type limits. If receipts outgrow function payload limits, use temporary object storage with short-lived upload URLs.
