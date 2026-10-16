@@ -7,7 +7,7 @@ const { createApp } = require('../dist/app');
 const { AuthFailure } = require('../dist/services/auth');
 const identity = { id: 'series-fixture', email: 'fixture@example.test', name: 'Fixture' };
 const now = () => new Date('2026-09-30T18:30:00Z');
-const group = (month, bucket, amount, provenance = 'PURCHASE') => ({ month, bucket, amount, provenance, currency: 'INR', count: '1' });
+const group = (month, bucket, amount, provenance = 'PURCHASE') => ({ month, category: 'OTHER', bucket, amount, provenance, currency: 'INR', count: '1' });
 function fixture(groups = [], membership = { householdId: '11111111-1111-4111-8111-111111111111', household: { timezone: 'Asia/Kolkata', currencyCode: 'INR' } }) {
   const calls = { queries: 0 };
   const db = { $transaction: async (run, options) => { calls.options = options; return run({ householdMember: { findUnique: async args => { calls.member = args; return membership; } }, $queryRaw: async sql => { calls.queries++; calls.sql = sql; return groups; } }); } };
@@ -55,7 +55,7 @@ test('HTTP series rejects client identity, malformed counts, duplicated/nested s
   let calls = 0;
   const app = createApp({ verifyIdentity: async token => { if (token !== 'a.b.c') throw new AuthFailure(); return identity; }, analyticsService: { series: async (user, month, count) => { calls++; assert.equal(user.id, identity.id); return { month: month ?? 'default', count: count ?? 6 }; } } });
   assert.equal((await request(app).get('/api/v1/analytics/series')).status, 401);
-  for (const query of ['?months=1', '?months=13', '?months=2.5', '?months=02', '?months=', '?months=2&months=3', '?months[]=2', '?month=2026-10&month=2026-09', '?householdId=victim', '?timezone=UTC', '?month=2026-13']) {
+  for (const query of ['?months=1', '?months=13', '?months=2.5', '?months=02', '?months=', '?months=2&months=3', '?months[]=2', '?month=2026-10&month=2026-09', '?householdId=victim', '?category=PRODUCE', '?timezone=UTC', '?month=2026-13']) {
     assert.equal((await request(app).get('/api/v1/analytics/series' + query).set('Authorization', 'Bearer a.b.c')).status, 400);
   }
   assert.equal((await request(app).get('/api/v1/analytics/series').set('Authorization', 'Bearer a.b.c').send({ months: 2 })).status, 400); assert.equal(calls, 0);

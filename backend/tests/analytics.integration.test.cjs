@@ -14,16 +14,16 @@ const subject = 'freshtrack-dev-test:analytics:read-only';
 const asOf = new Date('2026-12-01T00:00:00Z');
 let sequence = 0;
 const event = (item, at, status, cost = 6050, options = {}) => ({ id: String(++sequence).padStart(5, '0'), item, at, status, cost,
-  household, previous: 'ACTIVE', type: 'STATUS_CHANGED', provenance: cost === null ? 'UNKNOWN' : 'PURCHASE', currency: 'INR', timezone: 'Asia/Kolkata', expiry: '2026-10-31', source: 'APP', ...options });
+  household, category: 'OTHER', previous: 'ACTIVE', type: 'STATUS_CHANGED', provenance: cost === null ? 'UNKNOWN' : 'PURCHASE', currency: 'INR', timezone: 'Asia/Kolkata', expiry: '2026-10-31', source: 'APP', ...options });
 async function read(rows, month = '2026-10', timezone = 'Asia/Kolkata', account = subject, count) {
   const months = count === undefined ? month : analyticsMonths(month, count);
   // CTEs shadow the application tables: exact production aggregate, synthetic VALUES only.
   // No application records are read, inserted, updated or deleted; no cleanup is required.
   const values = rows.map(r => Prisma.sql`(${r.id}::text, ${r.item}::text, ${r.household}::uuid, ${new Date(r.at)}::timestamptz,
     ${r.status}::text, ${r.previous}::text, ${r.type}::text, ${r.cost}::integer, ${r.provenance}::text,
-    ${r.currency}::text, ${r.timezone}::text, ${new Date(r.expiry + 'T00:00:00Z')}::date, ${r.source}::text)`);
+    ${r.currency}::text, ${r.timezone}::text, ${new Date(r.expiry + 'T00:00:00Z')}::date, ${r.source}::text, ${r.category}::text)`);
   const groups = await query(Prisma.sql`WITH "HouseholdMember" AS (SELECT ${household}::uuid AS "householdId", ${subject}::text AS "authSubject"),
-    "PantryItemEvent" (id, "pantryItemId", "householdId", "occurredAt", "newStatus", "previousStatus", "eventType", "totalCostMinor", "costSource", "currencyCode", timezone, "expiresOn", source)
+    "PantryItemEvent" (id, "pantryItemId", "householdId", "occurredAt", "newStatus", "previousStatus", "eventType", "totalCostMinor", "costSource", "currencyCode", timezone, "expiresOn", source, category)
       AS (VALUES ${Prisma.join(values)}), ${analyticsGroupsQuery(household, account, months, timezone, asOf)}`);
   return count === undefined ? analyticsSummary(groups, month, timezone, asOf.toISOString()) : analyticsSeries(groups, months, timezone, asOf.toISOString(), '2026-12');
 }
@@ -86,4 +86,38 @@ test('SQL series month grouping respects a DST-observing household without devic
   assert.deepEqual(ny.months.map(point => point.wasted.purchaseCostMinor), ['100', '200']);
   const utc = await read(rows, '2026-11', 'UTC', subject, 2);
   assert.deepEqual(utc.months.map(point => point.wasted.purchaseCostMinor), ['0', '300']);
+});
+
+test('SQL categories preserve outcome snapshots across edits, Undo and recategorized reconfirmation', async () => {
+  const rows = [event('one', '2026-10-01T12:00:00Z', 'WASTED', 6050, { category: 'DAIRY' }),
+    event('one', '2026-10-02T12:00:00Z', 'WASTED', 9999, { category: 'MEAT', previous: 'WASTED', type: 'EDITED' }),
+    event('two', '2026-10-01T12:00:00Z', 'WASTED', 2500, { category: 'DAIRY' }),
+    event('two', '2026-11-01T12:00:00Z', 'ACTIVE', 2500, { category: 'DAIRY', previous: 'WASTED' }),
+    event('two', '2026-11-02T12:00:00Z', 'WASTED', 3000, { category: 'BAKERY' }),
+    event('three', '2026-10-15T12:00:00Z', 'CONSUMED', 7200, { category: 'PRODUCE' }),
+    event('foreign', '2026-10-15T12:00:00Z', 'WASTED', 9999, { category: 'MEAT', household: foreign })];
+  const october = await read(rows, '2026-10', 'Asia/Kolkata', subject, 2), last = october.months[1];
+  assert.equal(october.categories.find(row => row.category === 'DAIRY').wasted.purchaseCostMinor, '6050');
+  assert.equal(october.categories.find(row => row.category === 'MEAT').wasted.count, 0);
+  assert.equal(october.categories.find(row => row.category === 'PRODUCE').consumedBeforeOrOnExpiry.purchaseCostMinor, '7200');
+  for (const bucket of ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed']) {
+    assert.equal(String(october.categories.reduce((sum, row) => sum + BigInt(row[bucket].purchaseCostMinor), 0n)), last[bucket].purchaseCostMinor);
+    assert.equal(october.categories.reduce((sum, row) => sum + row[bucket].count, 0), last[bucket].count);
+  }
+  const november = await read(rows, '2026-11', 'Asia/Kolkata', subject, 2);
+  assert.equal(november.categories.find(row => row.category === 'BAKERY').wasted.purchaseCostMinor, '3000');
+  assert.equal(november.categories.find(row => row.category === 'DAIRY').wasted.count, 0);
+});
+test('SQL category coverage separates estimated, unknown, zero and system outcomes with empty partitions', async () => {
+  const rows = [event('unknown', '2026-10-15T12:00:00Z', 'WASTED', null, { category: 'PRODUCE' }),
+    event('estimate', '2026-10-15T12:00:00Z', 'WASTED', 2000, { category: 'DAIRY', provenance: 'ESTIMATE' }),
+    event('zero', '2026-10-15T12:00:00Z', 'WASTED', 0, { category: 'BAKERY' }),
+    event('system', '2026-10-15T12:00:00Z', 'CONSUMED', 9999, { category: 'MEAT', source: 'SYSTEM' })];
+  const data = await read(rows, '2026-10', 'Asia/Kolkata', subject, 2);
+  assert.equal(data.categories.find(row => row.category === 'PRODUCE').wasted.unknownCount, 1);
+  assert.equal(data.categories.find(row => row.category === 'DAIRY').wasted.estimatedCostMinor, '2000');
+  assert.equal(data.categories.find(row => row.category === 'BAKERY').wasted.purchaseCount, 1);
+  assert.equal(data.categories.find(row => row.category === 'MEAT').unconfirmed.purchaseCostMinor, '9999');
+  assert.equal(data.categories.find(row => row.category === 'MEAT').consumedBeforeOrOnExpiry.count, 0);
+  const empty = await read(rows, '2026-09', 'Asia/Kolkata', subject, 2); assert.ok(empty.categories.every(row => row.wasted.count === 0));
 });
