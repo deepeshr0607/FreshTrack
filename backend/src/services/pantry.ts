@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { resolveExpiry } from '../contracts/expiry';
 import { Prisma, type PrismaClient, type PantryItem } from '@prisma/client';
-import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination, PantryListFilters } from '../contracts/api';
+import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination, PantryListFilters, ReceiptReviewInput, ReceiptImportInput, ReceiptDuplicateRow } from '../contracts/api';
 import { InvalidApiInput, pageInfo, paginationOffset } from '../lib/api';
 import { calendarDate, expiryState, planStatusTransition, serializeCalendarDate, utcTimestamp } from '../lib/inventoryRules';
 import { pantryListWhere, pantryListOrder, categoryPageWindows } from '../lib/pantryQuery';
@@ -71,6 +71,24 @@ export function pantryInput(value: unknown): PantryCreateInput {
   return { ...(duplicateConfirmation ? { duplicateConfirmation } : {}), ...(expiry ? { expirySelection: expiry.selection } : {}), name: text('name', 120), category: body['category'] as PantryCreateInput['category'],
     quantity: quantityString(body['quantity'] as string), unit: text('unit', 32),
     expiresOn: calendarDate(body['expiresOn'] as string), totalCostMinor: minorAmount(body['totalCostMinor']) };
+}
+/** Validate and canonicalize a bounded haul before any inventory writes. */
+export function receiptInput(value: unknown, importing: true): ReceiptImportInput;
+export function receiptInput(value: unknown, importing?: false): ReceiptReviewInput;
+export function receiptInput(value: unknown, importing = false): ReceiptReviewInput | ReceiptImportInput {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid receipt review.');
+  const body = value as Record<string, unknown>;
+  if (Object.keys(body).some(key => !(importing ? ['confirmed', 'items'] : ['items']).includes(key)) ||
+      (importing && body['confirmed'] !== true) || !Array.isArray(body['items']) || body['items'].length < 1 || body['items'].length > 20) throw new InvalidApiInput('Review between 1 and 20 groceries.');
+  const items = body['items'].map(value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !['rowId', 'item'].includes(key)) ||
+        typeof value.rowId !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(value.rowId)) throw new InvalidApiInput('Invalid receipt row.');
+    const item = pantryInput(value.item);
+    if (!importing && item.duplicateConfirmation) throw new InvalidApiInput('Review before confirming separate purchases.');
+    return { rowId: value.rowId, item };
+  }).sort((a, b) => a.rowId.localeCompare(b.rowId, 'en'));
+  if (new Set(items.map(row => row.rowId)).size !== items.length) throw new InvalidApiInput('Repeated receipt row ID.');
+  return importing ? { confirmed: true, items } : { items };
 }
 function view(item: PantryItem, timezone: string, now = new Date()): PantryItemDto {
   const expiresOn = serializeCalendarDate(item.expiresOn);
@@ -182,7 +200,65 @@ export function createPantryService(db: PrismaClient = prisma) {
     normalizedName: input.name.toLowerCase(), category: input.category,
     expiresOn: new Date(`${input.expiresOn}T00:00:00Z`),
   });
+  const receiptMatches = async (tx: Prisma.TransactionClient, identity: VerifiedIdentity, householdId: string, timezone: string, input: ReceiptReviewInput): Promise<ReceiptDuplicateRow[]> => {
+    const rows: ReceiptDuplicateRow[] = [];
+    for (const row of input.items) {
+      const where = duplicateWhere(identity, householdId, row.item);
+      const total = await tx.pantryItem.count({ where });
+      const matches = await tx.pantryItem.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: 5 });
+      rows.push({ rowId: row.rowId, total, matches: matches.map(item => view(item, timezone)),
+        withinHaul: input.items.filter(other => other.rowId !== row.rowId && other.item.name.toLowerCase() === row.item.name.toLowerCase() &&
+          other.item.category === row.item.category && other.item.expiresOn === row.item.expiresOn).map(other => other.rowId) });
+    }
+    return rows;
+  };
+  const receiptReview = (identity: VerifiedIdentity, value: ReceiptReviewInput) => {
+    const input = receiptInput(value);
+    return run(async tx => {
+      const membership = await member(tx, identity);
+      return { rows: await receiptMatches(tx, identity, membership.householdId, membership.household.timezone, input) };
+    });
+  };
+  const receiptImport = (identity: VerifiedIdentity, value: ReceiptImportInput, key: string) => {
+    const input = receiptInput(value, true);
+    if (!/^[A-Za-z0-9_-]{16,100}$/.test(key)) throw new InvalidApiInput('Invalid receipt retry key.');
+    return run(async tx => {
+      const membership = await member(tx, identity);
+      const prefix = `receipt:${key}:`;
+      const requestHash = createHash('sha256').update(JSON.stringify({ subject: identity.id, input })).digest('hex');
+      // Cardinality and hashes protect changed-payload retries, including removed/added rows.
+      const prior = await tx.pantryItemEvent.findMany({ where: { householdId: membership.householdId, idempotencyKey: { in: Array.from({ length: 20 }, (_unused, index) => `${prefix}${index}`) } }, include: { pantryItem: true } });
+      if (prior.length) {
+        const receiptScanId = prior[0]!.pantryItem.receiptScanId;
+        if (!receiptScanId || prior.length !== input.items.length || input.items.some((row, index) => !prior.some(event =>
+          event.idempotencyKey === `${prefix}${index}` && event.pantryItem.receiptScanId === receiptScanId &&
+          (event.metadata as { requestHash?: string; rowId?: string } | null)?.requestHash === requestHash &&
+          (event.metadata as { rowId?: string } | null)?.rowId === row.rowId))) throw new PantryFailure('IDEMPOTENCY_CONFLICT');
+        return { receiptScanId, replayed: true, items: input.items.map((_row, index) => view(prior.find(event => event.idempotencyKey === `${prefix}${index}`)!.pantryItem, membership.household.timezone)) };
+      }
+      const duplicates = await receiptMatches(tx, identity, membership.householdId, membership.household.timezone, input);
+      if (duplicates.some(row => (row.total > 0 || row.withinHaul.length > 0) && !input.items.find(item => item.rowId === row.rowId)!.item.duplicateConfirmation)) throw new PantryFailure('PANTRY_DUPLICATE');
+      const receipt = await tx.receiptScan.create({ data: { householdId: membership.householdId, createdByAuthSubject: identity.id, status: 'IMPORTED', importedAt: new Date() } });
+      const result: PantryItemDto[] = [];
+      for (const [index, row] of input.items.entries()) {
+        const { expirySelection, duplicateConfirmation, ...fields } = row.item;
+        const expiry = expirySelection ? resolveExpiry(expirySelection) : null;
+        const item = await tx.pantryItem.create({ data: { ...fields, householdId: membership.householdId, normalizedName: fields.name.toLowerCase(),
+          expiresOn: new Date(`${fields.expiresOn}T00:00:00Z`), expirySource: expiry?.expirySource ?? 'USER_ENTERED',
+          purchaseDate: expiry?.purchaseDate ? new Date(`${expiry.purchaseDate}T00:00:00Z`) : null, freshnessPresetDays: expiry?.freshnessPresetDays ?? null,
+          costSource: fields.totalCostMinor === null ? 'UNKNOWN' : 'PURCHASE', currencyCode: 'INR', source: 'RECEIPT', receiptScanId: receipt.id } });
+        await tx.pantryItemEvent.create({ data: { householdId: membership.householdId, pantryItemId: item.id,
+          eventType: 'CREATED', previousStatus: null, newStatus: 'ACTIVE', quantity: item.quantity, totalCostMinor: item.totalCostMinor,
+          costSource: item.costSource, currencyCode: item.currencyCode, category: item.category, expiresOn: item.expiresOn, timezone: membership.household.timezone,
+          source: 'APP', idempotencyKey: `${prefix}${index}`, metadata: { requestHash, rowId: row.rowId, duplicateConfirmed: !!duplicateConfirmation,
+            expirySource: item.expirySource, receiptScanId: receipt.id } } });
+        result.push(view(item, membership.household.timezone));
+      }
+      return { receiptScanId: receipt.id, items: result, replayed: false };
+    }, true);
+  };
   return {
+    receiptReview, receiptImport,
     duplicates: (identity: VerifiedIdentity, input: PantryCreateInput) => run(async tx => {
       const membership = await member(tx, identity);
       const where = duplicateWhere(identity, membership.householdId, input);

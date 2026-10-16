@@ -190,7 +190,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
-| 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; candidate review checked on iPhone, import/barcode incomplete |
+| 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; candidate review checked on iPhone; import backend tested, mobile import/barcode incomplete |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 6 atomic receipt-import backend verified locally (16 October); mobile connection pending.** Added protected bounded receipt duplicate-review/import endpoints using the existing schema. One Serializable transaction records receipt/items/CREATED snapshots; unchanged retries and concurrent confirmations create no duplicates, changed payloads conflict, and failures roll back the haul. Both TypeScript/build, root215/215, backend125+1 regression tests, health1/1 and live8+1 capacity cases with fixture cleanup pass. Existing backend lint is unavailable; no mobile/runtime environment, deployment or user-grocery change. See [import backend report](docs/Phase_6_Receipt_Import_Backend.md). Next: phone confirmation/duplicate UI with a durable frozen retry record, then development deployment and iPhone checks. Receipt Save is not connected yet; barcode/native QA remain, no Phase9.
 
 **Phase 6 local receipt candidate review passed iPhone checks by user report (16 October).** Same-line item/amount heuristics preserve original OCR and unassigned lines; quantities, units and expiry require explicit review. Editable candidates, Add Missing/remove/include, validation and haul preview are local only; no Pantry import or backend changes. Both TypeScript checks, root215/215 and all-platform/36-route exports pass. Existing Expo server manifest returns200; no native rebuild required. See [candidate review report](docs/Phase_6_Receipt_Candidate_Review.md). User answered “All passed” to the clarified 19-step review checklist; this is user-reported evidence, not direct observation. Next: authenticated atomic/idempotent import and household duplicate handling. Barcode and broader native QA remain; no Phase9.
 

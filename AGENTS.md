@@ -166,6 +166,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 6 atomic receipt-import backend verified locally (16 October); mobile connection pending.** Added protected bounded receipt duplicate-review/import endpoints using the existing schema. One Serializable transaction records receipt/items/CREATED snapshots; unchanged retries and concurrent confirmations create no duplicates, changed payloads conflict, and failures roll back the haul. Both TypeScript/build, root215/215, backend125+1 regression tests, health1/1 and live8+1 capacity cases with fixture cleanup pass. Existing backend lint is unavailable; no mobile/runtime environment, deployment or user-grocery change. See [import backend report](docs/Phase_6_Receipt_Import_Backend.md). Next: phone confirmation/duplicate UI with a durable frozen retry record, then development deployment and iPhone checks. Receipt Save is not connected yet; barcode/native QA remain, no Phase9.
+
 **Phase 6 local receipt candidate review passed iPhone checks by user report (16 October).** Same-line item/amount heuristics preserve original OCR and unassigned lines; quantities, units and expiry require explicit review. Editable candidates, Add Missing/remove/include, validation and haul preview are local only; no Pantry import or backend changes. Both TypeScript checks, root215/215 and all-platform/36-route exports pass. Existing Expo server manifest returns200; no native rebuild required. See [candidate review report](docs/Phase_6_Receipt_Candidate_Review.md). User answered “All passed” to the clarified 19-step review checklist; this is user-reported evidence, not direct observation. Next: authenticated atomic/idempotent import and household duplicate handling. Barcode and broader native QA remain; no Phase9.
 
 **Phase 6 on-device OCR proof passed iPhone checks by user report (16 October).** Development-only Scanner check captures/selects a bounded local image, previews it and explicitly reads raw text with Apple Vision/iOS or ML Kit/Android through expo-text-extractor2.0.0. No upload, parsing or Pantry import. Generation/account guards, retry/cancel/empty states and best-effort cache cleanup are implemented. Both TypeScript checks, root212/212 and all-platform/36-route export pass; Doctor20/21 retains five patch recommendations. Native pods113, iOS build/sign/install/launch and manifest200 pass. User answered “All checks passed” to the numbered capture/library, cancellation, recognition/re-read, no-text, clear/navigation and unchanged-Pantry checklist. This is user-reported evidence, not direct observation or a receipt-accuracy benchmark. See [OCR proof report](docs/Phase_6_On_Device_OCR_Proof.md). Next: deterministic receipt candidates, editable review and confirmed import. Barcode and broader native QA remain; no Phase9.
@@ -293,13 +295,13 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 6 — local OCR and candidate review passed by user report
+### Current phase: Phase 6 — receipt-import backend tested, mobile connection pending
 
-See docs/Phase_6_Receipt_Candidate_Review.md. Prior root215 tests/both TypeScript checks and
-36-route exports pass. OCR-only and clarified candidate-review iPhone checklists passed by user
-report, not direct observation. Next: protected atomic/idempotent import and household duplicate
-review. No real receipt imports or barcode implementation yet. Phase8 development review closed;
-Phase9 not started.
+See docs/Phase_6_Receipt_Import_Backend.md. Both TypeScript/build, root215, backend125+1,
+health1 and live8+1 cases/cleanup pass. OCR/candidate review passed by user report previously.
+Next: durable confirmed-haul retry controller, phone duplicate/confirmation UI, development
+Preview deployment and numbered iPhone acceptance. Current phone preview does not save.
+No barcode implementation yet. Phase8 development review closed; Phase9 not started.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 

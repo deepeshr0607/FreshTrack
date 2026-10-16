@@ -86,6 +86,16 @@ export interface PantryItemDto extends PantryCreateInput {
   createdAt: string; updatedAt: string;
 }
 export type PantryItemResponse = ApiSuccess<{ item: PantryItemDto }>;
+/** Reviewed fields only; no raw receipt text/images or client ownership IDs. */
+export interface ReceiptImportRow { rowId: string; item: PantryCreateInput }
+export interface ReceiptReviewInput { items: ReceiptImportRow[] }
+export interface ReceiptImportInput extends ReceiptReviewInput { confirmed: true }
+export interface ReceiptDuplicateRow {
+  rowId: string; total: number; matches: PantryItemDto[]; withinHaul: string[];
+}
+export type ReceiptReviewResponse = ApiSuccess<{ rows: ReceiptDuplicateRow[] }>;
+export interface ReceiptImportData { receiptScanId: string; items: PantryItemDto[]; replayed: boolean }
+export type ReceiptImportResponse = ApiSuccess<ReceiptImportData>;
 export interface PantryEditInput extends Omit<PantryCreateInput, 'duplicateConfirmation'> { expectedUpdatedAt: string }
 export interface PantryOutcomeInput { confirmed: true; expectedUpdatedAt: string }
 export interface PantryBatchInput {
