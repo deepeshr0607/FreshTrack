@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 8 individual confirmed-use entries connected/deployed (16 October); phone verification pending.** Financial Analytics now lists the latest20 confirmed uses on/before expiry, with current Pantry names, immutable outcome category/value/expiry, explicit unknown/estimated/zero prices and protected detail links. Aggregate and list reads share a scoped RepeatableRead snapshot; Undo and capped coverage are validated. Both TypeScript/build, root206/206, backend122/122, health1/1, HTTPS SQL11/11 and all-platform/35-route exports pass. Development Preview Ready, health200/tokenless analytics401; ignored API URL updated, Auth preserved. See [individual-entry report](docs/Phase_8_Individual_Entries.md). Category and individual phone acceptance remain pending, followed by failure/native/accessibility QA and final Phase8 review. Existing local Prisma/Doctor/lint gaps remain; Phase6 deferred, no Phase9.
+
 **Phase 8 category breakdown connected/deployed (16 October); iPhone verification pending.** Series now includes seven selected-month outcome-time category partitions from the same scoped snapshot as totals. Insights shows consumed categories/View All; Financial shows confirmed waste/segmented shares. Estimates, unknowns, zero and unconfirmed outcomes remain separate; exact category sums are validated against headers. Both TypeScript/build, root202/202, backend118/118, health1/1, HTTPS SQL8/8 and final all-platform/35-route exports pass. Preview Ready, health200/tokenless analytics401; ignored public API URL updated, Auth preserved. Doctor20/21/lint/native/local Prisma gaps remain. See [category report](docs/Phase_8_Category_Breakdown.md). Next: numbered category phone checks, then individual rescue data and final review. Phase6 deferred; no Phase9.
 
 **Phase 8 monthly Analytics/Insights passed iPhone checks by user report (16 October).** User answered “All checks passed” to the 13-step checklist covering active-item exclusion, exact consumed/waste/unknown-price changes, chart values, Undo cancel/restore/reconfirmation without duplicate cost, restart, previous/current/invalid/future months, report/share cancellation and sign-out/Demo separation. Recorded as user report, not direct observation or per-step numeric evidence. Prior root199/backend115/health1/HTTPS SQL6 and all-platform/35-route exports pass; both TypeScript checks pass again. See [mobile report](docs/Phase_8_Mobile_Analytics.md). Remaining: category/individual rescue data, further edge/native QA and final Phase8 review. Local Prisma/maintenance gaps remain; Phase6 deferred, no Phase9.
@@ -274,12 +276,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 8 — category breakdown deployed, phone verification pending
+### Current phase: Phase 8 — individual entries deployed, phone verification pending
 
-See docs/Phase_8_Category_Breakdown.md. Real category partitions from effective outcome snapshots
-are connected to both views and reports. Root202/backend118/health1/HTTPS SQL8 and exports pass.
-Next category phone checklist, then individual rescue data and final review. Prior monthly checks
-passed by user report. Local Prisma/native/maintenance gaps remain; Phase6 deferred, no Phase9.
+See docs/Phase_8_Individual_Entries.md. Root206/backend122/health1/HTTPS SQL11 and exports pass.
+Category and individual phone checks remain pending, then remaining QA and final review.
+Prior monthly checks passed by user report. Local Prisma/native/maintenance gaps remain;
+Phase6 deferred, no Phase9.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 

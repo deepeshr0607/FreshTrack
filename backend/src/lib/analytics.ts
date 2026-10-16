@@ -27,8 +27,7 @@ export function analyticsMonths(month: string, count: number): string[] {
 }
 
 /** The caller prefixes WITH. Bind all selectors; household membership is rechecked in SQL. */
-export function analyticsGroupsQuery(householdId: string, subject: string, month: string | string[], timezone: string, now: Date) {
-  const months = typeof month === 'string' ? [month] : month;
+export function analyticsEffectiveQuery(householdId: string, subject: string, now: Date) {
   return Prisma.sql`effective AS (
     SELECT DISTINCT ON (e."pantryItemId") e.*
     FROM "PantryItemEvent" e
@@ -37,7 +36,11 @@ export function analyticsGroupsQuery(householdId: string, subject: string, month
       AND e."previousStatus"::text IS DISTINCT FROM e."newStatus"::text
       AND EXISTS (SELECT 1 FROM "HouseholdMember" m WHERE m."householdId" = e."householdId" AND m."authSubject" = ${subject})
     ORDER BY e."pantryItemId", e."occurredAt" DESC, e.id DESC
-  ), classified AS (
+  )`;
+}
+export function analyticsGroupsQuery(householdId: string, subject: string, month: string | string[], timezone: string, now: Date) {
+  const months = typeof month === 'string' ? [month] : month;
+  return Prisma.sql`${analyticsEffectiveQuery(householdId, subject, now)}, classified AS (
     SELECT CASE
       WHEN "newStatus"::text = 'ASSUMED_CONSUMED' OR source::text = 'SYSTEM' THEN 'unconfirmed'
       WHEN "newStatus"::text = 'WASTED' THEN 'wasted'
@@ -73,7 +76,7 @@ export function analyticsSummary(groups: AnalyticsGroup[], month: string, timezo
   return { month, timezone, currencyCode: 'INR', asOf, basis: 'LATEST_EFFECTIVE_OUTCOME', ...totals };
 }
 
-export function analyticsSeries(groups: AnalyticsGroup[], months: string[], timezone: string, asOf: string, currentMonth: string): AnalyticsSeries {
+export function analyticsSeries(groups: AnalyticsGroup[], months: string[], timezone: string, asOf: string, currentMonth: string): Omit<AnalyticsSeries, 'usedBeforeExpiry'> {
   const categoryKeys = Object.values(ItemCategory);
   if (groups.some(row => !row.month || !months.includes(row.month) || !row.category || !categoryKeys.includes(row.category))) throw new Error('INVALID_ANALYTICS_MONTH_GROUP');
   const points = months.map(month => ({ ...analyticsSummary(groups.filter(row => row.month === month), month, timezone, asOf),

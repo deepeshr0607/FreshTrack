@@ -12,6 +12,7 @@ import { useRealPantry } from '@/context/RealPantryContext';
 import { analyticsPeriodLabel, analyticsReport, consumedAmount, formatAnalyticsMoney } from '@/lib/analyticsPresentation';
 import { Colors } from '@/constants/Theme';
 import CategoryBreakdown from './CategoryBreakdown';
+import UsedBeforeExpiry from './UsedBeforeExpiry';
 import { Comparison, MonthControls, MonthlyChart, PriceCoverage } from './AnalyticsParts';
 export default function LiveAnalyticsScreen({ financial = false }: { financial?: boolean }) {
   const { state: auth } = useAuth(), { state, store } = useRealAnalytics(), pantry = useRealPantry();
@@ -55,9 +56,10 @@ export default function LiveAnalyticsScreen({ financial = false }: { financial?:
         <Comparison data={data} />
         <MonthlyChart data={data} wasteOnly />
         <CategoryBreakdown data={data} waste />
+        <UsedBeforeExpiry data={data} />
         <View style={ui.card}><Text style={ui.heading}>Unconfirmed Outcomes</Text><Text style={ui.text}>{row.unconfirmed.count} assumed or system-generated outcomes excluded from confirmed totals.</Text></View>
       </>}
-      <View style={ui.card}><Text style={ui.heading}>Impact Metrics</Text><Text style={ui.text}>Carbon, food mass, achievement scores and individual rescue rankings are not calculated in this view yet.</Text></View>
+      <View style={ui.card}><Text style={ui.heading}>Impact Metrics</Text><Text style={ui.text}>Carbon, food mass, achievement scores are not calculated in this view yet.</Text></View>
       <Text style={[ui.text, { fontSize: 11 }]}>As of {data.asOf}. Estimates and unknown prices are excluded from recorded-purchase totals. Whole-entry outcomes; partial consumption is not tracked.</Text>
     </>}
     <ReconciliationBanner />

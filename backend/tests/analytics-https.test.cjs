@@ -22,6 +22,7 @@ test('optional synthetic HTTPS test transport pins the development host and reda
     });
     assert.deepEqual(await query(sql), [{ count: '1' }]);
     await assert.rejects(query({ text: 'SELECT * FROM "PantryItemEvent"', values: [] }), /SYNTHETIC_ANALYTICS_QUERY_REQUIRED/); assert.equal(calls, 1);
+    await assert.rejects(query({ text: sql.text + ' JOIN \"PantryItem\"', values: sql.values }), /SYNTHETIC_ANALYTICS_QUERY_REQUIRED/); assert.equal(calls, 1);
     const failed = createAnalyticsHttpsQuery(async () => { throw Error(process.env.DATABASE_URL); });
     await assert.rejects(failed(sql), error => error.message === 'ANALYTICS_HTTPS_SQL_UNAVAILABLE');
     process.env.ALLOW_DEVELOPMENT_DATABASE_TESTS = 'false'; assert.throws(() => createAnalyticsHttpsQuery(), /OPT_IN_REQUIRED/);

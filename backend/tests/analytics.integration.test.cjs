@@ -121,3 +121,51 @@ test('SQL category coverage separates estimated, unknown, zero and system outcom
   assert.equal(data.categories.find(row => row.category === 'MEAT').consumedBeforeOrOnExpiry.count, 0);
   const empty = await read(rows, '2026-09', 'Asia/Kolkata', subject, 2); assert.ok(empty.categories.every(row => row.wasted.count === 0));
 });
+
+const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+async function readUsed(rows, month = '2026-10', timezone = 'Asia/Kolkata', account = subject, entries) {
+  const { analyticsUsedQuery } = require('../dist/lib/analyticsUsed');
+  const values = rows.map(r => Prisma.sql`(${r.id}::text, ${r.item}::text, ${r.household}::uuid, ${new Date(r.at)}::timestamptz,
+    ${r.status}::text, ${r.previous}::text, ${r.type}::text, ${r.cost}::integer, ${r.provenance}::text,
+    ${r.currency}::text, ${r.timezone}::text, ${new Date(r.expiry + 'T00:00:00Z')}::date, ${r.source}::text, ${r.category}::text)`);
+  const items = entries ?? [...new Map(rows.map(row => [row.item, { id: row.item, household: row.household, name: 'Current Pantry Name', archived: null }])).values()];
+  const names = items.map(row => Prisma.sql`(${row.id}::text, ${row.household}::uuid, ${row.name}::text, ${row.archived ? new Date(row.archived) : null}::timestamptz)`);
+  return query(Prisma.sql`WITH "HouseholdMember" AS (SELECT ${household}::uuid AS "householdId", ${subject}::text AS "authSubject"),
+    "PantryItemEvent" (id, "pantryItemId", "householdId", "occurredAt", "newStatus", "previousStatus", "eventType", "totalCostMinor", "costSource", "currencyCode", timezone, "expiresOn", source, category)
+      AS (VALUES ${Prisma.join(values)}),
+    "PantryItem" (id, "householdId", name, "archivedAt") AS (VALUES ${Prisma.join(names)}),
+    ${analyticsUsedQuery(household, account, month, timezone, asOf)}`);
+}
+const usedEvent = (item, id, at = '2026-10-15T12:00:00Z', status = 'CONSUMED', cost = 6050, options = {}) => event(uuid(item), at, status, cost, { id: uuid(id), ...options });
+test('SQL individual list excludes late/system/assumed/undone/superseded/foreign outcomes and uses immutable prices', async () => {
+  const rows = [usedEvent(1, 1, undefined, undefined, 6050, { category: 'DAIRY' }),
+    usedEvent(1, 2, '2026-10-16T12:00:00Z', 'CONSUMED', 9999, { type: 'EDITED', previous: 'CONSUMED', category: 'MEAT' }),
+    usedEvent(2, 3, undefined, undefined, 100, { expiry: '2026-10-14' }), usedEvent(3, 4, undefined, undefined, 100, { source: 'SYSTEM' }),
+    usedEvent(4, 5, undefined, 'ASSUMED_CONSUMED'), usedEvent(5, 6), usedEvent(5, 7, '2026-11-01T12:00:00Z', 'ACTIVE', 6050, { previous: 'CONSUMED' }),
+    usedEvent(6, 8), usedEvent(6, 9, '2026-11-01T12:00:00Z', 'WASTED', 6050, { previous: 'CONSUMED' }),
+    usedEvent(7, 10, undefined, undefined, 9999, { household: foreign }), usedEvent(8, 11, undefined, undefined, null), usedEvent(9, 12, undefined, undefined, 0)];
+  const entries = [...new Map(rows.map(row => [row.item, { id: row.item, household: row.household, name: row.item === uuid(1) ? 'Current Renamed Milk' : 'Fixture', archived: row.item === uuid(8) ? '2026-11-01T00:00:00Z' : null }])).values()];
+  const result = await readUsed(rows, '2026-10', 'Asia/Kolkata', subject, entries);
+  assert.deepEqual(result.map(row => row.pantryItemId), [uuid(9), uuid(8), uuid(1)]);
+  const milk = result.find(row => row.pantryItemId === uuid(1)); assert.equal(milk.name, 'Current Renamed Milk'); assert.equal(milk.totalCostMinor, '6050'); assert.equal(milk.category, 'DAIRY');
+  assert.equal(result.find(row => row.pantryItemId === uuid(8)).reviewable, 'false'); assert.equal(result.find(row => row.pantryItemId === uuid(8)).totalCostMinor, null);
+  assert.equal(result.find(row => row.pantryItemId === uuid(9)).totalCostMinor, '0');
+  assert.equal((await readUsed(rows, '2026-10', 'Asia/Kolkata', 'foreign-account', entries)).length, 0);
+});
+test('SQL individual list caps latest rows deterministically and reconciles bounded subset with monthly totals', async () => {
+  const { withAnalyticsUsedRows } = require('../dist/lib/analyticsUsed');
+  const rows = Array.from({ length: 25 }, (_, n) => usedEvent(n + 1, n + 1, `2026-10-15T12:00:${String(n).padStart(2, '0')}Z`, 'CONSUMED', 100));
+  const listed = await readUsed(rows); assert.equal(listed.length, 20); assert.equal(listed[0].pantryItemId, uuid(25)); assert.equal(listed[19].pantryItemId, uuid(6));
+  const series = await read(rows, '2026-10', 'Asia/Kolkata', subject, 2), complete = withAnalyticsUsedRows(series, listed);
+  assert.equal(complete.usedBeforeExpiry.total, 25); assert.equal(complete.usedBeforeExpiry.items.length, 20);
+  assert.equal(complete.months[1].consumedBeforeOrOnExpiry.purchaseCostMinor, '2500');
+});
+test('SQL individual month and expiry selection use distinct household/outcome timezones and retain estimates', async () => {
+  const rows = [usedEvent(1, 1, '2026-10-31T18:30:00Z', 'CONSUMED', 2000, { expiry: '2026-11-01', provenance: 'ESTIMATE' })];
+  assert.equal((await readUsed(rows, '2026-10')).length, 0);
+  const kolkata = await readUsed(rows, '2026-11'); assert.equal(kolkata.length, 1); assert.equal(kolkata[0].costSource, 'ESTIMATE');
+  assert.equal((await readUsed(rows, '2026-10', 'UTC')).length, 1);
+  assert.equal((await readUsed(rows, '2026-11', 'UTC')).length, 0);
+  const mismatch = [{ id: uuid(1), household: foreign, name: 'Foreign name', archived: null }];
+  assert.equal((await readUsed(rows, '2026-11', 'Asia/Kolkata', subject, mismatch)).length, 0);
+});

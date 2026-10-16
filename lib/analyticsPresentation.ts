@@ -5,6 +5,14 @@ export const ANALYTICS_CATEGORIES: { code: PantryCategory; name: string; emoji: 
   { code: 'MEAT', name: 'Meat', emoji: '🥩' }, { code: 'FROZEN', name: 'Frozen', emoji: '🧊' }, { code: 'OTHER', name: 'Other', emoji: '🛒' },
 ];
 export function validMonth(value: string) { return /^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(value); }
+export function analyticsCalendarDate(instant: string, timezone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, calendar: 'gregory', numberingSystem: 'latn', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(instant));
+  const part = (type: string) => parts.find(row => row.type === type)!.value;
+  return `${part('year').padStart(4, '0')}-${part('month')}-${part('day')}`;
+}
+export function analyticsUsedPrice(item: { costSource: string; totalCostMinor: number | null }): string {
+  return item.costSource === 'UNKNOWN' ? 'Unknown price' : `${item.costSource === 'ESTIMATE' ? 'Estimated ' : 'Recorded '}${formatAnalyticsMoney(String(item.totalCostMinor))}`;
+}
 export function shiftAnalyticsMonth(month: string, offset: number): string | null {
   if (!validMonth(month) || !Number.isInteger(offset)) return null;
   const [year, number] = month.split('-').map(Number), value = (year - 1) * 12 + number - 1 + offset;
@@ -26,10 +34,13 @@ export const analyticsPeriodLabel = (period: string) => period === 'MONTH_TO_DAT
 export function analyticsReport(data: AnalyticsSeries): string {
   const row = data.months[data.months.length - 1], consumed = consumedAmount(row);
   const report = `FreshTrack — ${row.month} household report\nTimezone: ${data.timezone}\n${analyticsPeriodLabel(row.period)}\nAs of: ${data.asOf}\nConsumed recorded purchase value: ${formatAnalyticsMoney(consumed.purchaseCostMinor)} (${consumed.purchaseCount} entries)\nConfirmed waste recorded purchase value: ${formatAnalyticsMoney(row.wasted.purchaseCostMinor)} (${row.wasted.purchaseCount} entries)\nEstimated consumed/waste values: ${formatAnalyticsMoney(consumed.estimatedCostMinor)} / ${formatAnalyticsMoney(row.wasted.estimatedCostMinor)}\nUnknown-price consumed/wasted entries: ${consumed.unknownCount} / ${row.wasted.unknownCount}\nUnconfirmed outcomes excluded: ${row.unconfirmed.count}\nPurchase waste change vs ${data.previousMonth}: ${data.comparison.wastedPurchaseDeltaMinor === null ? 'Unavailable for future month' : formatAnalyticsMoney(data.comparison.wastedPurchaseDeltaMinor)}\nCurrent-month comparisons use month-to-date totals against the previous calendar month.\nLatest effective outcomes; Undo can revise earlier months. Consumed value is not a savings or carbon estimate.`;
-  return report + '\nOutcome-time category purchase values (estimates/unknowns excluded):\n' + data.categories.map(category => {
+  const categories = data.categories.map(category => {
     const used = consumedAmount(category);
     return `${ANALYTICS_CATEGORIES.find(row => row.code === category.category)!.name}: consumed ${formatAnalyticsMoney(used.purchaseCostMinor)}, wasted ${formatAnalyticsMoney(category.wasted.purchaseCostMinor)}; estimated consumed/wasted ${formatAnalyticsMoney(used.estimatedCostMinor)}/${formatAnalyticsMoney(category.wasted.estimatedCostMinor)}; unknown-price consumed/wasted ${used.unknownCount}/${category.wasted.unknownCount}`;
   }).join('\n');
+  return report + '\nOutcome-time category purchase values (estimates/unknowns excluded):\n' + categories
+    + `\nLatest ${data.usedBeforeExpiry.items.length} of ${data.usedBeforeExpiry.total} confirmed uses on/before expiry (current Pantry names; outcome-time values):\n`
+    + data.usedBeforeExpiry.items.map(item => `${item.name}: ${analyticsUsedPrice(item)}; used ${analyticsCalendarDate(item.occurredAt, item.outcomeTimezone)} (${item.outcomeTimezone}), expiry ${item.expiresOn}`).join('\n');
 }
 /** Exact values remain strings; only relative drawing heights use a bounded 0..100 ratio. */
 export function analyticsBarPercent(value: string, maximum: string): number {

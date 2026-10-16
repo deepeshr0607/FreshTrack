@@ -4,7 +4,7 @@ import { apiOrigin } from './backendIdentity.ts';
 // @ts-expect-error Explicit extensions support strip-types tests and Metro.
 import { NeonAuthError } from './neonAuth.ts';
 // @ts-expect-error Explicit extensions support strip-types tests and Metro.
-import { validMonth, shiftAnalyticsMonth, consumedAmount, ANALYTICS_CATEGORIES } from './analyticsPresentation.ts';
+import { validMonth, shiftAnalyticsMonth, consumedAmount, ANALYTICS_CATEGORIES, analyticsCalendarDate } from './analyticsPresentation.ts';
 const record = (value: any): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
 const count = (value: any) => Number.isSafeInteger(value) && value >= 0;
 const money = (value: any) => typeof value === 'string' && /^(0|[1-9]\d{0,24})$/.test(value);
@@ -28,6 +28,23 @@ export function validAnalyticsSeries(value: any, requested?: string): value is A
       && ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed'].every(key => amount(row[key]) && (row.period !== 'FUTURE' || row[key].count === 0))
       && count(row.consumedBeforeOrOnExpiry.count + row.consumedAfterExpiry.count))) return false;
     const last = value.months[5], previous = value.months[4], comparison = value.comparison;
+    const entries = value.usedBeforeExpiry;
+    if (!record(entries) || entries.nameBasis !== 'CURRENT_PANTRY_NAME' || entries.total !== last.consumedBeforeOrOnExpiry.count
+      || !Array.isArray(entries.items) || entries.items.length !== Math.min(entries.total, 20)) return false;
+    const events = new Set(), items = new Set();
+    for (const item of entries.items) {
+      const uuid = (id: any) => typeof id === 'string' && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id);
+      if (!record(item) || !uuid(item.eventId) || !uuid(item.pantryItemId) || events.has(item.eventId.toLowerCase()) || items.has(item.pantryItemId.toLowerCase())
+        || typeof item.name !== 'string' || !item.name.trim() || item.name.length > 200 || /[\u0000-\u001f\u007f]/.test(item.name)
+        || !ANALYTICS_CATEGORIES.some(row => row.code === item.category) || item.currencyCode !== 'INR' || typeof item.reviewable !== 'boolean'
+        || !['PURCHASE', 'ESTIMATE', 'UNKNOWN'].includes(item.costSource)
+        || (item.costSource === 'UNKNOWN' ? item.totalCostMinor !== null : !Number.isInteger(item.totalCostMinor) || item.totalCostMinor < 0 || item.totalCostMinor > 2147483647)
+        || typeof item.occurredAt !== 'string' || new Date(item.occurredAt).toISOString() !== item.occurredAt || Date.parse(item.occurredAt) > Date.parse(value.asOf)
+        || typeof item.outcomeTimezone !== 'string' || item.outcomeTimezone.length > 64
+        || typeof item.expiresOn !== 'string' || !/^(?!0000)\d{4}-\d\d-\d\d$/.test(item.expiresOn) || new Date(`${item.expiresOn}T00:00:00Z`).toISOString().slice(0, 10) !== item.expiresOn
+        || analyticsCalendarDate(item.occurredAt, value.timezone).slice(0, 7) !== value.month || analyticsCalendarDate(item.occurredAt, item.outcomeTimezone) > item.expiresOn) return false;
+      events.add(item.eventId.toLowerCase()); items.add(item.pantryItemId.toLowerCase());
+    }
     if (!Array.isArray(value.categories) || value.categories.length !== 7 || new Set(value.categories.map((row: any) => row?.category)).size !== 7
       || !value.categories.every((row: any) => record(row) && ANALYTICS_CATEGORIES.some(category => category.code === row.category)
         && ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed'].every(key => amount(row[key])))) return false;
@@ -38,6 +55,18 @@ export function validAnalyticsSeries(value: any, requested?: string): value is A
       }
       for (const field of ['purchaseCostMinor', 'estimatedCostMinor']) {
         if (String(value.categories.reduce((sum: bigint, row: any) => sum + BigInt(row[bucket][field]), 0n)) !== last[bucket][field]) return false;
+      }
+    }
+    for (const category of value.categories) {
+      const selected = entries.items.filter((item: any) => item.category === category.category), expected = category.consumedBeforeOrOnExpiry;
+      const actual: Record<string, number> = { count: selected.length, purchaseCount: selected.filter((row: any) => row.costSource === 'PURCHASE').length,
+        estimatedCount: selected.filter((row: any) => row.costSource === 'ESTIMATE').length, unknownCount: selected.filter((row: any) => row.costSource === 'UNKNOWN').length };
+      for (const key of ['count', 'purchaseCount', 'estimatedCount', 'unknownCount']) {
+        if (entries.total <= 20 ? actual[key] !== expected[key] : actual[key] > expected[key]) return false;
+      }
+      for (const [source, key] of [['PURCHASE', 'purchaseCostMinor'], ['ESTIMATE', 'estimatedCostMinor']]) {
+        const actual = selected.filter((row: any) => row.costSource === source).reduce((sum: bigint, row: any) => sum + BigInt(row.totalCostMinor), 0n), target = BigInt(expected[key]);
+        if (entries.total <= 20 ? actual !== target : actual > target) return false;
       }
     }
     if (!record(comparison) || comparison.basis !== 'PURCHASE_VALUES_ONLY' || comparison.period !== (last.period === 'FUTURE' ? 'FUTURE_PERIOD' : last.period === 'MONTH_TO_DATE' ? 'MONTH_TO_DATE' : 'COMPLETE_PERIODS')) return false;
