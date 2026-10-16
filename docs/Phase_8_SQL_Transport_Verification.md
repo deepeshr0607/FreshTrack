@@ -62,9 +62,14 @@ connection was made. Existing Analytics/Insights screens still show their protot
 
 ## Exact next step
 
-Use the existing signed-in Settings → Check Backend Database control to verify Prisma from the
-already-hosted development API, independently of this laptop's connection problem. Record that
-phone diagnostic separately; it verifies hosted database reachability, not new analytics endpoints.
-Then connect the supplied Analytics/Insights designs and deploy/test the Phase8 endpoints with
-authenticated real-account phone access. Local Prisma failure remains an open development issue.
-Phase6 is deferred; Phase9 remains unstarted.
+On 16 October the user answered “Backend database verified” to the four-step iPhone Settings
+check using the existing hosted development API. This is user-reported evidence, not direct device
+observation. It confirms reported hosted Prisma/database reachability; it does not test the new
+analytics endpoints, transaction behavior or financial totals. The already-hosted API was unchanged.
+Local Prisma connectivity remains unresolved.
+
+Next: inspect supplied designs and compatible chart options, connect Analytics/Insights to the
+summary/series endpoints, deploy a development Preview and run authenticated phone checks of actual
+analytics results. No analytics UI or deployment work was done in this documentation update.
+Both TypeScript checks pass again; no regression/export suites were rerun for this documentation-only
+acceptance update. Phase6 is deferred; Phase9 remains unstarted.
