@@ -1,4 +1,4 @@
-import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryBatchResponse, PantryItemDto, PantryItemResponse, PantryListFilters, PantryListResponse, PantryDuplicateResponse } from '../types/api';
+import type { HouseholdResponse, PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryBatchResponse, PantryItemDto, PantryItemResponse, PantryListFilters, PantryListResponse, PantryDuplicateResponse, ReceiptReviewInput, ReceiptImportInput, ReceiptReviewResponse, ReceiptImportResponse } from '../types/api';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { apiOrigin } from './backendIdentity.ts';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
@@ -85,6 +85,8 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
       }
       throw new NeonAuthError('PANTRY_LIMIT', 'This household exceeds the 1,000-item reminder sync limit. Existing reminders were not replaced.');
     },
+    receiptReview: (input: ReceiptReviewInput) => request<ReceiptReviewResponse>('/api/v1/pantry/receipt-review', 'POST', input),
+    receiptImport: (input: ReceiptImportInput, key: string) => request<ReceiptImportResponse>('/api/v1/pantry/receipt-import', 'POST', input, key),
     setup: () => request<HouseholdResponse>('/api/v1/households/current', 'POST', {}),
     list: (page = 1, filters: PantryListFilters = {}) => {
       const query = new URLSearchParams({ page: String(page), pageSize: '50' });
