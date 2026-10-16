@@ -73,8 +73,8 @@ After interruption, checks were resumed with fresh logs, not inferred from missi
 
 ## Remaining Phase6 work
 
-Real native OCR recognition/camera permission/empty/retry/privacy behavior requires phone evidence.
-Then implement deterministic candidate parsing, uncertain/missing fields, original editable receipt
+The bounded iPhone diagnostic passed by user report; Android and broader native failure/accuracy
+coverage remain unverified. Next implement deterministic candidate parsing, uncertain/missing fields, original editable receipt
 review, duplicates and atomic confirmed import with event/idempotency protections. Barcode camera,
 catalog choice/manual fallback and corresponding native/failure QA remain. No Phase9 work.
 
@@ -92,7 +92,7 @@ catalog choice/manual fallback and corresponding native/failure QA remain. No Ph
 | Local iPhone build | Build Succeeded,0errors/2warnings; signed and installed |
 | Device launch with8087 development URL | Passed, command exit0 |
 | Actual iOS manifest | HTTP200, FreshTrack Dev and launch asset |
-| Phone capture/OCR/permission/no-text/cleanup | Pending; no successful recognition claimed |
+| Phone capture/OCR/permission/no-text/cleanup | User reported “All checks passed” to the 12-step checklist; not directly observed |
 | Android native build/runtime | Not run |
 
 Commands:
@@ -123,3 +123,13 @@ FreshTrack Dev is installed and reopened at current LAN172.20.10.2/port8087. Bas
 is untouched; no application records were created by automated tests. The next phone checklist
 must test camera/photo selection, cancellation, raw text/no-text, retry/clear/navigation cleanup
 and unchanged Pantry. Never include receipt content/credentials in the result report.
+
+## iPhone acceptance — 16 October 2026
+
+User answered “All checks passed” after the 12-step checklist covering FreshTrack Dev real-account
+access, camera permission/cancel/capture, text recognition and repeat without accumulated output,
+library cancellation/selection, blank-image no-text state, clear and navigation reset, and unchanged
+Pantry. This is a broad user report, without per-step screenshots or receipt contents; it is not a
+recognition-accuracy benchmark, Android acceptance or completed receipt ingestion. No code, runtime,
+dependency, environment or backend data change in this acceptance update. Prior automated results
+above were not rerun for this documentation-only checkpoint.
