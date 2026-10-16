@@ -1,3 +1,5 @@
+import { useAuth } from '@/context/AuthContext';
+import LiveAnalyticsScreen from '@/features/analytics/LiveAnalyticsScreen';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -12,7 +14,7 @@ import { Colors } from '@/constants/Theme';
 import { useRealPantry } from '@/context/RealPantryContext';
 import ReconciliationBanner from '@/components/ReconciliationBanner';
 
-export default function FinancialAnalytics() {
+function DemoFinancialAnalytics() {
   const real = useRealPantry();
   const [month, setMonth] = useState('2025-06');
   const [chooseMonth, setChooseMonth] = useState(false);
@@ -75,4 +77,9 @@ export default function FinancialAnalytics() {
     }} />
     <ReportSheet report={report} onClose={() => setReport(null)} />
   </PrototypeScreen>;
+}
+
+export default function FinancialAnalytics() {
+  const { state } = useAuth();
+  return state.demo ? <DemoFinancialAnalytics /> : <LiveAnalyticsScreen financial />;
 }
