@@ -192,12 +192,14 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
 | 6 | Barcode scan + receipt OCR | ⏸ Deferred by user |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
-| 8 | Waste analytics and data integrity | 🟡 Implemented slices deployed; category/individual phone checks and final review pending |
+| 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
 
 ---
 
 ## Project Status
+
+**Phase 8 final development review complete (16 October).** Fresh checks pass: mobile/backend TypeScript and backend build, root206/206, backend122/122, health1/1, read-only HTTPS SQL11/11 and all-platform/35-route exports. Hosted health200/tokenless analytics401 pass. User explicitly skipped category and individual-entry phone checks; they remain unverified, not passed. Earlier core monthly iPhone checks passed by user report. Existing Doctor20/21, lint/local Prisma and broader native/accessibility/performance gaps remain. Native bar charts are a documented alternative to the plan's chart libraries; unsupported impact metrics remain unavailable. See [final review](docs/Phase_8_Final_Review.md). Phase8 development checkpoint is closed with these limitations. Next: Phase9 prerequisites/first incomplete slice only when authorized; Phase6 deferred. No next-phase work started.
 
 **Phase 8 individual confirmed-use entries connected/deployed (16 October); phone verification pending.** Financial Analytics now lists the latest20 confirmed uses on/before expiry, with current Pantry names, immutable outcome category/value/expiry, explicit unknown/estimated/zero prices and protected detail links. Aggregate and list reads share a scoped RepeatableRead snapshot; Undo and capped coverage are validated. Both TypeScript/build, root206/206, backend122/122, health1/1, HTTPS SQL11/11 and all-platform/35-route exports pass. Development Preview Ready, health200/tokenless analytics401; ignored API URL updated, Auth preserved. See [individual-entry report](docs/Phase_8_Individual_Entries.md). Category and individual phone acceptance remain pending, followed by failure/native/accessibility QA and final Phase8 review. Existing local Prisma/Doctor/lint gaps remain; Phase6 deferred, no Phase9.
 

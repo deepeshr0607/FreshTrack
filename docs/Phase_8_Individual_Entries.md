@@ -1,5 +1,9 @@
 # Phase 8 — individual confirmed uses on/before expiry
 
+Final-review update (16 October): user chose to skip this slice's remaining phone checklist.
+It remains **unverified**, not passed. See [final review](Phase_8_Final_Review.md) for the
+closed development checkpoint and remaining QA; earlier next-step wording below is historical.
+
 16 October 2026. Implemented; deployment and phone result recorded below. Category phone acceptance
 has not yet been reported and is not inferred from the user's instruction to continue.
 

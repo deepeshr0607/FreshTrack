@@ -1,5 +1,9 @@
 # Phase 8 — event-backed category breakdown
 
+Final-review update (16 October): user chose to skip this slice's remaining phone checklist.
+It remains **unverified**, not passed. See [final review](Phase_8_Final_Review.md) for the
+closed development checkpoint and remaining QA; earlier next-step wording below is historical.
+
 16 October 2026. Implemented/deployed to development Preview; category iPhone acceptance pending.
 
 ## Data and financial rules
