@@ -21,6 +21,16 @@ export interface AnalyticsSummary {
   /** Assumed outcomes and SYSTEM-sourced outcomes never enter confirmed totals. */
   unconfirmed: AnalyticsAmount;
 }
+export interface AnalyticsSeries {
+  month: string; previousMonth: string; timezone: string; currencyCode: 'INR'; asOf: string;
+  months: (AnalyticsSummary & { period: 'COMPLETE' | 'MONTH_TO_DATE' | 'FUTURE' })[];
+  comparison: {
+    basis: 'PURCHASE_VALUES_ONLY';
+    period: 'COMPLETE_PERIODS' | 'MONTH_TO_DATE' | 'FUTURE_PERIOD';
+    /** Signed exact paise deltas: selected minus previous, excluding estimated/unknown costs. */
+    wastedPurchaseDeltaMinor: string | null; consumedPurchaseDeltaMinor: string | null;
+  };
+}
 export interface HouseholdDto {
   id: string;
   name: string;

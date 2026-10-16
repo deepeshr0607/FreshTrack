@@ -2,7 +2,7 @@ const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { Prisma, PrismaClient } = require('@prisma/client');
 const { requireDevelopmentDatabase } = require('../scripts/development-database.cjs');
-const { analyticsGroupsQuery, analyticsSummary } = require('../dist/lib/analytics');
+const { analyticsGroupsQuery, analyticsSummary, analyticsMonths, analyticsSeries } = require('../dist/lib/analytics');
 requireDevelopmentDatabase();
 if (process.env.ALLOW_DEVELOPMENT_DATABASE_TESTS !== 'true') throw Error('DEVELOPMENT_TEST_OPT_IN_REQUIRED');
 const db = new PrismaClient({ log: [], errorFormat: 'minimal' });
@@ -13,7 +13,8 @@ const asOf = new Date('2026-12-01T00:00:00Z');
 let sequence = 0;
 const event = (item, at, status, cost = 6050, options = {}) => ({ id: String(++sequence).padStart(5, '0'), item, at, status, cost,
   household, previous: 'ACTIVE', type: 'STATUS_CHANGED', provenance: cost === null ? 'UNKNOWN' : 'PURCHASE', currency: 'INR', timezone: 'Asia/Kolkata', expiry: '2026-10-31', source: 'APP', ...options });
-async function read(rows, month = '2026-10', timezone = 'Asia/Kolkata', account = subject) {
+async function read(rows, month = '2026-10', timezone = 'Asia/Kolkata', account = subject, count) {
+  const months = count === undefined ? month : analyticsMonths(month, count);
   // CTEs shadow the application tables: exact production aggregate, synthetic VALUES only.
   // No application records are read, inserted, updated or deleted; no cleanup is required.
   const values = rows.map(r => Prisma.sql`(${r.id}::text, ${r.item}::text, ${r.household}::uuid, ${new Date(r.at)}::timestamptz,
@@ -21,8 +22,8 @@ async function read(rows, month = '2026-10', timezone = 'Asia/Kolkata', account 
     ${r.currency}::text, ${r.timezone}::text, ${new Date(r.expiry + 'T00:00:00Z')}::date, ${r.source}::text)`);
   const groups = await db.$queryRaw(Prisma.sql`WITH "HouseholdMember" AS (SELECT ${household}::uuid AS "householdId", ${subject}::text AS "authSubject"),
     "PantryItemEvent" (id, "pantryItemId", "householdId", "occurredAt", "newStatus", "previousStatus", "eventType", "totalCostMinor", "costSource", "currencyCode", timezone, "expiresOn", source)
-      AS (VALUES ${Prisma.join(values)}), ${analyticsGroupsQuery(household, account, month, timezone, asOf)}`);
-  return analyticsSummary(groups, month, timezone, asOf.toISOString());
+      AS (VALUES ${Prisma.join(values)}), ${analyticsGroupsQuery(household, account, months, timezone, asOf)}`);
+  return count === undefined ? analyticsSummary(groups, month, timezone, asOf.toISOString()) : analyticsSeries(groups, months, timezone, asOf.toISOString(), '2026-12');
 }
 test('SQL keeps authoritative entry snapshots, zero/unknown/estimated values separate and excludes foreign events', async () => {
   const rows = [event('half-litre', '2026-10-15T12:00:00Z', 'WASTED'), event('zero', '2026-10-15T12:00:00Z', 'WASTED', 0),
@@ -59,4 +60,28 @@ test('SQL handles leap-day and year boundaries, empty months and totals beyond a
   assert.equal((await read(rows, '2023-01')).wasted.purchaseCostMinor, '0');
   const large = [event('large-one', '2026-10-15T00:00:00Z', 'WASTED', 2147483647), event('large-two', '2026-10-15T00:00:00Z', 'WASTED', 2147483647)];
   assert.equal((await read(large)).wasted.purchaseCostMinor, '4294967294');
+});
+
+test('SQL series exactly reconciles with standalone summaries after cross-month Undo and confirmation', async () => {
+  const rows = [event('undone-outside-range', '2026-09-15T12:00:00Z', 'WASTED'),
+    event('undone-outside-range', '2026-12-01T00:00:00Z', 'ACTIVE', 6050, { previous: 'WASTED' }),
+    event('corrected', '2026-09-20T12:00:00Z', 'WASTED'), event('corrected', '2026-10-01T12:00:00Z', 'ACTIVE', 6050, { previous: 'WASTED' }),
+    event('corrected', '2026-11-01T12:00:00Z', 'WASTED', 7700), event('estimate', '2026-09-15T12:00:00Z', 'WASTED', 2000, { provenance: 'ESTIMATE' }),
+    event('unknown', '2026-10-15T12:00:00Z', 'WASTED', null), event('used', '2026-10-15T12:00:00Z', 'CONSUMED', 200)];
+  const series = await read(rows, '2026-11', 'Asia/Kolkata', subject, 3);
+  for (const point of series.months) {
+    const { period, ...summary } = point;
+    assert.deepEqual(summary, await read(rows, point.month)); assert.equal(period, 'COMPLETE');
+  }
+  assert.equal(series.months[0].wasted.purchaseCostMinor, '0'); assert.equal(series.months[0].wasted.estimatedCostMinor, '2000');
+  assert.equal(series.months[1].wasted.unknownCount, 1); assert.equal(series.months[2].wasted.purchaseCostMinor, '7700');
+  assert.equal(series.comparison.wastedPurchaseDeltaMinor, '7700'); assert.equal(series.comparison.consumedPurchaseDeltaMinor, '-200');
+  assert.equal((await read(rows, '2026-11', 'Asia/Kolkata', 'foreign-account', 3)).months.every(point => point.wasted.count === 0), true);
+});
+test('SQL series month grouping respects a DST-observing household without device timezone arithmetic', async () => {
+  const rows = [event('october', '2026-11-01T03:59:59.999Z', 'WASTED', 100), event('november', '2026-11-01T04:00:00Z', 'WASTED', 200)];
+  const ny = await read(rows, '2026-11', 'America/New_York', subject, 2);
+  assert.deepEqual(ny.months.map(point => point.wasted.purchaseCostMinor), ['100', '200']);
+  const utc = await read(rows, '2026-11', 'UTC', subject, 2);
+  assert.deepEqual(utc.months.map(point => point.wasted.purchaseCostMinor), ['0', '300']);
 });

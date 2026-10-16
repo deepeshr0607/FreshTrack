@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 8 monthly series/comparison implemented locally (16 October); live SQL verification pending.** Added protected /api/v1/analytics/series with 2–12 ascending month points, exact purchase-only signed deltas, explicit complete/month-to-date/future labels and no future-month deltas. Summary/series share scoped effective-outcome SQL and Undo rules. Both TypeScript/build, root189/189, backend114/114 and health1/1 pass. Six read-only synthetic Neon SQL tests failed before assertions because Prisma could not connect, including after user switched to hotspot; the preceding summary SQL4/4 is historical, not a current series pass. No record writes, schema/dependency/environment/deploy or mobile changes. See [series report](docs/Phase_8_Monthly_Series.md). Next: restore development database connectivity and rerun six SQL tests, then connect supplied Analytics/Insights UI. Existing Doctor/lint/native gaps remain; Phase6 deferred, no Phase9.
+
 **Phase 8 started — first monthly summary backend slice tested locally (16 October).** Added authenticated GET /api/v1/analytics/summary with strict optional household month, grouped immutable event snapshots and latest-effective-outcome/Undo rules. Purchase/estimate/unknown values and unconfirmed outcomes remain separate; exact paise strings and snapshot expiry-day classification avoid invented savings/partial quantities. Both TypeScript/build, root189/189, backend107/107, health1/1 and read-only synthetic Neon SQL4/4 pass. No application records read/written by integration fixtures, schema/dependency/environment/deploy or mobile UI changes. Existing Doctor/lint/native QA gaps remain. See [monthly summary report](docs/Phase_8_Monthly_Summary.md). Next: monthly series/previous-month comparison, then supplied Analytics/Insights UI connection. Phase6 deferred; Phase9 unstarted.
 
 **Phase 7 — development acceptance complete (16 October).** Final development review and core Recipes/details/shopping checks are recorded; the user now answered “All checks passed” to the latest ten-step iPhone checklist covering metadata loading, Quick/Vegetarian/Vegan composition, filter clearing, recipe details, shopping deduplication and return navigation. This is user-reported evidence, not direct agent observation. Prior final automated results: root189/189, backend100/100, health1/1, both TypeScript/build and all-platform/35-route exports pass. Broader Android/signed-build/failure-path/accessibility QA, Doctor20/21 and existing lint gaps remain. See [final review](docs/Phase_7_Final_Review.md). Phase6 remains deferred. Next proposed phase: Phase8 event-based waste analytics, only when authorized; Phase8/9 have not started.
@@ -262,12 +264,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 8 — first monthly summary backend slice tested locally
+### Current phase: Phase 8 — local monthly series, live SQL verification pending
 
-See docs/Phase_8_Monthly_Summary.md. Authenticated event-derived summary and effective outcome/Undo
-rules are implemented and tested; monthly series and mobile Analytics/Insights connection remain.
-No deployment or mobile connection yet. Phase7 development acceptance is recorded; broader native QA,
-Doctor/lint gaps and Phase5 native acceptance limits remain. Phase6 deferred; no Phase9 work.
+See docs/Phase_8_Monthly_Series.md. Summary/series and previous-month comparison code pass local
+regressions. Six read-only SQL tests could not connect, including hotspot retry, and are not marked
+passed. Restore Neon development connectivity and rerun them before deploying/connecting Analytics UI.
+No deployment/mobile change yet. Broader native QA and maintenance gaps remain. Phase6 deferred; no Phase9.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
