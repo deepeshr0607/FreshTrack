@@ -7,6 +7,8 @@ requireDevelopmentDatabase();
 if (process.env.ALLOW_DEVELOPMENT_DATABASE_TESTS !== 'true') throw Error('DEVELOPMENT_TEST_OPT_IN_REQUIRED');
 const db = new PrismaClient({ log: [], errorFormat: 'minimal' });
 after(() => db.$disconnect());
+const query = process.env.ANALYTICS_SQL_TRANSPORT === 'https'
+  ? require('./analytics-https.cjs').createAnalyticsHttpsQuery() : sql => db.$queryRaw(sql);
 const household = '11111111-1111-4111-8111-111111111111', foreign = '22222222-2222-4222-8222-222222222222';
 const subject = 'freshtrack-dev-test:analytics:read-only';
 const asOf = new Date('2026-12-01T00:00:00Z');
@@ -20,7 +22,7 @@ async function read(rows, month = '2026-10', timezone = 'Asia/Kolkata', account 
   const values = rows.map(r => Prisma.sql`(${r.id}::text, ${r.item}::text, ${r.household}::uuid, ${new Date(r.at)}::timestamptz,
     ${r.status}::text, ${r.previous}::text, ${r.type}::text, ${r.cost}::integer, ${r.provenance}::text,
     ${r.currency}::text, ${r.timezone}::text, ${new Date(r.expiry + 'T00:00:00Z')}::date, ${r.source}::text)`);
-  const groups = await db.$queryRaw(Prisma.sql`WITH "HouseholdMember" AS (SELECT ${household}::uuid AS "householdId", ${subject}::text AS "authSubject"),
+  const groups = await query(Prisma.sql`WITH "HouseholdMember" AS (SELECT ${household}::uuid AS "householdId", ${subject}::text AS "authSubject"),
     "PantryItemEvent" (id, "pantryItemId", "householdId", "occurredAt", "newStatus", "previousStatus", "eventType", "totalCostMinor", "costSource", "currencyCode", timezone, "expiresOn", source)
       AS (VALUES ${Prisma.join(values)}), ${analyticsGroupsQuery(household, account, months, timezone, asOf)}`);
   return count === undefined ? analyticsSummary(groups, month, timezone, asOf.toISOString()) : analyticsSeries(groups, months, timezone, asOf.toISOString(), '2026-12');
