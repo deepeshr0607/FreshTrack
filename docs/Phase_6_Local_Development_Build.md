@@ -183,3 +183,22 @@ Exact next step: user trusts their Apple development profile, opens FreshTrack D
 network access if asked, connects to8087, and verifies real sign-in/Pantry/Settings. Keep codes and
 passwords private. After this baseline works, select/verify an on-device OCR module. No Google
 billing/API credentials, backend/data/schema change, production deploy or App Store submission.
+
+## Development launcher recovery — 16 October
+
+User reported Error loading app / Failed to open app. Metro on8087 was still running with cached
+configuration referring to the earlier withLocalNotificationsOnly plugin name, renamed during the
+build fix. The server had not been restarted after that rename. Identified and stopped only the
+listener on8087, then restarted with the current APP_LOCAL_NATIVE_IDENTIFIER and --dev-client.
+No source/dependency/native rebuild or account setting change was needed.
+
+Verified the actual iOS manifest over the current LAN address, including expo-platform/protocol
+headers: HTTP200, application/expo+json, name FreshTrack Dev, a launch asset URL and no plugin
+resolution error. Prior HTTP200 bundle/status checks alone did not cover the stale manifest error.
+Reopened the installed app using devicectl with its development-client URL for port8087; launch
+command exited0 and reported the app launched. This supersedes the previous launch-denied state,
+but does not establish a visible working screen/sign-in. User phone confirmation remains pending.
+Server log: /private/tmp/freshtrack-native-metro-restart.log. Current port8087/LAN172.20.10.2.
+Exact next step: user checks FreshTrack loads, then verifies real sign-in, Pantry and Settings.
+OCR remains uninstalled. No runtime code changed; prior209 tests/exports remain prior evidence,
+not rerun in this server restart. No Phase9 work.
