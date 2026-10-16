@@ -11,6 +11,7 @@ import { useRealAnalytics } from '@/context/RealAnalyticsContext';
 import { useRealPantry } from '@/context/RealPantryContext';
 import { analyticsPeriodLabel, analyticsReport, consumedAmount, formatAnalyticsMoney } from '@/lib/analyticsPresentation';
 import { Colors } from '@/constants/Theme';
+import CategoryBreakdown from './CategoryBreakdown';
 import { Comparison, MonthControls, MonthlyChart, PriceCoverage } from './AnalyticsParts';
 export default function LiveAnalyticsScreen({ financial = false }: { financial?: boolean }) {
   const { state: auth } = useAuth(), { state, store } = useRealAnalytics(), pantry = useRealPantry();
@@ -43,6 +44,7 @@ export default function LiveAnalyticsScreen({ financial = false }: { financial?:
         <View style={[ui.card, { backgroundColor: Colors.surfaceContainerHigh }]}><Text style={ui.heading}>Kitchen Activity</Text><Text style={ui.text}>{consumed.count} confirmed used · {row.wasted.count} confirmed wasted · {row.unconfirmed.count} unconfirmed outcomes excluded</Text>
           <Text style={ui.text}>Only confirmed effective outcomes count. Undo can revise an earlier month.</Text></View>
         <PriceCoverage title="Confirmed Waste · Price Coverage" value={row.wasted} />
+        <CategoryBreakdown data={data} />
         <View style={[ui.card, { borderLeftWidth: 5, borderLeftColor: Colors.primary }]}><Text style={ui.heading}>Plan Your Next Rescue</Text><Text style={ui.text}>Check near-expiry groceries before planning meals.</Text>
           <PrimaryButton label="Plan Rescue Meals" onPress={() => router.push('/(tabs)/recipes')} /><PrimaryButton label="Adjust Reminder Window" variant="ghost" onPress={() => router.push('/settings')} /></View>
         <PrimaryButton label="Impact & Financial Analytics →" variant="ghost" onPress={() => router.push('/analytics/financial')} />
@@ -52,9 +54,10 @@ export default function LiveAnalyticsScreen({ financial = false }: { financial?:
         <PriceCoverage title="Confirmed Waste · Recorded Value" value={row.wasted} />
         <Comparison data={data} />
         <MonthlyChart data={data} wasteOnly />
+        <CategoryBreakdown data={data} waste />
         <View style={ui.card}><Text style={ui.heading}>Unconfirmed Outcomes</Text><Text style={ui.text}>{row.unconfirmed.count} assumed or system-generated outcomes excluded from confirmed totals.</Text></View>
       </>}
-      <View style={ui.card}><Text style={ui.heading}>Impact Metrics</Text><Text style={ui.text}>Carbon, food mass, achievement scores, category breakdown and individual rescue rankings are not calculated in this view yet.</Text></View>
+      <View style={ui.card}><Text style={ui.heading}>Impact Metrics</Text><Text style={ui.text}>Carbon, food mass, achievement scores and individual rescue rankings are not calculated in this view yet.</Text></View>
       <Text style={[ui.text, { fontSize: 11 }]}>As of {data.asOf}. Estimates and unknown prices are excluded from recorded-purchase totals. Whole-entry outcomes; partial consumption is not tracked.</Text>
     </>}
     <ReconciliationBanner />

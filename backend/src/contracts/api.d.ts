@@ -24,6 +24,8 @@ export interface AnalyticsSummary {
 export interface AnalyticsSeries {
   month: string; previousMonth: string; timezone: string; currencyCode: 'INR'; asOf: string;
   months: (AnalyticsSummary & { period: 'COMPLETE' | 'MONTH_TO_DATE' | 'FUTURE' })[];
+  /** Selected-month outcome-time categories, from the same snapshot as monthly totals. */
+  categories: AnalyticsCategory[];
   comparison: {
     basis: 'PURCHASE_VALUES_ONLY';
     period: 'COMPLETE_PERIODS' | 'MONTH_TO_DATE' | 'FUTURE_PERIOD';
@@ -31,6 +33,7 @@ export interface AnalyticsSeries {
     wastedPurchaseDeltaMinor: string | null; consumedPurchaseDeltaMinor: string | null;
   };
 }
+export type AnalyticsCategory = Pick<AnalyticsSummary, 'wasted' | 'consumedBeforeOrOnExpiry' | 'consumedAfterExpiry' | 'unconfirmed'> & { category: PantryCategory };
 export interface HouseholdDto {
   id: string;
   name: string;

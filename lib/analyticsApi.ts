@@ -4,7 +4,7 @@ import { apiOrigin } from './backendIdentity.ts';
 // @ts-expect-error Explicit extensions support strip-types tests and Metro.
 import { NeonAuthError } from './neonAuth.ts';
 // @ts-expect-error Explicit extensions support strip-types tests and Metro.
-import { validMonth, shiftAnalyticsMonth, consumedAmount } from './analyticsPresentation.ts';
+import { validMonth, shiftAnalyticsMonth, consumedAmount, ANALYTICS_CATEGORIES } from './analyticsPresentation.ts';
 const record = (value: any): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
 const count = (value: any) => Number.isSafeInteger(value) && value >= 0;
 const money = (value: any) => typeof value === 'string' && /^(0|[1-9]\d{0,24})$/.test(value);
@@ -28,6 +28,18 @@ export function validAnalyticsSeries(value: any, requested?: string): value is A
       && ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed'].every(key => amount(row[key]) && (row.period !== 'FUTURE' || row[key].count === 0))
       && count(row.consumedBeforeOrOnExpiry.count + row.consumedAfterExpiry.count))) return false;
     const last = value.months[5], previous = value.months[4], comparison = value.comparison;
+    if (!Array.isArray(value.categories) || value.categories.length !== 7 || new Set(value.categories.map((row: any) => row?.category)).size !== 7
+      || !value.categories.every((row: any) => record(row) && ANALYTICS_CATEGORIES.some(category => category.code === row.category)
+        && ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed'].every(key => amount(row[key])))) return false;
+    // Every category count and monetary subtotal must reconcile exactly with this month's header.
+    for (const bucket of ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed']) {
+      for (const field of ['count', 'purchaseCount', 'estimatedCount', 'unknownCount']) {
+        if (value.categories.reduce((sum: number, row: any) => sum + row[bucket][field], 0) !== last[bucket][field]) return false;
+      }
+      for (const field of ['purchaseCostMinor', 'estimatedCostMinor']) {
+        if (String(value.categories.reduce((sum: bigint, row: any) => sum + BigInt(row[bucket][field]), 0n)) !== last[bucket][field]) return false;
+      }
+    }
     if (!record(comparison) || comparison.basis !== 'PURCHASE_VALUES_ONLY' || comparison.period !== (last.period === 'FUTURE' ? 'FUTURE_PERIOD' : last.period === 'MONTH_TO_DATE' ? 'MONTH_TO_DATE' : 'COMPLETE_PERIODS')) return false;
     return comparison.wastedPurchaseDeltaMinor === (last.period === 'FUTURE' ? null : String(BigInt(last.wasted.purchaseCostMinor) - BigInt(previous.wasted.purchaseCostMinor)))
       && comparison.consumedPurchaseDeltaMinor === (last.period === 'FUTURE' ? null : String(BigInt(consumedAmount(last).purchaseCostMinor) - BigInt(consumedAmount(previous).purchaseCostMinor)));

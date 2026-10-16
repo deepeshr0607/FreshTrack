@@ -16,7 +16,7 @@ function createAnalyticsHttpsQuery(transport = fetch) {
         body: JSON.stringify({ query: sql.text, params: sql.values }), signal: AbortSignal.timeout(15000) });
       if (!response.ok) throw Error();
       const body = await response.json();
-      if (!Array.isArray(body.rows) || body.rows.length > 144 || !Array.isArray(body.fields)) throw Error();
+      if (!Array.isArray(body.rows) || body.rows.length > 1008 || !Array.isArray(body.fields)) throw Error();
       return body.rows.map(row => Array.isArray(row) ? Object.fromEntries(body.fields.map((field, index) => [field.name, row[index]])) : row);
     } catch { throw Error('ANALYTICS_HTTPS_SQL_UNAVAILABLE'); } // Never echo connection strings/provider bodies.
   };

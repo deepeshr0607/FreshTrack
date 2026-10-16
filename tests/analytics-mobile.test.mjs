@@ -60,6 +60,7 @@ test('failure clears prior values, retries recover and Current resets to the aut
 });
 test('empty-month data remains a valid ready result rather than fallback mock analytics', async () => {
   const data = analyticsFixture(); data.months.forEach(row => { for (const key of ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed']) row[key] = { count: 0, purchaseCount: 0, purchaseCostMinor: '0', estimatedCount: 0, estimatedCostMinor: '0', unknownCount: 0 }; });
+  data.categories.forEach(row => { for (const key of ['wasted', 'consumedBeforeOrOnExpiry', 'consumedAfterExpiry', 'unconfirmed']) row[key] = { count: 0, purchaseCount: 0, purchaseCostMinor: '0', estimatedCount: 0, estimatedCostMinor: '0', unknownCount: 0 }; });
   data.comparison.wastedPurchaseDeltaMinor = '0'; data.comparison.consumedPurchaseDeltaMinor = '0'; assert.equal(validAnalyticsSeries(data), true);
   const store = createAnalyticsSession({ series: async () => data }, () => true); await store.load(); assert.equal(store.getSnapshot().status, 'ready'); assert.equal(store.getSnapshot().data.months[5].wasted.count, 0);
 });

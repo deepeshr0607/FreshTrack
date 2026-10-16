@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 8 category breakdown connected/deployed (16 October); iPhone verification pending.** Series now includes seven selected-month outcome-time category partitions from the same scoped snapshot as totals. Insights shows consumed categories/View All; Financial shows confirmed waste/segmented shares. Estimates, unknowns, zero and unconfirmed outcomes remain separate; exact category sums are validated against headers. Both TypeScript/build, root202/202, backend118/118, health1/1, HTTPS SQL8/8 and final all-platform/35-route exports pass. Preview Ready, health200/tokenless analytics401; ignored public API URL updated, Auth preserved. Doctor20/21/lint/native/local Prisma gaps remain. See [category report](docs/Phase_8_Category_Breakdown.md). Next: numbered category phone checks, then individual rescue data and final review. Phase6 deferred; no Phase9.
+
 **Phase 8 monthly Analytics/Insights passed iPhone checks by user report (16 October).** User answered “All checks passed” to the 13-step checklist covering active-item exclusion, exact consumed/waste/unknown-price changes, chart values, Undo cancel/restore/reconfirmation without duplicate cost, restart, previous/current/invalid/future months, report/share cancellation and sign-out/Demo separation. Recorded as user report, not direct observation or per-step numeric evidence. Prior root199/backend115/health1/HTTPS SQL6 and all-platform/35-route exports pass; both TypeScript checks pass again. See [mobile report](docs/Phase_8_Mobile_Analytics.md). Remaining: category/individual rescue data, further edge/native QA and final Phase8 review. Local Prisma/maintenance gaps remain; Phase6 deferred, no Phase9.
 
 **Phase 8 real Insights/Financial views connected and deployed (16 October), iPhone verification pending.** Existing routes preserve Demo and use a scoped shared six-month analytics provider for real accounts. Exact INR values/coverage, month navigation, consumed/waste charts, previous-month deltas, report preview/share, retry/empty states and existing reconciliation are connected. Unsupported scores/carbon/category/individual-rescue metrics remain unavailable; no fake savings. Both TypeScript/build, root199/199, backend115/115, health1/1, HTTPS SQL6/6 and all-platform/35-route exports pass. Preview Ready, health200/tokenless analytics401; ignored API URL updated with Auth preserved. Doctor20/21 (six patch recommendations) and lint gaps remain; local Prisma unresolved. See [mobile report](docs/Phase_8_Mobile_Analytics.md). Next: numbered iPhone acceptance, then remaining design/data/QA/final review. Phase6 deferred; no Phase9.
@@ -272,12 +274,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 8 — real monthly analytics passed user-reported iPhone checks
+### Current phase: Phase 8 — category breakdown deployed, phone verification pending
 
-See docs/Phase_8_Mobile_Analytics.md. User reported all 13 phone checks passed on 16 October,
-including exact totals, unknown prices, Undo/reconfirmation, month controls, restart, sharing and
-Demo separation. Next category/individual rescue data and remaining QA/final review. Local Prisma,
-native/maintenance gaps remain; Phase6 deferred, no Phase9. Full Phase8 is not yet complete.
+See docs/Phase_8_Category_Breakdown.md. Real category partitions from effective outcome snapshots
+are connected to both views and reports. Root202/backend118/health1/HTTPS SQL8 and exports pass.
+Next category phone checklist, then individual rescue data and final review. Prior monthly checks
+passed by user report. Local Prisma/native/maintenance gaps remain; Phase6 deferred, no Phase9.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 

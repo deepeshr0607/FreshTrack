@@ -1,6 +1,6 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, ItemCategory } from '@prisma/client';
 import { InvalidApiInput } from './api';
-import type { AnalyticsAmount, AnalyticsSummary, AnalyticsSeries } from '../contracts/api';
+import type { AnalyticsAmount, AnalyticsSummary, AnalyticsSeries, PantryCategory } from '../contracts/api';
 
 export function analyticsMonth(value: unknown): string {
   if (typeof value !== 'string' || !/^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(value)) {
@@ -43,18 +43,18 @@ export function analyticsGroupsQuery(householdId: string, subject: string, month
       WHEN "newStatus"::text = 'WASTED' THEN 'wasted'
       WHEN ("occurredAt" AT TIME ZONE timezone)::date <= "expiresOn" THEN 'consumedBeforeOrOnExpiry'
       ELSE 'consumedAfterExpiry' END AS bucket,
-      "costSource"::text AS provenance, "currencyCode", "totalCostMinor",
+      "costSource"::text AS provenance, "currencyCode", "totalCostMinor", category::text AS category,
       to_char("occurredAt" AT TIME ZONE ${timezone}, 'YYYY-MM') AS month
     FROM effective
     WHERE "newStatus"::text IN ('CONSUMED', 'WASTED', 'ASSUMED_CONSUMED')
       AND to_char("occurredAt" AT TIME ZONE ${timezone}, 'YYYY-MM') BETWEEN ${months[0]} AND ${months[months.length - 1]}
   )
-  SELECT month, bucket, provenance, "currencyCode" AS currency,
+  SELECT month, category, bucket, provenance, "currencyCode" AS currency,
     count(*)::text AS count, COALESCE(sum("totalCostMinor"), 0)::text AS amount
-  FROM classified GROUP BY month, bucket, provenance, "currencyCode"`;
+  FROM classified GROUP BY month, category, bucket, provenance, "currencyCode"`;
 }
 
-export interface AnalyticsGroup { month?: string; bucket: string; provenance: string; currency: string; count: string; amount: string }
+export interface AnalyticsGroup { month?: string; category?: PantryCategory; bucket: string; provenance: string; currency: string; count: string; amount: string }
 const amount = (): AnalyticsAmount => ({ count: 0, purchaseCount: 0, purchaseCostMinor: '0', estimatedCount: 0, estimatedCostMinor: '0', unknownCount: 0 });
 /** SQL bigint totals travel as decimal strings, never rounded through floating point. */
 export function analyticsSummary(groups: AnalyticsGroup[], month: string, timezone: string, asOf: string): AnalyticsSummary {
@@ -74,13 +74,18 @@ export function analyticsSummary(groups: AnalyticsGroup[], month: string, timezo
 }
 
 export function analyticsSeries(groups: AnalyticsGroup[], months: string[], timezone: string, asOf: string, currentMonth: string): AnalyticsSeries {
-  if (groups.some(row => !row.month || !months.includes(row.month))) throw new Error('INVALID_ANALYTICS_MONTH_GROUP');
+  const categoryKeys = Object.values(ItemCategory);
+  if (groups.some(row => !row.month || !months.includes(row.month) || !row.category || !categoryKeys.includes(row.category))) throw new Error('INVALID_ANALYTICS_MONTH_GROUP');
   const points = months.map(month => ({ ...analyticsSummary(groups.filter(row => row.month === month), month, timezone, asOf),
     period: month < currentMonth ? 'COMPLETE' as const : month === currentMonth ? 'MONTH_TO_DATE' as const : 'FUTURE' as const }));
   const selected = points[points.length - 1], previous = points[points.length - 2];
+  const categories = categoryKeys.map(category => {
+    const { wasted, consumedBeforeOrOnExpiry, consumedAfterExpiry, unconfirmed } = analyticsSummary(groups.filter(row => row.month === selected.month && row.category === category), selected.month, timezone, asOf);
+    return { category, wasted, consumedBeforeOrOnExpiry, consumedAfterExpiry, unconfirmed };
+  });
   const future = selected.period === 'FUTURE';
   const consumed = (row: AnalyticsSummary) => BigInt(row.consumedBeforeOrOnExpiry.purchaseCostMinor) + BigInt(row.consumedAfterExpiry.purchaseCostMinor);
-  return { month: selected.month, previousMonth: previous.month, timezone, currencyCode: 'INR', asOf, months: points,
+  return { month: selected.month, previousMonth: previous.month, timezone, currencyCode: 'INR', asOf, months: points, categories,
     comparison: { basis: 'PURCHASE_VALUES_ONLY', period: future ? 'FUTURE_PERIOD' : selected.period === 'MONTH_TO_DATE' ? 'MONTH_TO_DATE' : 'COMPLETE_PERIODS',
       wastedPurchaseDeltaMinor: future ? null : String(BigInt(selected.wasted.purchaseCostMinor) - BigInt(previous.wasted.purchaseCostMinor)),
       consumedPurchaseDeltaMinor: future ? null : String(consumed(selected) - consumed(previous)) } };
