@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { receiptImportResult } from '@/lib/receiptImport';
 import { createNotificationOutbox } from '@/lib/notificationOutbox';
 import { notificationOutboxStorage } from '@/features/notifications/nativeOutbox';
 import { createOverdueReview } from '@/lib/overdueReview';
@@ -11,7 +12,7 @@ import { bindAutomaticReminderSession, createAutomaticReminders } from '@/lib/au
 import { createPantryApi, requirePantryStatus, pantryFilterKey } from '@/lib/pantryApi';
 import { createPantryReadCache, cacheablePantryFailure } from '@/lib/pantryReadCache';
 import { NeonAuthError } from '@/lib/neonAuth';
-import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryItemDto, PantryListFilters, PantryInventoryCounts } from '@/types/api';
+import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryBatchOutcomeInput, PantryItemDto, PantryListFilters, PantryInventoryCounts, ReceiptReviewInput, ReceiptReviewResponse, ReceiptImportInput, ReceiptImportData } from '@/types/api';
 
 type Value = { overdueReview: ReturnType<typeof createOverdueReview> | null; pendingNotificationIds: string[]; notificationOutbox: ReturnType<typeof createNotificationOutbox> | null; enabled: boolean; items: PantryItemDto[]; loading: boolean; error: string; total: number; hasMore: boolean;
   diskStatus: string; restoreSavedPreview: () => Promise<void>;
@@ -21,6 +22,8 @@ type Value = { overdueReview: ReturnType<typeof createOverdueReview> | null; pen
   reminderItems: () => Promise<PantryItemDto[]>;
   syncReminders: () => Promise<void>;
   duplicates: (input: PantryCreateInput) => Promise<{ matches: PantryItemDto[]; total: number }>;
+  reviewReceipt: (input: ReceiptReviewInput) => Promise<ReceiptReviewResponse['data']>;
+  importReceipt: (input: ReceiptImportInput, key: string) => Promise<ReceiptImportData>;
   add: (input: PantryCreateInput, key: string) => Promise<PantryItemDto>;
   edit: (id: string, input: PantryEditInput, key: string) => Promise<PantryItemDto>;
   outcome: (id: string, action: 'consume' | 'waste', input: PantryOutcomeInput, key: string) => Promise<PantryItemDto>;
@@ -243,6 +246,20 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     if (mounted.current) { await load(false); if (mounted.current) void automatic?.request(); } // Saved detail is returned; list refresh failures display a retry notice.
     return item;
   };
+  const reviewReceipt = async (input: ReceiptReviewInput) => {
+    requireLive(); await api.setup(); requireLive();
+    return (await api.receiptReview(input)).data;
+  };
+  const importReceipt = async (input: ReceiptImportInput, key: string) => {
+    requireLive(); await api.setup(); requireLive();
+    const result = receiptImportResult((await api.receiptImport(input, key)).data, input.items.length);
+    if (mounted.current && session.getSnapshot().user?.id === state.user?.id && !session.getSnapshot().checking) {
+      automatic?.invalidate(); overdueReview?.invalidate(); generation.current++;
+      cache.remember(scope, result.items.filter(item => item.status === 'ACTIVE')); persistDisk();
+      void overdueReview?.request(); await load(false); if (mounted.current) void automatic?.request();
+    }
+    return result;
+  };
   const reconcileMany = async (changed: PantryItemDto[], rememberOutcome = false) => {
     automatic?.invalidate();
     overdueReview?.invalidate(); if (mounted.current) void overdueReview?.request();
@@ -299,7 +316,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       await hydrateDisk(); showCached(filtersRef.current);
     }, readOnly, cachedAt, cachePreview,
     previewCache: () => { if (__DEV__ && enabled) { automatic?.invalidate(); overdueReview?.invalidate(); previewRef.current = true; setCachePreview(true); void reload(); } },
-    endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, add, edit, outcome, undo,
+    endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, reviewReceipt, importReceipt, add, edit, outcome, undo,
     reminderItems: async () => { requireLive(); await api.setup(); requireLive(); const rows = await api.reminderItems(); requireLive(); return rows; },
     syncReminders: async () => { await automatic?.flush(); },
     batchOutcome, batchUndo, lastOutcome, dismissUndo: () => setLastOutcome([]),

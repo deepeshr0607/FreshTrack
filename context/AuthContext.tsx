@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { createAuthSession } from '@/lib/authSession';
+import { bindReceiptImportCleanup } from '@/features/scanner/nativeReceiptImport';
 import { bindPantryCacheCleanup } from '@/lib/pantryDiskCache';
 import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
@@ -16,11 +17,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const disk = nativePantryDiskCache;
     const stopCacheCleanup = disk ? bindPantryCacheCleanup(session, () => disk.clear()) : () => undefined;
     const stopScheduleCleanup = bindExpiryScheduleSession(session);
+    const stopReceiptCleanup = bindReceiptImportCleanup(session);
     void session.refresh().catch(() => undefined);
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'active' && !session.getSnapshot().checking) void session.refresh().catch(() => undefined);
     });
-    return () => { subscription.remove(); stopCacheCleanup(); stopScheduleCleanup(); };
+    return () => { subscription.remove(); stopCacheCleanup(); stopScheduleCleanup(); stopReceiptCleanup(); };
   }, [session]);
   return <Context.Provider value={{ session, state, allowDemo }}>{children}</Context.Provider>;
 }
