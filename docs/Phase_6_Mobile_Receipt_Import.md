@@ -1,6 +1,6 @@
 # Phase 6 — reviewed receipt import on mobile
 
-16 October 2026. Core import/restart and duplicate choices passed by user report; sign-out phone check pending.
+16 October 2026. Core import/restart, duplicate choices and sign-out cleanup passed by user report.
 This follows the independently tested atomic receipt backend in Phase_6_Receipt_Import_Backend.md.
 
 ## Behavior and boundaries
@@ -92,7 +92,7 @@ restarted after verifying its process/cwd; unrelated servers were not stopped.
 | Actual iOS manifest and development bundle | HTTP200, FreshTrack Dev; bundle contains new public API URL |
 | iPhone core confirmation/cancel/paused retry/restart/exact values | User reported “All checks passed” to the 15-step checklist; not directly observed |
 | iPhone duplicate choices | User reported “All checks passed” to the 12-step checklist; not directly observed |
-| iPhone sign-out retry cleanup | Pending |
+| iPhone sign-out retry cleanup | User reported “All checks passed” to the 12-step checklist; not directly observed |
 | Android/native accessibility/real transport-loss UI | Not verified |
 
 The new tests cover field privacy/unknown/free values; isolated chunked persistence; partial-write
@@ -144,10 +144,9 @@ Launcher: http://172.20.10.2:8087. No authenticated hosted receipt writes were m
 
 ## Next step
 
-Core import/restart and household duplicate-choice checks passed by user report. Next verify
-sign-out retry cleanup on iPhone. Keep per-check evidence distinct. Normal scanner entry integration,
-expiry presets during receipt review, barcode scanning/catalog decision and broader native/failure
-QA remain incomplete. Phase6 is not complete; Phase9 has not started.
+All three receipt-import checklists passed by user report. Next implement normal Scanner receipt
+entry integration while preserving Demo and keeping diagnostics separate. Expiry presets during
+receipt review, barcode scanning/catalog decision and broader native/failure QA remain incomplete. Phase6 is not complete; Phase9 has not started.
 
 ## Core iPhone acceptance — 16 October 2026
 
@@ -170,3 +169,14 @@ after restart (original Milk0.5l/₹60.50, new Milk2l/₹80.00, original Bread1l
 report, not direct observation or per-step numeric evidence. Sign-out retry cleanup remains pending.
 Documentation-only update; no source/runtime/environment change or repeated automated checks.
 git diff --check passed.
+
+## Sign-out cleanup iPhone acceptance — 16 October 2026
+
+User answered “All checks passed” to the 12-step checklist: created the reviewed Receipt Logout
+Check sample, confirmed a paused/no-send retry, signed out, restarted, signed into the same account,
+confirmed the retry was absent, found no matching Pantry sample and confirmed the previous two Milk
+purchases/one Bread purchase remained. This is user-reported evidence without direct observation
+or per-step screenshots. All three phone checklists for this bounded import slice are now recorded;
+it does not complete normal Scanner integration, expiry presets, barcode or broader native QA.
+Documentation only: no runtime/environment/dependency/data change by the agent. Prior automated
+checks were not rerun; git diff --check passed.
