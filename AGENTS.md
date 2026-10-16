@@ -165,6 +165,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 8 started — first monthly summary backend slice tested locally (16 October).** Added authenticated GET /api/v1/analytics/summary with strict optional household month, grouped immutable event snapshots and latest-effective-outcome/Undo rules. Purchase/estimate/unknown values and unconfirmed outcomes remain separate; exact paise strings and snapshot expiry-day classification avoid invented savings/partial quantities. Both TypeScript/build, root189/189, backend107/107, health1/1 and read-only synthetic Neon SQL4/4 pass. No application records read/written by integration fixtures, schema/dependency/environment/deploy or mobile UI changes. Existing Doctor/lint/native QA gaps remain. See [monthly summary report](docs/Phase_8_Monthly_Summary.md). Next: monthly series/previous-month comparison, then supplied Analytics/Insights UI connection. Phase6 deferred; Phase9 unstarted.
+
 **Phase 7 — development acceptance complete (16 October).** Final development review and core Recipes/details/shopping checks are recorded; the user now answered “All checks passed” to the latest ten-step iPhone checklist covering metadata loading, Quick/Vegetarian/Vegan composition, filter clearing, recipe details, shopping deduplication and return navigation. This is user-reported evidence, not direct agent observation. Prior final automated results: root189/189, backend100/100, health1/1, both TypeScript/build and all-platform/35-route exports pass. Broader Android/signed-build/failure-path/accessibility QA, Doctor20/21 and existing lint gaps remain. See [final review](docs/Phase_7_Final_Review.md). Phase6 remains deferred. Next proposed phase: Phase8 event-based waste analytics, only when authorized; Phase8/9 have not started.
 
 **Phase 7 final development review complete (15 October); latest filter phone acceptance pending.** All implementation items were reviewed against the five plan criteria. Fresh reruns pass: mobile/backend TypeScript and backend build, root189/189, backend100/100, health1/1, all-platform/35-route exports, hosted health200 and all four tokenless Chef endpoints401. Core Recipes/details/shopping passed prior user-reported iPhone checks; the user explicitly confirmed the latest ten-step Quick/Vegetarian/Vegan checklist is not tested yet. Existing Doctor20/21 and lint setup gaps remain. No runtime/schema/dependency/environment/deployment changes in this review. See [final review](docs/Phase_7_Final_Review.md). Exact next step: complete and record the outstanding filter phone checklist. Phase6 deferred; Phase8/9 not started.
@@ -260,12 +262,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 7 — development acceptance complete
+### Current phase: Phase 8 — first monthly summary backend slice tested locally
 
-See docs/Phase_7_Final_Review.md. User reported all latest ten-step filter/detail/shopping phone
-checks passed on 16 October, following the final development review. Broader native failure-path,
-Android/signed-build QA, maintenance gaps and Phase5 native acceptance limits remain. Phase6 deferred.
-Next proposed phase: Phase8 event-based waste analytics, only when authorized. No Phase8/9 work yet.
+See docs/Phase_8_Monthly_Summary.md. Authenticated event-derived summary and effective outcome/Undo
+rules are implemented and tested; monthly series and mobile Analytics/Insights connection remain.
+No deployment or mobile connection yet. Phase7 development acceptance is recorded; broader native QA,
+Doctor/lint gaps and Phase5 native acceptance limits remain. Phase6 deferred; no Phase9 work.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 
