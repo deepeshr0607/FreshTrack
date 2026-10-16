@@ -2,6 +2,10 @@
 
 16 October 2026. Local backend slice; not deployed or connected to mobile yet.
 
+Update: the six SQL tests subsequently passed using test-only Neon HTTPS. Local Prisma connection
+failure remains unresolved. See [transport verification](Phase_8_SQL_Transport_Verification.md);
+the failed runs below remain historical evidence, not the latest SQL result.
+
 ## Behavior
 
 Authenticated GET /api/v1/analytics/series?month=YYYY-MM&months=6 returns 2–12 ascending month
