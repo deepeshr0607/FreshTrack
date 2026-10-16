@@ -878,6 +878,8 @@ Phase 5 has not started.
 
 ## Phase 6 — Scanner: barcode and receipt OCR
 
+**Phase 6 local native dependencies installed (16 October); signing setup pending.** Homebrew7.0.9/CocoaPods1.17.0 verified; pod install passed with110 pods. Both TypeScript checks and root207/207 pass. Doctor20/21 leaves only existing six Expo patch mismatches. The local iPhone build command stops before compilation because no code-signing certificate is available. No app installed or OCR tested. See [local build report](Phase_6_Local_Development_Build.md). Next: create an Apple Development certificate in Xcode using the user's Personal Team, then retry the baseline build. No paid cloud build or Google billing setup; Phase9 not started.
+
 **Phase 6 resumed — local development-build preparation (16 October).** User selected the free on-device OCR direction; ML Kit remains proposed/unverified and no cloud OCR is configured. Xcode26.6 is selected; prior iPhone diagnostics report iOS26.6.1, Developer Mode and development services available. Installed expo-dev-client~57.0.20 and added an optional local-only native identity; Expo generated ignored iOS files. Both TypeScript checks, root207/207 and all-platform/35-route exports pass. Doctor19/21: CocoaPods absent plus existing six patch mismatches. Native dependency installation, signed device build and OCR remain incomplete. See [local build report](Phase_6_Local_Development_Build.md). Next: resolve CocoaPods, then verify a baseline device build before OCR integration. Phase8 development review is closed; Phase9 not started.
 
 **Goal:** Accelerate entry while retaining an accurate review step.

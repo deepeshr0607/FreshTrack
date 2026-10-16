@@ -72,3 +72,33 @@ Official docs consulted:
 - https://docs.expo.dev/versions/v57.0.0/sdk/dev-client/
 - https://docs.expo.dev/guides/local-app-development/
 - https://developer.apple.com/xcode/system-requirements
+
+## Native tooling update — 16 October
+
+User installed Homebrew7.0.9. Agent installed its CocoaPods1.17.0 formula successfully,
+including a separate Ruby4.0.7 dependency. System Ruby is unchanged. pod install passed:
+111 Podfile dependencies,110 installed pods. Expo run:ios is now attempted against the connected
+iPhone with the provisional local identifier and --no-bundler. Final signing/build outcome follows.
+Both TypeScript checks and root207/207 pass again. Doctor20/21 now confirms native tooling;
+only the six previously recorded Expo patch mismatches remain. No backend/dependency/source
+change in this tooling update, no OCR installed, and no cloud configuration or deployment.
+
+Logs: /private/tmp/freshtrack-brew-cocoapods.log, /private/tmp/freshtrack-local-pods.log,
+/private/tmp/freshtrack-device-build.log and /private/tmp/freshtrack-device-baseline-doctor.log.
+
+### Device attempt result
+
+The first Expo attempt used CoreDevice's identifier, which Expo did not recognize. xctrace
+provided the hardware UDID; retry with that identifier resolved the correct iPhone and stopped
+with: CommandError: No code signing certificates are available to use. No compilation,
+provisioning success or installation is claimed. security find-identity confirmed zero valid
+code-signing identities before the attempt. Xcode's account UI must create an Apple Development
+certificate under the owner's Personal Team. Account passwords remain private; no certificate
+material is committed. Then retry Expo run:ios and address any actual provisioning/capability errors.
+The generated notifications entitlement currently requests APNs; Personal Team capability limits
+must be checked during that retry. Local notification behavior must be verified separately.
+
+This update supersedes the earlier CocoaPods blocker. Full iOS26.6.1 build compatibility and OCR
+remain unproven. Fresh TypeScript checks and207/207 tests pass; no runtime/source/dependency or
+backend change in this follow-up. Only status documentation changes. Expo exports were not repeated
+because they passed at f335656 and this follow-up changes documentation only. Existing lint gaps remain.
