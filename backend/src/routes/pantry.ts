@@ -3,7 +3,7 @@ import { InvalidApiInput, sendFailure, success } from '../lib/api';
 import { pantryListQuery } from '../lib/pantryQuery';
 import { requireIdentity } from '../middleware/auth';
 import type { VerifiedIdentity, VerifyIdentity } from '../services/auth';
-import { createPantryService, pantryInput, pantryEditInput, pantryOutcomeInput, pantryBatchInput, PantryFailure, type PantryService } from '../services/pantry';
+import { createPantryService, receiptInput, pantryInput, pantryEditInput, pantryOutcomeInput, pantryBatchInput, PantryFailure, type PantryService } from '../services/pantry';
 
 export function createPantryRouter(verify: VerifyIdentity, service: PantryService = createPantryService()) {
   const router = Router();
@@ -14,6 +14,17 @@ export function createPantryRouter(verify: VerifyIdentity, service: PantryServic
       if (!key || !/^[A-Za-z0-9_-]{16,100}$/.test(key) || req.originalUrl.includes('?') || !req.is('application/json')) throw new InvalidApiInput('Invalid batch request.');
       const input = pantryBatchInput(req.body, !undo);
       res.json(success({ items: await service.batch(res.locals.identity as VerifiedIdentity, input, undo ? 'restore' : input.action!, key) }));
+    } catch (error) { next(error); }
+  });
+  for (const importing of [false, true]) router.post(importing ? '/pantry/receipt-import' : '/pantry/receipt-review', async (req, res, next) => {
+    try {
+      if (req.originalUrl.includes('?') || !req.is('application/json')) throw new InvalidApiInput('Use a JSON receipt review without query fields.');
+      const identity = res.locals.identity as VerifiedIdentity;
+      if (importing) {
+        const key = req.get('Idempotency-Key');
+        if (!key || !/^[A-Za-z0-9_-]{16,100}$/.test(key)) throw new InvalidApiInput('Provide a receipt retry key.');
+        res.json(success(await service.receiptImport(identity, receiptInput(req.body, true), key)));
+      } else res.json(success(await service.receiptReview(identity, receiptInput(req.body))));
     } catch (error) { next(error); }
   });
   const mutationRequest = (req: Request) => {
