@@ -1,6 +1,6 @@
 # Phase 6 — receipt expiry choices and provenance
 
-19 October 2026. Estimate iPhone checklist passed by user report; package/manual checklist pending.
+19 October 2026. Estimate and package/manual iPhone checklists passed by user report.
 
 ## Scope
 
@@ -53,7 +53,7 @@ refresh/notification/overdue behavior after receipt import is preserved. Demo re
 | Actual iOS manifest/bundle at172.20.10.3:8087 | HTTP200, FreshTrack Dev and new expiry form copy |
 | `git diff --check` and secret/logging review | Passed |
 | iPhone estimate acceptance | User reported “All checks passed” to the 13-step checklist; not directly observed |
-| iPhone package-priority/manual-override acceptance | Pending |
+| iPhone package-priority/manual-override acceptance | User reported “All checks passed” to the 14-step checklist; not directly observed |
 
 New tests verify explicit-only estimates and labels; priority and chosen-only rehydration; invalid
 calendar/duration/lower-priority choices; date/source mismatch rejection; valid legacy payload
@@ -94,9 +94,8 @@ Existing development API remains https://freshtrack-6d1mt9hlm-dragon-2818.vercel
 
 ## Next step
 
-The estimate checklist passed by user report. Next: package-priority/manual-override checklist,
-including discarded lower choices on re-edit. Barcode
-camera/catalog decision and broader Phase6 native/failure QA remain. Phase6 is incomplete; no Phase9.
+Both receipt-expiry checklists passed by user report. Next: barcode camera/catalog decision
+and remaining Phase6 native/failure QA. Phase6 is incomplete; no Phase9.
 
 ## Estimate iPhone acceptance — 19 October 2026
 
@@ -107,3 +106,15 @@ base date and duration after restart. This is user-reported evidence without dir
 per-step screenshots. Package-priority/manual-override acceptance remains pending. Documentation
 only; no source/runtime/environment/data change by the agent. Prior automated checks were not
 rerun; git diff --check passed.
+
+## Package/manual iPhone acceptance — 19 October 2026
+
+User answered “All checks passed” to the 14-step checklist: Bread package date outranked a manual
+date and explicit estimate; re-edit retained only the package choice; clearing it showed a manual
+choice and Cancel preserved the saved package date. Rice manual date outranked its estimate and
+re-edit discarded the unused estimate. Both source/date/value combinations survived confirmed
+import and restart as individual purchases. Bread details then saved an explicit manual override
+after clearing the package date. This is user-reported evidence without direct observation or
+per-step screenshots. Both expiry phone checklists are recorded; broader native/failure QA and
+barcode integration remain incomplete. Documentation-only checkpoint: no runtime/environment/
+data change by the agent, no repeated automated checks; git diff --check passed.
