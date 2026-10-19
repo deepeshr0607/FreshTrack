@@ -21,9 +21,9 @@ The provider documents community data without completeness/accuracy guarantees, 
 
 The current introduction lists 15 product reads/minute/IP and asks for usage registration plus a custom app/contact User-Agent. It directs development tests to staging. Serverless instances do not share our process-local rate guard; deployment-wide/IP quota enforcement remains a production prerequisite. Staging data can differ from production, and real packaging coverage, response-envelope compatibility and availability still require live verification.
 
-`backend/.env.example` contains dummy `OPEN_FOOD_FACTS_USER_AGENT` and staging `OPEN_FOOD_FACTS_ENV`. Empty/placeholder configuration produces `BARCODE_NOT_CONFIGURED`. The user supplied a public developer contact for this purpose; it is saved only in ignored `backend/.env`, not source/docs or mobile configuration. Other environment settings were preserved. No live request has been made: the provider usage form remains pending. Staging's public off:off HTTP access is the provider-documented test credential, not a FreshTrack account secret. No paid billing or provider write account is configured by this slice.
+`backend/.env.example` contains dummy `OPEN_FOOD_FACTS_USER_AGENT` and staging `OPEN_FOOD_FACTS_ENV`. Empty/placeholder configuration produces `BARCODE_NOT_CONFIGURED`. The user supplied a public developer contact for this purpose; it is saved only in ignored `backend/.env`, not source/docs or mobile configuration. Other environment settings were preserved. The user reported submitting the provider usage form; two subsequent read-only staging requests passed as documented below. Staging's public off:off HTTP access is the provider-documented test credential, not a FreshTrack account secret. No paid billing or provider write account is configured by this slice.
 
-## Actual verification
+## Implementation-checkpoint verification
 
 - Mobile and backend `npx tsc --noEmit` — pass; backend `npm run build` — pass.
 - Root `node --experimental-strip-types --test tests/*.test.mjs` — 234/234 pass.
@@ -34,6 +34,15 @@ The current introduction lists 15 product reads/minute/IP and asks for usage reg
 - Backend `npm run lint` — exit 127, `eslint: command not found`, existing setup gap. Root has no lint script.
 - `git diff --check` — pass. Initial HTTP tests were blocked by sandbox localhost permissions, then rerun outside the sandbox. One test incorrectly expected Superagent to retain a bare `?`; replaced it with an actual unsupported query selector. No application fix was needed for that test assumption.
 
+## Live staging verification — 19 October
+
+After the user reported submitting the usage form, ran two separate bounded Node processes under backend with `node --env-file=.env`, requiring `dist/integrations/openFoodFacts.js` and calling `createOpenFoodFactsProvider().lookup(...)`. Both processes asserted staging configuration before requesting anything. Used the user-authorized contact only in the User-Agent; output contained safe status/field-presence metadata, not the email or environment secrets.
+
+1. `3017620422003` — `FOUND`, product name and brand present, package size absent/null; source `COMMUNITY_UNVERIFIED`, environment staging. The real response passed the existing parser without code changes.
+2. `0000000000000` — `NOT_FOUND`, product null, environment staging. This reserved zero code was a negative diagnostic input, not a claimed retail package; the actual provider 404 envelope passed the existing parser.
+
+Both processes exited 0. No database access, Pantry reads/writes, image transfer, production provider calls, environment changes, deployment or native changes in this verification step. Prior automated results above were not rerun for this documentation-only acceptance update. This is direct transport/parser evidence for two staging cases, not a benchmark of packaging coverage, production availability, hosted routing or mobile behavior. A missing package size remains explicitly unknown rather than inferred.
+
 ## Next step
 
-Complete the provider usage form, then run one bounded read-only staging smoke test using the configured contact and document the actual response. After that, connect camera lookup to the existing editable Pantry form, including source attribution, no-result/error/manual fallback, explicit purchase/expiry fields, duplicate review and idempotent BARCODE-source saving. Phone acceptance follows the connected slice, not this backend-only checkpoint. Android/native failure QA and remaining Phase 6 review are still pending; no Phase 9 work.
+Connect camera lookup to the existing editable Pantry form, including source attribution, no-result/error/manual fallback, explicit purchase/expiry fields, duplicate review and idempotent BARCODE-source saving. Phone acceptance follows the connected slice, not this backend-only checkpoint. Android/native failure QA and remaining Phase 6 review are still pending; no Phase 9 work.
