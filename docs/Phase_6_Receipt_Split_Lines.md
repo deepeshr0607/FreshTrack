@@ -1,6 +1,6 @@
 # Phase 6 — separate receipt name/amount lines
 
-19 October 2026. Local parser/review slice; phone UI acceptance pending. Barcode follow-up is deferred at the user's request.
+19 October 2026. Local parser/review slice; synthetic iPhone UI acceptance passed by user report. Barcode follow-up is deferred at the user's request.
 
 ## Change
 
@@ -41,6 +41,12 @@ Inspected the supplied receipt OCR image and design-system tokens; retained exis
 
 No live database fixtures, real receipt contents or user groceries were read/written by the agent in this slice. No automatic phone launch or visible UI pass is claimed.
 
+## Synthetic iPhone acceptance — user report
+
+The user answered “All checks passed” to the 13-step local-only exercise: separate columns remain unpaired until explicit selection; Cancel Match and Cancel Edit preserve available lines without adding a row; matched Rice and Milk retain originals and reviewed quantities/units/manual expiry 2026-11-30 with ₹40.00/₹60.50; removing Rice frees its name/amount for a new review; final local field preview preserves both groceries; foreign $4.29 remains uncopied and an explicitly blank reviewed value previews as unknown; no Layout Test groceries are added to Pantry.
+
+This is user-reported synthetic UI evidence, not direct agent observation, a real-photo OCR result or a receipt-accuracy benchmark. No source/runtime/environment/deployment change or agent grocery write in this acceptance update. Prior automated checks above were not rerun for documentation-only changes. Real receipt accuracy and failure/native QA remain pending; barcode follow-up stays deferred.
+
 ## Next step and limits
 
-Run the numbered local iPhone matching/Cancel/edit/remove/currency/preview checklist and record the user-reported result. Then evaluate real receipt layouts and remaining parser improvements. Geometry-based automatic column matching, retailer aliases, quantity/unit extraction, discounts and grouped-number support remain incomplete. Receipt failure/native/accessibility/performance QA and final Phase6 review remain; barcode follow-up stays deferred. No Phase9 work.
+Next: evaluate real receipt layouts and remaining parser improvements. Geometry-based automatic column matching, retailer aliases, quantity/unit extraction, discounts and grouped-number support remain incomplete. Receipt failure/native/accessibility/performance QA and final Phase6 review remain; barcode follow-up stays deferred. No Phase9 work.
