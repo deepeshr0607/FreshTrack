@@ -1,6 +1,6 @@
 # Phase 6 — normal Scanner receipt entry
 
-19 October 2026. Implemented and checked locally; new-entry iPhone acceptance pending.
+19 October 2026. Normal-entry iPhone checklist passed by user report.
 The prior three diagnostic receipt-import checklists passed by user report on16 October.
 
 ## Scope
@@ -58,7 +58,7 @@ remain. Started Metro on8087 after confirming no listener there; new Wi-Fi addre
 | Actual iOS manifest/bundle | HTTP200, FreshTrack Dev; normal receipt screen included |
 | Existing development API health | HTTP200 |
 | `git diff --check`, source/secret/logging review | Pass |
-| New-entry phone/Demo/back/restart/hidden-controls checks | Pending |
+| New-entry phone/Demo/back/restart/hidden-controls checks | User reported “All checks passed” to the 13-step checklist; not directly observed |
 
 Initial TypeScript check saw stale generated route types; starting Expo regenerated them and the
 final check passed without type casts or route exceptions. Initial root tests226/227: a pre-existing
@@ -92,8 +92,18 @@ https://freshtrack-6d1mt9hlm-dragon-2818.vercel.app.
 
 ## Next step
 
-Numbered iPhone verification using the normal Receipt OCR card: camera cancel/photo/read, text
-show/hide, review/cancel/explicit import of one named development sample, hidden diagnostic control,
-Pantry/restart, manual fallback and Demo separation. Then receipt expiry presets/package-date review,
-barcode scanning/catalog choice and remaining native/failure QA. Phase6 remains incomplete;
+The normal Receipt OCR checklist passed by user report. Next implement receipt expiry presets/
+package-date review, followed by barcode scanning/catalog choice and remaining native/failure QA. Phase6 remains incomplete;
 Phase9 has not started.
+
+## iPhone acceptance — 19 October 2026
+
+User answered “All checks passed” to the 13-step normal Scanner checklist. It covered the normal
+Receipt OCR card and Scan Receipt page, no simulated permission gate, camera cancellation/photo
+recognition, recognized-text show/hide, reviewed Normal Entry Rice fields, Cancel and retained
+review, no diagnostic confirmation button, explicit one-item import, exact quantity/value/expiry
+and one purchase after restart, manual-entry fallback and Demo separation after sign-out/relogin.
+This is a broad user report without direct screen observation or per-step screenshots. It is not
+Android acceptance or completion of all Phase6 work. No source/runtime/environment/data changes
+by the agent in this documentation-only checkpoint. Prior automated checks were not rerun;
+git diff --check passed.
