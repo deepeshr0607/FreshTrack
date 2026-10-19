@@ -878,6 +878,8 @@ Phase 5 has not started.
 
 ## Phase 6 — Scanner: barcode and receipt OCR
 
+**Phase 6 receipt food/category suggestions implemented (19 October); phone acceptance pending.** A shared typed catalogue supplies supported food identities/category hints and name-only vocabulary. Explicit Use Suggested Category preserves manual choices; ambiguous/unknown names stay Other/Needs Review. No storage/expiry inference. Root294/294, receipt HTTP5/5, both TypeScript/build and final all-platform/40-route exports pass; iOS manifest/bundle200. Doctor20/21/missing ESLint remain. See [food/category review](Phase_6_Receipt_Food_Categories.md). No backend/schema/dependency/native/environment/deployment or grocery changes. Next: local phone exercise, then researched storage-dependent expiry suggestions. Barcode follow-up deferred; no Phase9. Store submission/publishing out of scope per user.
+
 **Phase 6 longer receipts passed local iPhone checks by user report (19 October).** Shared50-item bounds cover candidates, review, API, replay and durable retry; review shows10 cards per page with global selections. Batched scoped duplicate counts fix an initial capacity timeout without raising transaction limits. Root285/285, receipt HTTP5/5, Pantry16/16, live receipt10/10 and live mobile-controller4/4 pass with fixture cleanup; both TypeScript/build/all-platform40-route exports pass. Preview Ready, health200/tokenless receipt401; ignored public API URL updated and actual iOS bundle verified. Doctor20/21/missing ESLint remain. See [long receipts](Phase_6_Long_Receipts.md). Schema/Auth/provider settings unchanged; no existing user groceries changed. User answered “All checks passed” to the ten-step synthetic exercise covering five-page navigation, edits/selections across pages, exact local preview, capacity/removal/Add Missing cancellation, Reset and unchanged Pantry. This is user-reported local UI evidence, not fifty-item phone import or real-photo OCR accuracy. Next: food/category recognition, then editable expiry suggestions. Barcode follow-up deferred; no Phase9.
 
 **Phase 6 grouped receipt prices/currency context passed local iPhone checks by user report (19 October).** Valid Western/Indian grouped decimals normalize exactly; RM/MYR and explicit foreign headers keep INR values blank, including explicit separate-line matching. Financial adjustments remain unassigned; no conversion or discount allocation. Root281/281, receipt backend4/4, both TypeScript/build and all-platform/40-route exports pass; iOS manifest/bundle200. Doctor20/21 and missing ESLint remain. See [receipt prices](Phase_6_Receipt_Prices.md). No backend/schema/dependency/native/environment/deployment or grocery changes. User answered “All checks passed” to the ten-step synthetic exercise covering grouped values, Cancel, free/unknown values, foreign-header matching, local previews, Reset and unchanged Pantry. This is user-reported UI evidence, not real-receipt OCR accuracy. Next: longer receipts and remaining receipt/expiry work. Barcode follow-up deferred; no Phase9.
@@ -1057,6 +1059,8 @@ Phase 5 has not started.
 **Checkpoint:** `feat: build waste-cost analytics and reconciliation`
 
 ## Phase 9 — Settings, privacy, reliability, and release preparation
+
+**19 October user scope update:** Store submission and publishing tasks below are excluded from current scope. Settings, privacy, device-build quality and personal device use remain relevant. No Phase9 implementation has started.
 
 ### Tasks
 

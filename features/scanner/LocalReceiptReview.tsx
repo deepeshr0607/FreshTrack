@@ -14,6 +14,7 @@ import { receiptQuantityHint, applyReceiptQuantityHint } from '@/lib/receiptQuan
 import { receiptNameSuggestion, applyReceiptNameSuggestion } from '@/lib/receiptNameAliases';
 
 import { RECEIPT_MAX_ITEMS } from '@/lib/receiptLimits';
+import { recognizeReceiptFood, applyReceiptFoodCategory } from '@/lib/receiptFoodRecognition';
 
 /** OCR stays local; only an explicit reviewed-fields handoff can prepare a server import. */
 export default function LocalReceiptReview({ lines, onPrepare, localOnly = false }: { lines: string[]; onPrepare(input: ReceiptReviewInput): void; localOnly?: boolean }) {
@@ -35,6 +36,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
   const usedLines = usedReceiptLineIds(rows);
   const quantityHint = editor ? receiptQuantityHint(editor.draft.name) : null;
   const nameSuggestion = editor ? receiptNameSuggestion(editor.draft.name) : null;
+  const foodSuggestion = editor ? recognizeReceiptFood(editor.draft.name) : null;
   const remaining = parsed.remaining.filter(line => !usedLines.has(line.id));
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null); setError('');
@@ -55,6 +57,12 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
     </View>}
     <FormInput label="Item name" accessibilityLabel="Reviewed item name" value={editor.draft.name} maxLength={120} onChangeText={v => change('name', v)} />
     <Text style={ui.heading}>Category</Text>
+    {foodSuggestion?.status === 'matched' ? <View style={ui.card}>
+      <Text style={ui.text}>Detected food: {foodSuggestion.label} · Suggested category: {foodSuggestion.category}. Check the item name and choose the category that fits. This does not assign an expiry date.</Text>
+      {foodSuggestion.category !== editor.draft.category && <PrimaryButton label="Use Suggested Category" variant="ghost" onPress={() => {
+        setEditor(previous => previous ? { ...previous, draft: applyReceiptFoodCategory(previous.draft) } : null); setError('');
+      }} />}
+    </View> : <Text style={ui.text}>Category needs review: {foodSuggestion?.status === 'ambiguous' ? 'this name may describe a mixed or prepared product' : 'this food name is not recognized'}. Choose a category yourself; Other is available.</Text>}
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{PANTRY_CATEGORIES.map(category => <Pressable key={category.name}
       accessibilityRole="radio" accessibilityLabel={category.name} accessibilityState={{ checked: category.name === editor.draft.category }}
       style={[ui.pill, category.name === editor.draft.category && { backgroundColor: Colors.primary }]} onPress={() => change('category', category.name)}>
@@ -105,6 +113,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       </View>}
       {visibleRows.map(row => <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
         <Text style={ui.heading}>{row.draft.name || 'Unnamed grocery'}</Text>
+        {!row.reviewed && <ReceiptCategoryHint name={row.draft.name} />}
         {!row.reviewed && row.detectedPrice === null && <Text style={ui.text}>Name detected without a price · value unknown. Review it, or remove this suggestion to match its name with a separate amount below.</Text>}
         <Text style={ui.text}>{row.reviewed ? `${row.draft.quantity} ${row.draft.unit} · ${row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · ${receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection })}` : 'Needs review · quantity, unit, category, value and expiry unverified'}</Text>
         <Text selectable style={ui.text}>Original OCR: {row.original || 'Added manually'}</Text>
@@ -143,4 +152,9 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       }} />
     </>}
   </View>;
+}
+
+function ReceiptCategoryHint({ name }: { name: string }) {
+  const food = recognizeReceiptFood(name);
+  return <Text style={ui.text}>{food.status === 'matched' ? `Detected ${food.label} · Suggested ${food.category} · Review to apply` : 'Category needs review · Other until you choose'}</Text>;
 }
