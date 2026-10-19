@@ -1,6 +1,6 @@
 # Phase 6 — longer receipt review and atomic import
 
-19 October 2026. Implemented, tested and deployed to the development Preview. Local iPhone paging acceptance pending. Barcode follow-up remains deferred.
+19 October 2026. Implemented, tested and deployed to the development Preview. Local synthetic iPhone paging acceptance passed by user report. Barcode follow-up remains deferred.
 
 ## Change
 
@@ -50,10 +50,16 @@ Only the ignored root `.env.local` public API URL changed to this Preview; Auth 
 
 Logs are in `/private/tmp/freshtrack-long-receipt-{root,database,database-final,client-live,export,doctor,deploy,inspect}.log` (the initial focused parser log is `freshtrack-long-receipt-tests.log`).
 
-## Local phone exercise — pending
+## Local phone exercise — passed by user report
 
 Scanner→Test Receipt Layout Review→Long receipt(50items). Expect50candidates, five pages of10, no preselected rows, Previous disabled on page1 and Add Missing disabled at capacity. Explicitly review rows01/21/50 across pages with manual2026-11-30:1bag/1.00,2bags/21.00,1bag/50.00. Returning to page1 must retain those reviews, and local preview must contain exactly these three rows. Exclude/reinclude a review across pages without changing its fields; remove an unreviewed row to enable Add Missing, then cancel its editor; Reset restores50 unreviewed candidates. Pantry remains unchanged. This is synthetic UI verification, not50-item phone import, real receipt OCR accuracy or Android acceptance.
 
 ## Next
 
-Record local paging acceptance, then implement food/category recognition and the researched, storage-dependent editable expiry suggestion workflow requested by the user. Unsupported layouts/aliases/currencies/discount allocation stay explicit review limitations. Receipts beyond50, Android/native/failure/accessibility/performance QA and final Phase6 review remain. Barcode follow-up deferred; no Phase9.
+Implement food/category recognition and the researched, storage-dependent editable expiry suggestion workflow requested by the user. Unsupported layouts/aliases/currencies/discount allocation stay explicit review limitations. Receipts beyond50, Android/native/failure/accessibility/performance QA and final Phase6 review remain. Barcode follow-up deferred; no Phase9.
+
+## Acceptance update
+
+The user answered “All checks passed” to the ten-step synthetic phone exercise:50 candidates/five pages of10; initial Previous/Add Missing disabled as expected; explicit Rice01/21/50 reviews on different pages preserving1bag/1.00,2bags/21.00 and1bag/50.00 with manual2026-11-30; returning to page1 retains all three selections; local confirmed-field preview contains exactly those three reviews; excluding/reincluding Rice01 across navigation preserves fields and selected counts; removing unreviewed Rice49 reduces count to49 and enables Add Missing, whose Cancel does not add a row; Reset restores50 unreviewed candidates; Pantry unchanged.
+
+This is user-reported local UI evidence, not direct agent observation, a50-item phone import or real-photo OCR accuracy. Prior live database/controller evidence remains separately recorded above. No runtime/backend/environment/deployment or grocery change in this documentation-only update. Automated checks were not rerun; `git diff --check` passes. Food/category recognition and automatic storage-dependent expiry suggestions remain incomplete. Barcode follow-up stays deferred; no Phase9.
