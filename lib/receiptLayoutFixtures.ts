@@ -15,4 +15,5 @@ export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[] }[] = [
     'Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries', 'Pears', 'Spinach', 'Lettuce', 'Carrots', 'Broccoli',
     'Cabbage', 'Potatoes', 'Onions', 'Chicken breast', 'Fish', 'Beef steak', 'Eggs', 'Milk', 'White rice', 'Brown rice',
   ].map(name => `${name} Rs. 100.00`), 'TOTAL 2000.00'] },
+  { name: 'Package date review', lines: ['ITEM DESCRIPTION', 'Chocolate biscuits Rs. 30.00', 'Milk Rs. 60.00', 'Rice Rs. 100.00', 'Apples Rs. 40.00', 'TOTAL 230.00'] },
 ];

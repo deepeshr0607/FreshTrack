@@ -8,15 +8,15 @@ import type { PantryCategory } from '../types/api';
 import { expiryPreset, resolveExpiry, expirySelection, kolkataToday, type ExpiryDraft } from '../lib/pantryExpiry';
 
 /** Shared real-household form; supplied designs have no separate add/edit reference. */
-export default function PantryExpiryFields({ value, onChange, name, category, disabled = false, useLegacyPresets = true }: {
-  value: ExpiryDraft; onChange: (value: ExpiryDraft) => void; name: string; category: PantryCategory; disabled?: boolean; useLegacyPresets?: boolean;
+export default function PantryExpiryFields({ value, onChange, name, category, disabled = false, useLegacyPresets = true, packageDateConfirmed }: {
+  value: ExpiryDraft; onChange: (value: ExpiryDraft) => void; name: string; category: PantryCategory; disabled?: boolean; useLegacyPresets?: boolean; packageDateConfirmed?: boolean;
 }) {
   const preset = expiryPreset(name, category);
   let summary: string;
   let invalid = false;
   try {
     const resolved = resolveExpiry(expirySelection(value));
-    summary = `${resolved.expirySource === 'PACKAGE_DATE' ? 'Package date' : resolved.expirySource === 'USER_ENTERED' ? 'User set' : 'Estimated'}: ${resolved.expiresOn}`;
+    summary = `${resolved.expirySource === 'PACKAGE_DATE' ? packageDateConfirmed === false ? 'Package date (awaiting confirmation)' : 'Package date' : resolved.expirySource === 'USER_ENTERED' ? 'User set' : 'Estimated'}: ${resolved.expiresOn}`;
   } catch (error) { summary = (error as Error).message; invalid = true; }
   const change = (key: keyof ExpiryDraft, text: string) => onChange({ ...value, [key]: text });
   return <View>

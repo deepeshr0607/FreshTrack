@@ -7,6 +7,9 @@ import type { ExpirySelection } from '../types/api';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { expiryDraft, expirySelection, resolveExpiry } from './pantryExpiry.ts';
 import type { ExpiryDraft } from './pantryExpiry';
+import type { ReceiptPackageDateReview } from './receiptPackageDates';
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { validateReceiptPackageDateReview } from './receiptPackageDates.ts';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { isPossibleReceiptFoodName } from './receiptItemNames.ts';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
@@ -20,6 +23,8 @@ export interface LocalReceiptCandidate {
   original: string;
   draft: PantryDraft;
   expirySelection?: ExpirySelection;
+  /** Local package-label declaration; excluded from API/durable retry payloads. */
+  packageDateReview?: ReceiptPackageDateReview;
   detectedPrice: string | null;
   currency: 'INR' | 'unspecified' | 'unsupported';
   reviewed: boolean;
@@ -112,9 +117,10 @@ export function manualReceiptCandidate(id: string, original = ''): LocalReceiptC
   return { id, original, detectedPrice: null, currency: 'unspecified', draft: emptyDraft(), reviewed: false, selected: false };
 }
 /** Legacy date-only reviews remain manual; OCR never infers an expiry source. */
-export function receiptCandidateExpiry(row: { draft: PantryDraft; expirySelection?: ExpirySelection }) {
+export function receiptCandidateExpiry(row: { draft: PantryDraft; expirySelection?: ExpirySelection; packageDateReview?: ReceiptPackageDateReview }) {
   const resolved = resolveExpiry(row.expirySelection ?? { packageDate: null, userDate: row.draft.expiresOn, preset: null });
   if (resolved.expiresOn !== row.draft.expiresOn) throw Error('Expiry date does not match the reviewed choice.');
+  if (row.packageDateReview !== undefined) validateReceiptPackageDateReview(row.draft.name, resolved, row.packageDateReview);
   return resolved;
 }
 export function receiptExpiryDraft(row: LocalReceiptCandidate): ExpiryDraft {
@@ -128,6 +134,7 @@ export function receiptExpiryDraft(row: LocalReceiptCandidate): ExpiryDraft {
 /** Save only the winning source. Clearing it later cannot revive an unused lower choice. */
 export function saveReceiptCandidate(row: LocalReceiptCandidate, form: ExpiryDraft): LocalReceiptCandidate {
   const resolved = resolveExpiry(expirySelection(form));
+  if (row.packageDateReview !== undefined) validateReceiptPackageDateReview(row.draft.name, resolved, row.packageDateReview);
   const chosen: ExpirySelection = { packageDate: resolved.expirySource === 'PACKAGE_DATE' ? resolved.expiresOn : null,
     userDate: resolved.expirySource === 'USER_ENTERED' ? resolved.expiresOn : null,
     preset: resolved.expirySource === 'PRESET_ESTIMATE' ? { baseDate: resolved.purchaseDate!, days: resolved.freshnessPresetDays! } : null };
