@@ -1,6 +1,6 @@
 # Phase 6 — receipt food/category suggestions
 
-19 October 2026. Bounded deterministic recognition/review slice; local iPhone acceptance pending. Barcode follow-up remains deferred.
+19 October 2026. Bounded deterministic recognition/review slice; local synthetic iPhone acceptance passed by user report. Barcode follow-up remains deferred.
 
 ## Behavior
 
@@ -38,7 +38,7 @@ No backend source, schema, dependency, native build, deployment or environment c
 
 Temporary logs: `/private/tmp/freshtrack-receipt-food-tests.log`, `freshtrack-receipt-food-export-final.log`, `freshtrack-receipt-food-doctor.log`. Earlier preliminary focused/export outputs are also local temporary artifacts. No real receipt OCR accuracy benchmark performed.
 
-## Local phone exercise — pending
+## Local phone exercise — passed by user report
 
 Scanner→Test Receipt Layout Review→Food category review must show ten unreviewed candidates with category hints, leaving actual draft categories Other. Apples Apply/Cancel must not save the category; Apply then explicit1bag/manual2026-11-30/40.00 review saves Produce. Milk’s abbreviation should suggest Dairy without requiring name expansion; Apply then deliberately choose Snacks and review1bottle/manual2026-11-30/60.00 to verify manual override survives reopening. Chicken Apply saves Meat with explicit0.5kg/manual2026-11-30/120.00. Milk biscuits suggests Snacks, Frozen spinach Frozen, Rice recognized/Other; Chicken soup/Unknown product/Milk cheese require manual review. No category button may populate expiry. Local confirmed-field preview contains only the three reviewed rows with exact user choices; Reset restores ten unreviewed rows; Pantry unchanged.
 
@@ -46,4 +46,10 @@ This local synthetic exercise checks UI/classification behavior, not real receip
 
 ## Next
 
-Record phone acceptance, then research and implement storage-dependent shelf-life rules with confirmed purchase-date bases and editable estimated dates. Printed package-date/unchecked-date decisions, remaining real-receipt/failure/native/accessibility QA and final Phase6 review remain. Barcode follow-up deferred; no Phase9 implementation. Store submission/publishing are excluded per the user’s scope update; device use remains the goal.
+Research and implement storage-dependent shelf-life rules with confirmed purchase-date bases and editable estimated dates. Printed package-date/unchecked-date decisions, remaining real-receipt/failure/native/accessibility QA and final Phase6 review remain. Barcode follow-up deferred; no Phase9 implementation. Store submission/publishing are excluded per the user’s scope update; device use remains the goal.
+
+## Acceptance update
+
+The user answered “All checks passed” to the nine-step synthetic exercise: ten unreviewed candidates; expected Produce/Dairy/Meat/Bakery/Snacks/Frozen hints; Rice recognized under Other, with Chicken soup/Unknown product/Milk cheese needing review; Apples category Apply/Cancel leaves Other and no expiry before explicit Produce/1bag/40.00/manual2026-11-30 review; Milk Dairy suggestion followed by deliberate Snacks override with1bottle/60.00 persists when reopened; Chicken Meat/0.5kg/120.00 review; exact three-row local confirmed-field preview; Reset and unchanged Pantry.
+
+This is user-reported local UI evidence, not direct agent observation, real-photo OCR/food recognition accuracy or new persisted-import acceptance. No runtime/backend/environment/deployment or grocery changes in this documentation-only update. Prior automated results were not rerun; `git diff --check` passes. Storage-dependent shelf-life rules, confirmed purchase-date bases and editable automatic expiry suggestions remain incomplete. Barcode follow-up stays deferred; store submission/publishing remain outside user scope.
