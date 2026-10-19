@@ -8,8 +8,8 @@ import { rupeeValue } from '@/lib/pantryApi';
 import type { createReceiptImportController } from '@/lib/receiptImport';
 
 type Controller = ReturnType<typeof createReceiptImportController>;
-export default function ReceiptImportView({ controller, state, readOnly, onNewReceipt }: {
-  controller: Controller; state: ReturnType<Controller['getSnapshot']>; readOnly: boolean; onNewReceipt(): void;
+export default function ReceiptImportView({ controller, state, readOnly, onNewReceipt, diagnostics = false }: {
+  controller: Controller; state: ReturnType<Controller['getSnapshot']>; readOnly: boolean; onNewReceipt(): void; diagnostics?: boolean;
 }) {
   if (state.ready && state.stage === 'idle') return null;
   const retryDisabled = state.busy || readOnly;
@@ -24,12 +24,12 @@ export default function ReceiptImportView({ controller, state, readOnly, onNewRe
       <PrimaryButton label="View Pantry" onPress={() => router.dismissTo('/(tabs)/pantry')} />
       <PrimaryButton label="Scan Another Receipt" variant="ghost" onPress={onNewReceipt} />
     </> : state.stage === 'pending' ? <>
-      <Text style={ui.text}>{state.pending!.paused ? 'Receipt sync paused for the development retry test. No import has been sent by this test yet.' : 'This confirmed haul is saved on this device. Its server result may be uncertain. Retry the unchanged request to recover the result.'}</Text>
+      <Text style={ui.text}>{state.pending!.paused ? (diagnostics ? 'Receipt sync paused for the development retry test. No import has been sent by this test yet.' : 'Your confirmed receipt is saved on this device and waiting to be sent.') : 'This confirmed haul is saved on this device. Its server result may be uncertain. Retry the unchanged request to recover the result.'}</Text>
       {state.pending!.input.items.map(row => <View key={row.rowId} style={ui.card}><Text style={ui.heading}>{row.item.name}</Text>
         <Text style={ui.text}>{row.item.quantity} {row.item.unit} · {rupeeValue(row.item.totalCostMinor)} · {row.item.expiresOn}</Text></View>)}
       <Text style={ui.text}>Editing and new receipt imports are locked until this request is resolved. Closing and reopening the app keeps this retry. Signing out removes its local copy; groceries already saved online remain.</Text>
-      <PrimaryButton label="Retry Saved Import" loading={state.busy} disabled={readOnly} onPress={() => void controller.retry()} />
-      {state.pending!.paused && <PrimaryButton label="End Retry Test & Import" disabled={retryDisabled} onPress={() => void controller.retry(true)} />}
+      {(!state.pending!.paused || diagnostics) && <PrimaryButton label="Retry Saved Import" loading={state.busy} disabled={readOnly} onPress={() => void controller.retry()} />}
+      {state.pending!.paused && <PrimaryButton label={diagnostics ? 'End Retry Test & Import' : 'Continue Saved Import'} disabled={retryDisabled} onPress={() => void controller.retry(true)} />}
     </> : <>
       <Text style={ui.text}>Only the reviewed fields below will be sent. Photos and raw OCR text stay on this device. Confirming adds new purchases; existing groceries stay unchanged.</Text>
       {state.input?.items.map(row => {
@@ -50,7 +50,7 @@ export default function ReceiptImportView({ controller, state, readOnly, onNewRe
       {state.duplicates ? <>
         <Text style={ui.heading}>{state.input!.items.filter(row => state.choices[row.rowId] !== 'skip').length} groceries to add</Text>
         <PrimaryButton label="Confirm Add Haul to Pantry" disabled={retryDisabled} onPress={() => void controller.confirm()} />
-        {__DEV__ && <PrimaryButton label="Confirm & Save Retry Test (No Send)" variant="ghost" disabled={retryDisabled} onPress={() => void controller.confirm(true)} />}
+        {__DEV__ && diagnostics && <PrimaryButton label="Confirm & Save Retry Test (No Send)" variant="ghost" disabled={retryDisabled} onPress={() => void controller.confirm(true)} />}
       </> : <PrimaryButton label="Check Duplicates Again" loading={state.busy} disabled={readOnly || !state.input} onPress={() => { if (state.input) void controller.review(state.input); }} />}
       <PrimaryButton label="Cancel — Back to Review" variant="ghost" disabled={state.busy} onPress={() => controller.cancel()} />
     </>}

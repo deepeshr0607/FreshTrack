@@ -20,7 +20,8 @@ test('scanner purchases, shopping, cooking and reconciliation preserve identity 
   let recipes = { shopping: [], saved: [], cooked: [] };
   const recipe = MOCK_RECIPES.find((entry) => entry.id === 'r1');
 
-  const receipt = newReceiptCandidates(new Date(2026, 9, 11));
+  // Keep generated receipt expiry relative to the same current day as the mock pantry.
+  const receipt = newReceiptCandidates();
   assert.match(prepareReceiptImport(receipt, pantry, 'haul').error, /Choose Skip/);
   receipt[0].duplicateChoice = 'skip';
   receipt[1].draft.expiresOn = '2000-01-01';

@@ -6,6 +6,8 @@
  *
  * Phase 1: Prototype UI only. No real camera/OCR integration.
  * Mock "scan" results appear after tapping Scan buttons.
+ * Phase 6: real receipt entry opens the shared protected on-device review/import route.
+ * Demo receipt and barcode previews remain explicit prototypes.
  */
 import React, { useState } from 'react';
 import {
@@ -32,6 +34,7 @@ type ScanMode = 'none' | 'barcode' | 'receipt';
 
 export default function ScannerScreen() {
   const { state: auth } = useAuth();
+  const realReceipt = !!auth.user && !auth.demo;
   const [mode, setMode] = useState<ScanMode>('none');
   const { permission: permissionPreview } = useLocalSearchParams<{ permission?: string }>();
   const [permission, setPermission] = useState<MockCameraPermission>(() => initialMockCameraPermission(permissionPreview));
@@ -50,13 +53,13 @@ export default function ScannerScreen() {
         {/* Title */}
         <Text style={styles.screenTitle}>Smart Scanner</Text>
         <Text style={styles.screenSub}>
-          Scan receipts or barcodes to instantly add items to your kitchen inventory
+          {realReceipt ? 'Read a grocery receipt, review the details and choose what to add to your pantry.' : 'Preview receipt and barcode entry in your demo kitchen.'}
         </Text>
 
         {/* Phase 1 notice */}
         <View style={styles.noticeBanner}>
           <Text style={styles.noticeText}>
-            🛠 Phase 1 Prototype · Camera not connected · Tap scan buttons to simulate
+            {realReceipt ? 'Receipt photos are read on your device. Barcode scanning is still a preview.' : 'Demo Scanner · Sample results only · No device camera access requested'}
           </Text>
         </View>
         <PrimaryButton label="Enter Item Manually" variant="ghost" onPress={() => router.push('/pantry/add')} />
@@ -68,7 +71,7 @@ export default function ScannerScreen() {
             {/* Receipt OCR card */}
             <Pressable
               style={({ pressed }) => [styles.modeCard, pressed && styles.pressed]}
-              onPress={() => setMode('receipt')}
+              onPress={() => realReceipt ? router.push('/scanner/receipt') : setMode('receipt')}
               accessibilityRole="button"
               accessibilityLabel="Scan receipt"
             >
@@ -77,10 +80,10 @@ export default function ScannerScreen() {
               </View>
               <Text style={styles.modeCardTitle}>Receipt OCR</Text>
               <Text style={styles.modeCardDesc}>
-                Photograph your grocery receipt and let AI extract all items automatically
+                {realReceipt ? 'Photograph or choose a receipt, then review groceries and dates before saving.' : 'Explore an editable sample receipt without changing your real pantry.'}
               </Text>
               <View style={styles.modeCardBadge}>
-                <Text style={styles.modeCardBadgeText}>AI-Powered</Text>
+                <Text style={styles.modeCardBadgeText}>{realReceipt ? 'On-device' : 'Demo'}</Text>
               </View>
             </Pressable>
 
@@ -96,11 +99,11 @@ export default function ScannerScreen() {
               </View>
               <Text style={styles.modeCardTitle}>Barcode Scan</Text>
               <Text style={styles.modeCardDesc}>
-                Scan a product barcode to identify items and verify expiry dates
+                {realReceipt ? 'Preview barcode entry with sample products, or enter a grocery manually.' : 'Try sample barcode products and expiry-date review.'}
               </Text>
               <View style={[styles.modeCardBadge, { backgroundColor: Colors.freshGreenBg }]}>
                 <Text style={[styles.modeCardBadgeText, { color: Colors.freshGreen }]}>
-                  Instant
+                  {realReceipt ? 'Preview' : 'Demo'}
                 </Text>
               </View>
             </Pressable>
@@ -108,7 +111,7 @@ export default function ScannerScreen() {
         )}
 
         {/* Receipt Scanner View */}
-        {mode === 'receipt' && (
+        {mode === 'receipt' && !realReceipt && (
           <View style={styles.scannerSection}>
             <View style={styles.scannerTopRow}>
               <Pressable accessibilityRole="button" accessibilityLabel="Change Scanner Mode" onPress={() => setMode('none')}>

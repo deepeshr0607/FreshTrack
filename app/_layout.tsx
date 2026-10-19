@@ -96,6 +96,7 @@ function SessionNavigation() {
           <Stack.Screen name="recipe/[id]" />
           <Stack.Screen name="recipe/shopping-list" />
           <Stack.Screen name="analytics/financial" />
+          <Stack.Screen name="scanner/receipt" />
           <Stack.Screen name="scanner/ocr-check" />
           <Stack.Screen name="settings/index" />
           <Stack.Screen name="settings/profile" />
