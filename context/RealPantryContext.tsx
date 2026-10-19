@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { BarcodeLookup } from '@/types/api';
 import { receiptImportResult } from '@/lib/receiptImport';
@@ -85,7 +86,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       requirePantryStatus([item], row.action === 'consume' ? 'CONSUMED' : 'WASTED');
     },
     acknowledged: id => outcomeAcknowledged.current(id),
-  }, __DEV__) : null, [api, enabled, scope, session, state.user?.id]);
+  }, DIAGNOSTICS_ENABLED) : null, [api, enabled, scope, session, state.user?.id]);
   useEffect(() => {
     if (!notificationOutbox) return;
     const retry = () => { const current = session.getSnapshot(); if (!current.checking && current.status === 'authenticated' && current.user?.id === state.user?.id) void notificationOutbox.flush(); };
@@ -174,7 +175,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     try {
       await hydrateDisk();
       if (!mounted.current || version !== generation.current) return;
-      if (__DEV__ && previewRef.current) throw new NeonAuthError('PANTRY_NETWORK', 'Development cached-view test.');
+      if (DIAGNOSTICS_ENABLED && previewRef.current) throw new NeonAuthError('PANTRY_NETWORK', 'Development cached-view test.');
       await api.setup();
       if (!mounted.current || version !== generation.current) return;
       const response = await api.list(nextPage, criteria);
@@ -315,7 +316,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
   };
   return <Context.Provider value={{ overdueReview, pendingNotificationIds, notificationOutbox, enabled, items, loading, error, total, hasMore, diskStatus,
     restoreSavedPreview: async () => {
-      if (!__DEV__ || !enabled) return;
+      if (!DIAGNOSTICS_ENABLED || !enabled) return;
       generation.current++; loadingRef.current = false; setLoading(false);
       automatic?.invalidate();
       overdueReview?.invalidate();
@@ -323,7 +324,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       cache.clear(); hydrated.current = null;
       await hydrateDisk(); showCached(filtersRef.current);
     }, readOnly, cachedAt, cachePreview,
-    previewCache: () => { if (__DEV__ && enabled) { automatic?.invalidate(); overdueReview?.invalidate(); previewRef.current = true; setCachePreview(true); void reload(); } },
+    previewCache: () => { if (DIAGNOSTICS_ENABLED && enabled) { automatic?.invalidate(); overdueReview?.invalidate(); previewRef.current = true; setCachePreview(true); void reload(); } },
     endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, lookupBarcode, reviewReceipt, importReceipt, add, edit, outcome, undo,
     reminderItems: async () => { requireLive(); await api.setup(); requireLive(); const rows = await api.reminderItems(); requireLive(); return rows; },
     syncReminders: async () => { await automatic?.flush(); },

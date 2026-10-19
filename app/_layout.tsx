@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_600SemiBold,
@@ -97,10 +98,12 @@ function SessionNavigation() {
           <Stack.Screen name="recipe/shopping-list" />
           <Stack.Screen name="analytics/financial" />
           <Stack.Screen name="scanner/receipt" />
-          <Stack.Screen name="scanner/receipt-layout-check" />
-          <Stack.Screen name="scanner/barcode-check" />
           <Stack.Screen name="scanner/barcode" />
-          <Stack.Screen name="scanner/ocr-check" />
+          <Stack.Protected guard={DIAGNOSTICS_ENABLED}>
+            <Stack.Screen name="scanner/receipt-layout-check" />
+            <Stack.Screen name="scanner/barcode-check" />
+            <Stack.Screen name="scanner/ocr-check" />
+          </Stack.Protected>
           <Stack.Screen name="settings/index" />
           <Stack.Screen name="settings/profile" />
           <Stack.Screen name="modal" />

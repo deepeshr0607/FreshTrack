@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 /**
  * OTP Verification screen
  * Design reference: freshtrack_account_sign_up_login — six-digit OTP step
@@ -32,7 +33,7 @@ const OTP_LENGTH = DEMO_AUTH.length;
 
 export default function VerifyOtpScreen() {
   const { preview, mode, email } = useLocalSearchParams<{ preview?: string; mode?: string; email?: string }>();
-  const realAuth = Platform.OS !== 'web' && mode !== 'demo';
+  const realAuth = !DIAGNOSTICS_ENABLED || (Platform.OS !== 'web' && mode !== 'demo');
   const targetEmail = typeof email === 'string' ? email : '';
   const { session } = useAuth();
   const { profile } = useMockPreferences();
@@ -190,7 +191,7 @@ export default function VerifyOtpScreen() {
           {realAuth && <PrimaryButton label="Back to Log In" variant="ghost" disabled={loading}
             onPress={() => router.replace({ pathname: '/(auth)/sign-in', params: { email: targetEmail } })} />}
           <Text style={styles.note}>
-            {realAuth ? 'Verifies your development account. Kitchen data remains a demo.' : `Demo code: ${DEMO_AUTH.code}. No email is sent or account verified. Reloading resets the demo.`}
+            {realAuth ? 'Verify your email to continue to FreshTrack.' : `Demo code: ${DEMO_AUTH.code}. No email is sent or account verified. Reloading resets the demo.`}
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

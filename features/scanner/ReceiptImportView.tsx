@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -51,7 +52,7 @@ export default function ReceiptImportView({ controller, state, readOnly, onNewRe
       {state.duplicates ? <>
         <Text style={ui.heading}>{state.input!.items.filter(row => state.choices[row.rowId] !== 'skip').length} groceries to add</Text>
         <PrimaryButton label="Confirm Add Haul to Pantry" disabled={retryDisabled} onPress={() => void controller.confirm()} />
-        {__DEV__ && diagnostics && <PrimaryButton label="Confirm & Save Retry Test (No Send)" variant="ghost" disabled={retryDisabled} onPress={() => void controller.confirm(true)} />}
+        {DIAGNOSTICS_ENABLED && diagnostics && <PrimaryButton label="Confirm & Save Retry Test (No Send)" variant="ghost" disabled={retryDisabled} onPress={() => void controller.confirm(true)} />}
       </> : <PrimaryButton label="Check Duplicates Again" loading={state.busy} disabled={readOnly || !state.input} onPress={() => { if (state.input) void controller.review(state.input); }} />}
       <PrimaryButton label="Cancel — Back to Review" variant="ghost" disabled={state.busy} onPress={() => controller.cancel()} />
     </>}

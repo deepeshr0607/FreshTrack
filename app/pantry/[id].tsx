@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import PantryExpiryFields from '@/components/PantryExpiryFields';
 import { expiryDraft, expirySelection, resolveExpiry } from '@/lib/pantryExpiry';
 import React, { useEffect, useRef, useState } from 'react';
@@ -152,7 +153,7 @@ function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: P
         onPress={() => { outcomeKey.current = pantryRetryKey(); setOutcomeError(''); setConfirmation('RESTORE'); }} />}
       <PrimaryButton label="Reload Item" variant="ghost" disabled={busy || real.readOnly} onPress={onReload} />
       <Text style={styles.body}>Reload discards unsaved changes and fetches the latest item.</Text>
-      {__DEV__ && item.status === 'ACTIVE' && real.notificationOutbox && !requestedAction && <>
+      {DIAGNOSTICS_ENABLED && item.status === 'ACTIVE' && real.notificationOutbox && !requestedAction && <>
         {(pendingNotification || busy || dirty) && <Text style={styles.body} accessibilityLiveRegion="polite">
           {pendingNotification ? 'Notification test unavailable: this item already has a saved outcome. Review it in Notification actions above; another confirmation would duplicate the test.'
             : busy ? 'Notification test unavailable: wait for this item’s current request to finish.'

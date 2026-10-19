@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import { Stack } from 'expo-router';
 import { Colors } from '@/constants/Theme';
 
@@ -14,6 +15,10 @@ export default function AuthLayout() {
       <Stack.Screen name="sign-up" />
       <Stack.Screen name="sign-in" />
       <Stack.Screen name="verify-otp" />
+      <Stack.Protected guard={DIAGNOSTICS_ENABLED}>
+        <Stack.Screen name="native-check" />
+        <Stack.Screen name="recover" />
+      </Stack.Protected>
     </Stack>
   );
 }

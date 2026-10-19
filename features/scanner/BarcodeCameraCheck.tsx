@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -21,7 +22,7 @@ export default function BarcodeCameraCheck({ lookupMode = false }: { lookupMode?
   const [typedCode, setTypedCode] = useState('');
   const [message, setMessage] = useState('');
   const identity = auth.user?.id;
-  const allowed = (lookupMode || __DEV__) && !!auth.user && !auth.demo && !auth.checking;
+  const allowed = (lookupMode || DIAGNOSTICS_ENABLED) && !!auth.user && !auth.demo && !auth.checking;
   const generation = useRef(0);
   const permitted = useRef(allowed);
   permitted.current = allowed;

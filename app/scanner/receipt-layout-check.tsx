@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -18,7 +19,7 @@ export default function ReceiptLayoutCheck() {
   const reset = (index = fixture) => { setFixture(index); setPrepared(null); setRevision(value => value + 1); };
   return <PrototypeScreen back={() => router.dismissTo('/(tabs)/scanner')}>
     <Text style={ui.title}>Receipt Layout Check</Text>
-    {!__DEV__ || !state.user || state.demo ? <Text style={ui.text}>Use Receipt OCR from Scanner. This local exercise requires a development account.</Text> : <>
+    {!DIAGNOSTICS_ENABLED || !state.user || state.demo ? <Text style={ui.text}>Use Receipt OCR from Scanner. This local exercise requires a development account.</Text> : <>
       <Text style={ui.text}>Synthetic text fixture · No camera recognition, household request or Pantry saving. This checks the same review controls used by real receipts.</Text>
       {RECEIPT_LAYOUT_FIXTURES.map((item, index) => <PrimaryButton key={item.name} label={item.name} variant={fixture === index ? 'primary' : 'ghost'} onPress={() => reset(index)} />)}
       <View style={ui.card}><Text style={ui.heading}>Fixture text</Text>

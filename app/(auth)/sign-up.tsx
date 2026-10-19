@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 /**
  * Sign-up screen
  * Design reference: design-reference/freshtrack_account_sign_up_login/screen.png
@@ -38,7 +39,7 @@ export default function SignUpScreen() {
   const [digestOptIn, setDigestOptIn] = useState(preferences.digest);
   const demoRequest = useDemoRequest();
   const { preview, mode } = useLocalSearchParams<{ preview?: string; mode?: string }>();
-  const realAuth = Platform.OS !== 'web' && mode !== 'demo';
+  const realAuth = !DIAGNOSTICS_ENABLED || (Platform.OS !== 'web' && mode !== 'demo');
   const [notice, setNotice] = useState('');
   const realRequest = useAuthRequest(setNotice);
   const loading = demoRequest.loading || realRequest.loading;
@@ -145,7 +146,7 @@ export default function SignUpScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.subtext}>{realAuth ? 'Development account: real authentication. Kitchen data remains a demo.' : 'Demo only. Use sample details; no account is created.'}</Text>
+          <Text style={styles.subtext}>{realAuth ? 'Sign in securely to your FreshTrack household.' : 'Demo only. Use sample details; no account is created.'}</Text>
           {/* Form card */}
           <View style={styles.formCard}>
             <FormInput
@@ -205,6 +206,7 @@ export default function SignUpScreen() {
               </View>
             )}
 
+            {!realAuth && <>
             {/* Digest opt-in */}
             <Pressable
               style={styles.checkRow}
@@ -222,6 +224,7 @@ export default function SignUpScreen() {
                 </Text>
               </View>
             </Pressable>
+            </>}
 
             {!!notice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{notice}</Text>}
             <PrimaryButton
@@ -231,6 +234,7 @@ export default function SignUpScreen() {
               style={{ marginTop: Spacing.sm }}
             />
 
+            {DIAGNOSTICS_ENABLED && <>
             {/* Social auth divider */}
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
@@ -246,6 +250,7 @@ export default function SignUpScreen() {
               <Text style={styles.socialIcon}>🍎</Text>
               <Text style={styles.socialText}>Continue with Apple</Text>
             </Pressable>
+            </>}
             {!!providerNotice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{providerNotice}</Text>}
           </View>
 
@@ -260,9 +265,8 @@ export default function SignUpScreen() {
             </Text>
           </Text>
           <Text style={styles.legal}>
-            By continuing, you agree to FreshTrack's{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Terms of Service</Text> and{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Privacy Policy</Text>.
+            Learn how FreshTrack handles your data.{' '}
+            <Text style={styles.legalLink} accessibilityRole="link" onPress={() => router.push('/settings/privacy')}>Privacy & Data</Text>.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

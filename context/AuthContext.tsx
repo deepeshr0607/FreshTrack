@@ -1,5 +1,6 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 import { createAuthSession } from '@/lib/authSession';
 import { bindReceiptImportCleanup } from '@/features/scanner/nativeReceiptImport';
 import { bindBarcodeRetryCleanup } from '@/features/scanner/nativeBarcodeRetry';
@@ -8,7 +9,7 @@ import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
 import { bindExpiryScheduleSession } from '@/features/notifications/nativeScheduler';
 
-const allowDemo = __DEV__ || Platform.OS === 'web';
+const allowDemo = DIAGNOSTICS_ENABLED;
 type Session = ReturnType<typeof createAuthSession>;
 const Context = createContext<{ session: Session; state: ReturnType<Session['getSnapshot']>; allowDemo: boolean } | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {

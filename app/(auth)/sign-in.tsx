@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 /**
  * Sign-in / Log In screen
  * Design reference: design-reference/freshtrack_account_log_in/screen.png
@@ -29,7 +30,7 @@ export default function SignInScreen() {
   const { session } = useAuth();
   const preferences = useMockPreferences();
   const { preview, mode, email: initialEmail, verified } = useLocalSearchParams<{ preview?: string; mode?: string; email?: string; verified?: string }>();
-  const realAuth = Platform.OS !== 'web' && mode !== 'demo';
+  const realAuth = !DIAGNOSTICS_ENABLED || (Platform.OS !== 'web' && mode !== 'demo');
   const [email, setEmail] = useState(typeof initialEmail === 'string' ? initialEmail : '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -121,7 +122,7 @@ export default function SignInScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.subtext}>{realAuth ? 'Development account: real authentication. Kitchen data remains a demo.' : 'Demo only. Use sample details; no account is created.'}</Text>
+          <Text style={styles.subtext}>{realAuth ? 'Sign in securely to your FreshTrack household.' : 'Demo only. Use sample details; no account is created.'}</Text>
           {/* Form card */}
           <View style={styles.formCard}>
             <FormInput
@@ -162,7 +163,7 @@ export default function SignInScreen() {
                 </View>
                 <Text style={styles.rememberText}>Remember this device</Text>
               </Pressable>
-              <Pressable accessibilityRole="link" onPress={() => realAuth ? setProviderNotice('Password recovery is not connected yet. The demo recovery screen cannot reset a Neon password.') : router.push('/(auth)/recover')}>
+              <Pressable accessibilityRole="link" onPress={() => realAuth ? setProviderNotice('Password recovery is not available yet.') : router.push('/(auth)/recover')}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </Pressable>
             </View>
@@ -184,6 +185,7 @@ export default function SignInScreen() {
               style={{ marginTop: Spacing.sm }}
             />
 
+            {DIAGNOSTICS_ENABLED && <>
             {/* Social auth */}
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
@@ -202,6 +204,7 @@ export default function SignInScreen() {
               <Text style={styles.socialIcon}>🫆</Text>
               <Text style={styles.socialText}>Sign in with Biometrics</Text>
             </Pressable>
+            </>}
             {!!providerNotice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{providerNotice}</Text>}
           </View>
 
@@ -216,9 +219,8 @@ export default function SignInScreen() {
             </Text>
           </Text>
           <Text style={styles.legal}>
-            By continuing, you agree to FreshTrack's{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Terms of Service</Text> and{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/settings/privacy')}>Privacy Policy</Text>.
+            Learn how FreshTrack handles your data.{' '}
+            <Text style={styles.legalLink} accessibilityRole="link" onPress={() => router.push('/settings/privacy')}>Privacy & Data</Text>.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

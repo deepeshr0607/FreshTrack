@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 /**
  * Pantry / Kitchen Inventory screen
  * Design reference: design-reference/kitchen_inventory_swipe_actions/screen.png
@@ -353,7 +354,7 @@ export default function PantryScreen() {
           <OverdueReviewCheck />
           <PrimaryButton label={real.cachePreview ? 'End Test & Refresh' : 'Refresh Pantry'} variant="ghost" loading={real.loading}
             onPress={() => real.cachePreview ? real.endCachePreview() : void real.reload()} />
-          {__DEV__ && !real.readOnly && !!items.length && <PrimaryButton label="Test Cached Pantry View" variant="ghost" disabled={real.loading} onPress={real.previewCache} />}
+          {DIAGNOSTICS_ENABLED && !real.readOnly && !!items.length && <PrimaryButton label="Test Cached Pantry View" variant="ghost" disabled={real.loading} onPress={real.previewCache} />}
           {!!real.error && <Text style={[styles.swipeHint, { color: Colors.error }]} accessibilityRole="alert">{real.error} {items.length && !real.readOnly ? 'Showing previously loaded items.' : ''}</Text>}
           <Text style={styles.swipeHint}>Pantry changes and batch actions are saved after confirmation. Scanner imports and other tabs remain prototypes.</Text>
         </>}

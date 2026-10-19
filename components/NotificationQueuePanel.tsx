@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { useState, useSyncExternalStore } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -15,7 +16,7 @@ function QueuePanel({ queue, item }: { queue: ReturnType<typeof createNotificati
   const state = useSyncExternalStore(queue.subscribe, queue.getSnapshot, queue.getSnapshot);
   const [error, setError] = useState('');
   const run = (task: () => Promise<unknown>) => { setError(''); void task().catch(() => setError('Unable to update saved actions. Retry after verifying your session.')); };
-  if (!__DEV__ && !state.entries.length && !state.message) return null;
+  if (!DIAGNOSTICS_ENABLED && !state.entries.length && !state.message) return null;
   return <View style={styles.card}>
     <Text style={styles.title}>Notification actions · {state.entries.length} pending</Text>
     <Text style={styles.body}>Pending outcomes are saved on this device, not confirmed by the server. Retries resume after the same account is verified. Signing out keeps these retries for that account.</Text>
@@ -29,7 +30,7 @@ function QueuePanel({ queue, item }: { queue: ReturnType<typeof createNotificati
         [{ text: 'Cancel', style: 'cancel' }, { text: 'Forget Retry', style: 'destructive', onPress: () => run(() => queue.discard(row.key)) }])} />
     </View>)}
     <PrimaryButton label="Retry Notification Sync" variant="ghost" loading={state.busy} onPress={() => run(queue.flush)} />
-    {__DEV__ && <PrimaryButton label={state.paused ? 'End Notification Test & Sync' : 'Pause Notification Sync (Test)'} variant="ghost" disabled={state.busy}
+    {DIAGNOSTICS_ENABLED && <PrimaryButton label={state.paused ? 'End Notification Test & Sync' : 'Pause Notification Sync (Test)'} variant="ghost" disabled={state.busy}
       onPress={() => run(() => queue.pause(!state.paused))} />}
   </View>;
 }

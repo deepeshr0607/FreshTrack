@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Image, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -18,7 +19,7 @@ export default function ReceiptScannerScreen({ diagnostics = false }: { diagnost
   if (!state.user || state.demo) return <PrototypeScreen back={() => router.dismissTo('/(tabs)/scanner')}>
     <Text style={ui.title}>Scan Receipt</Text><Text style={ui.text}>Sign in to scan receipts into your household. The Demo Scanner offers a sample receipt preview.</Text>
   </PrototypeScreen>;
-  return <ReceiptSession key={state.user.id} subject={state.user.id} diagnostics={__DEV__ && diagnostics} />;
+  return <ReceiptSession key={state.user.id} subject={state.user.id} diagnostics={DIAGNOSTICS_ENABLED && diagnostics} />;
 }
 function ReceiptSession({ subject, diagnostics }: { subject: string; diagnostics: boolean }) {
   const [showText, setShowText] = useState(false);

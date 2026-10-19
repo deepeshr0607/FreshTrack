@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { useSyncExternalStore } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRealPantry } from '@/context/RealPantryContext';
@@ -8,7 +9,7 @@ import { Colors, FontSize, Radius, Spacing } from '@/constants/Theme';
 /** Development inspection only; the reconciliation banner/bulk UI is Phase 5 item 8. */
 export default function OverdueReviewCheck() {
   const { overdueReview } = useRealPantry();
-  return __DEV__ && overdueReview ? <Check review={overdueReview} /> : null;
+  return DIAGNOSTICS_ENABLED && overdueReview ? <Check review={overdueReview} /> : null;
 }
 function Check({ review }: { review: ReturnType<typeof createOverdueReview> }) {
   const state = useSyncExternalStore(review.subscribe, review.getSnapshot, review.getSnapshot);

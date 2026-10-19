@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 /**
  * Welcome / Landing screen
  * Design reference: design-reference/freshtrack_welcome_get_started_centered_hero/screen.png
@@ -89,7 +90,7 @@ export default function WelcomeScreen() {
           </Text>
         </Pressable>
 
-        {__DEV__ && <Pressable onPress={() => router.push('/(auth)/native-check')} accessibilityRole="button">
+        {DIAGNOSTICS_ENABLED && <Pressable onPress={() => router.push('/(auth)/native-check')} accessibilityRole="button">
           <Text style={styles.loginLink}>Test Real Email Sign-In</Text>
         </Pressable>}
 
@@ -106,10 +107,8 @@ export default function WelcomeScreen() {
 
         {/* Legal */}
         <Text style={styles.legal}>
-          By continuing, you agree to FreshTrack's{' '}
-          <Text style={styles.legalLink}>Terms</Text> and{' '}
-          <Text style={styles.legalLink}>Privacy Policy</Text>.
-          {' '}Zero spam, guaranteed.
+          Learn how FreshTrack handles your data.{' '}
+          <Text style={styles.legalLink} accessibilityRole="link" onPress={() => router.push('/settings/privacy')}>Privacy & Data</Text>.
         </Text>
       </ScrollView>
     </SafeAreaView>

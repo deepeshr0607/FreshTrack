@@ -1,3 +1,4 @@
+import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import PantryExpiryFields from '@/components/PantryExpiryFields';
 import { expiryDraft, expirySelection, resolveExpiry } from '@/lib/pantryExpiry';
 import { NeonAuthError } from '@/lib/neonAuth';
@@ -56,7 +57,7 @@ function PantryAddForm({ barcodeEntry }: { barcodeEntry?: BarcodeEntryProps }) {
         if (pending.current && isMounted()) setFrozen(true);
         throw new NeonAuthError('BARCODE_STORAGE', 'The confirmed purchase could not be saved safely for retry. Return to Scanner → Resume Barcode Save before trying again.');
       }
-      if (__DEV__ && pauseForTest && freshIntent) return; // Deliberate local-only restart diagnostic, never an automatic submit.
+      if (DIAGNOSTICS_ENABLED && pauseForTest && freshIntent) return; // Deliberate local-only restart diagnostic, never an automatic submit.
     }
     attempt.current = input; // An uncertain save retries its exact payload/key without another preflight.
     try {
@@ -146,7 +147,7 @@ function PantryAddForm({ barcodeEntry }: { barcodeEntry?: BarcodeEntryProps }) {
         value={draft.price} onChangeText={(value) => change('price', value)} placeholder="Unknown" />
       <Text style={ui.text}>{real.enabled ? 'Value of this whole entry in rupees, not per unit. Leave blank for unknown; zero means free.' : 'Value of this whole entry, not per unit. Unknown values count as $0 in this prototype.'}</Text>
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
-      {__DEV__ && barcodeEntry && <><Text style={ui.text}>{pauseForTest ? 'Restart test: the next confirmation will be saved on this phone only. Use Retry Saved Barcode Purchase to submit it.' : 'Development diagnostic: optionally pause the next confirmed barcode save before sending.'}</Text>
+      {DIAGNOSTICS_ENABLED && barcodeEntry && <><Text style={ui.text}>{pauseForTest ? 'Restart test: the next confirmation will be saved on this phone only. Use Retry Saved Barcode Purchase to submit it.' : 'Development diagnostic: optionally pause the next confirmed barcode save before sending.'}</Text>
         <PrimaryButton label={pauseForTest ? 'End Barcode Pause Test' : 'Pause Barcode Save (Test)'} variant="ghost" disabled={request.loading} onPress={() => setPauseForTest(value => !value)} /></>}
       <PrimaryButton label="Add to Pantry" disabled={real.enabled && real.readOnly} loading={request.loading} onPress={() => {
         if (submitted.current) return;
