@@ -22,7 +22,7 @@ export default function ReceiptLayoutCheck() {
       <Text style={ui.text}>Synthetic text fixture · No camera recognition, household request or Pantry saving. This checks the same review controls used by real receipts.</Text>
       {RECEIPT_LAYOUT_FIXTURES.map((item, index) => <PrimaryButton key={item.name} label={item.name} variant={fixture === index ? 'primary' : 'ghost'} onPress={() => reset(index)} />)}
       <View style={ui.card}><Text style={ui.heading}>Fixture text</Text><Text selectable style={ui.text}>{selected.lines.join('\n')}</Text></View>
-      <LocalReceiptReview key={`${fixture}-${revision}`} localOnly lines={selected.lines} onPrepare={setPrepared} />
+      <LocalReceiptReview key={`${fixture}-${revision}`} localOnly lines={selected.lines} layout={selected.layout} onPrepare={setPrepared} />
       {prepared && <View style={ui.card}><Text style={ui.heading}>Confirmed Fields · Local Only</Text>
         {prepared.items.map(row => <Text key={row.rowId} style={ui.text}>{row.item.name} · {row.item.quantity} {row.item.unit} · {rupeeValue(row.item.totalCostMinor)} · {row.item.expiresOn}</Text>)}
         <Text style={ui.text}>Nothing was sent or saved. Original OCR/provenance is excluded from these reviewed fields.</Text>

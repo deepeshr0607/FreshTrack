@@ -5,7 +5,7 @@ import { File, Paths } from 'expo-file-system';
 import { ReceiptOcrError, type OcrPhotoSource } from '@/lib/receiptOcrProbe';
 
 export function ocrProbeSupported() {
-  return Platform.OS !== 'web' && !!requireOptionalNativeModule('ExpoTextExtractor');
+  return Platform.OS !== 'web' && !!(requireOptionalNativeModule('FreshTrackReceiptLayout') || requireOptionalNativeModule('ExpoTextExtractor'));
 }
 /** Only our cache copies are deleted. Original Photos-library assets are never removed. */
 export function disposeOcrImage(uri: string) {
@@ -43,6 +43,8 @@ export async function chooseOcrImage(source: OcrPhotoSource): Promise<string | n
 }
 export async function recognizeOcrImage(uri: string) {
   if (!ocrProbeSupported()) throw new ReceiptOcrError('UNAVAILABLE');
+  const layout = requireOptionalNativeModule<{ recognize(uri: string): Promise<unknown> }>('FreshTrackReceiptLayout');
+  if (layout) return layout.recognize(uri);
   const extractor = await import('expo-text-extractor');
   return extractor.extractTextFromImage(uri);
 }

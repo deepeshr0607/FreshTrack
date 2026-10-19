@@ -1,5 +1,8 @@
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { RECEIPT_COLUMN_FIXTURE } from './receiptGeometryFixtures.ts';
+import type { ReceiptTextBox } from './receiptTextBoxes';
 /** Synthetic local diagnostics only; never substituted for a photographed receipt. */
-export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[] }[] = [
+export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[]; layout?: ReceiptTextBox[] }[] = [
   { name: 'Separate INR columns', lines: ['ITEM DESCRIPTION', 'Layout Test Rice', 'Layout Test Milk', '₹40.00', 'Rs. 60.50', 'TOTAL 100.50', 'UPI 100.50'] },
   { name: 'Foreign amount and uncertain lines', lines: ['ITEM DESCRIPTION', 'Layout Test Yogurt', '$4.29', 'Discount -5.00', 'Rice 1,200.00', 'TOTAL 4.29'] },
   { name: 'Items without prices', lines: ['FRESHTRACK SAMPLE MARKET', 'ITEM DESCRIPTION', 'Milk', 'Bananas', 'Chicken breast', 'Whole wheat bread', 'Basmati rice', 'Chocolate biscuits', '₹60.00', 'TOTAL 60.00', 'Milk Road', 'Cashier: Milk', 'Unclear product XYZ'] },
@@ -16,4 +19,5 @@ export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[] }[] = [
     'Cabbage', 'Potatoes', 'Onions', 'Chicken breast', 'Fish', 'Beef steak', 'Eggs', 'Milk', 'White rice', 'Brown rice',
   ].map(name => `${name} Rs. 100.00`), 'TOTAL 2000.00'] },
   { name: 'Package date review', lines: ['ITEM DESCRIPTION', 'Chocolate biscuits Rs. 30.00', 'Milk Rs. 60.00', 'Rice Rs. 100.00', 'Apples Rs. 40.00', 'TOTAL 230.00'] },
+  RECEIPT_COLUMN_FIXTURE,
 ];

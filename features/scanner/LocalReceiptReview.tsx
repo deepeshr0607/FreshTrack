@@ -1,3 +1,6 @@
+import type { ReceiptColumnMode } from '@/lib/receiptColumnReview';
+import ReceiptColumnMatches from './ReceiptColumnMatches';
+import type { ReceiptTextBox } from '@/lib/receiptTextBoxes';
 import React, { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import PantryExpiryFields from '@/components/PantryExpiryFields';
@@ -22,12 +25,13 @@ import { RECEIPT_MAX_ITEMS } from '@/lib/receiptLimits';
 import { recognizeReceiptFood, applyReceiptFoodCategory } from '@/lib/receiptFoodRecognition';
 
 /** OCR stays local; only an explicit reviewed-fields handoff can prepare a server import. */
-export default function LocalReceiptReview({ lines, onPrepare, localOnly = false }: { lines: string[]; onPrepare(input: ReceiptReviewInput): void; localOnly?: boolean }) {
+export default function LocalReceiptReview({ lines, layout = null, onPrepare, localOnly = false }: { lines: string[]; layout?: ReceiptTextBox[] | null; onPrepare(input: ReceiptReviewInput): void; localOnly?: boolean }) {
   const [parsed] = useState(() => parseReceiptCandidates(lines));
   const [rows, setRows] = useState(() => suggestReceiptNameOnlyItems(parsed));
   const [editor, setEditor] = useState<LocalReceiptCandidate | null>(null);
   const [expiry, setExpiry] = useState(expiryDraft());
   const [receiptDate, setReceiptDate] = useState('');
+  const [columnMode, setColumnMode] = useState<ReceiptColumnMode>('same-row');
   const [packageReview, setPackageReview] = useState<PackageReview>({ kind: 'unchecked' });
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(false);
@@ -58,7 +62,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
   if (editor) return <View style={ui.card}>
     <Text accessibilityRole="header" style={ui.heading}>Review Grocery</Text>
     {!!editor.original && <Text selectable style={ui.text}>Original OCR: {editor.original}</Text>}
-    {editor.sourceLineIds?.length === 2 && <Text style={ui.text}>You matched two separate OCR lines. Check the name and amount against your receipt photo; text order does not establish a match.</Text>}
+    {(editor.sourceLineIds?.length ?? 0) > 1 && <Text style={ui.text}>Matched receipt lines: compare the original name and amount with your photo. A suggested match is unverified; a structural code is not a purchased quantity.</Text>}
     <Text style={ui.text}>Verify every field. Clear quantity text can be offered as a suggestion; apply it only after checking the receipt. Expiry is not read from the receipt. Category starts as Other. Value applies to the whole entry in INR; blank means unknown, zero means free.</Text>
     {editor.detectedPrice && <Text style={ui.text}>Detected amount: {editor.detectedPrice} ({editor.currency === 'INR' ? 'INR marker detected' : editor.currency === 'unsupported' ? 'foreign currency — not converted or copied' : 'currency not detected — confirm INR before keeping this value'}). This may be a unit price rather than the entry total.</Text>}
     {nameSuggestion && <View style={ui.card}>
@@ -121,6 +125,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
       <PrimaryButton label="Back to Review" variant="ghost" onPress={() => setSummary(false)} />
     </> : <>
+      {layout && <ReceiptColumnMatches lines={lines} layout={layout} rows={rows} mode={columnMode} onMode={setColumnMode} onReview={edit} />}
       <ReceiptEstimateBatch rows={rows} confirmedDate={receiptDate} onConfirmDate={setReceiptDate}
         onApply={preview => { setRows(applyReceiptEstimateBatch(rows, preview, kolkataToday())); setError(''); }} />
       <Text style={ui.text}>{rows.length} candidates · {rows.filter(row => row.selected).length} reviewed and selected · no accuracy score inferred</Text>

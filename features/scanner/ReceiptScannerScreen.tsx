@@ -64,10 +64,11 @@ function ReceiptSession({ subject, diagnostics }: { subject: string; diagnostics
       <PrimaryButton label="Open Device Settings" variant="ghost" onPress={() => void Linking.openSettings().catch(() => {})} /></View>}
     {state.read && <View style={ui.card}><Text style={ui.heading}>{state.lines.length ? `${state.lines.length} text lines detected` : 'No text detected'}</Text>
       <Text style={ui.text}>{state.lines.length ? 'Review the grocery candidates below. Recognition can contain mistakes.' : 'Use a well-lit, upright receipt and retry or choose another photo.'}</Text>
+      {diagnostics && <Text style={ui.text}>{state.layout ? 'Position-aware OCR available' : 'Text-only OCR · manual matching available'}</Text>}
       {!!state.lines.length && !diagnostics && <PrimaryButton label={showText ? 'Hide Recognized Text' : 'Show Recognized Text'} variant="ghost" onPress={() => setShowText(value => !value)} />}
       {(diagnostics || showText) && <Text selectable style={ui.text}>{state.lines.join('\n')}</Text>}
     </View>}
-    {state.read && state.lines.length > 0 && <LocalReceiptReview lines={state.lines} onPrepare={input => void importer.review(input)} />}
+    {state.read && state.lines.length > 0 && <LocalReceiptReview lines={state.lines} layout={state.layout} onPrepare={input => void importer.review(input)} />}
     <PrimaryButton label="Clear Photo & Text" variant="ghost" disabled={state.busy || !state.image} onPress={() => { store.clear(); setShowText(false); }} />
     <PrimaryButton label="Enter Grocery Manually" variant="ghost" disabled={state.busy} onPress={() => router.push('/pantry/add')} />
     </View>
