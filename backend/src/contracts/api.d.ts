@@ -3,6 +3,16 @@ export interface ApiSuccess<T> { data: T }
 export interface ApiFailure { error: { code: string; message: string; requestId: string } }
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 export interface ApiIdentity { id: string; email: string; name: string }
+/** Catalog descriptions only. Never infer purchase values, counts or expiry from a barcode. */
+export interface BarcodeLookup {
+  barcode: string;
+  status: 'FOUND' | 'NOT_FOUND' | 'INCOMPLETE';
+  product: null | { catalogBarcode: string; name: string; brand: string | null; packageSize: string | null;
+    /** Provider label is not a validated FreshTrack category. */
+    categoryLabel: string | null };
+  source: { provider: 'OPEN_FOOD_FACTS'; url: string; license: 'ODbL-1.0';
+    confidence: 'COMMUNITY_UNVERIFIED'; environment: 'staging' | 'production' };
+}
 export interface AnalyticsAmount {
   count: number;
   purchaseCount: number;
