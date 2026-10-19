@@ -17,7 +17,7 @@ test('specific confirmed storage conditions use the lower end of sourced ranges,
   assert.equal(new Set(RECEIPT_STORAGE_RULES.map(row => row.id)).size, RECEIPT_STORAGE_RULES.length);
   for (const rule of RECEIPT_STORAGE_RULES) {
     assert.ok(rule.rangeDays[0] > 0 && rule.rangeDays[0] <= rule.rangeDays[1]);
-    assert.match(rule.sourceUrl, /^https:\/\/(?:www.foodsafety.gov|extension.umd.edu|ask.fsis.usda.gov|www.pubs.ext.vt.edu|extension.usu.edu)\//);
+    assert.match(rule.sourceUrl, /^https:\/\/(?:www.foodsafety.gov|extension.umd.edu|ask.fsis.usda.gov|www.pubs.ext.vt.edu|extension.usu.edu|spendsmart.extension.iastate.edu)\//);
   }
 });
 test('package dates, food preparations, ambiguous foods and unsupported storage never get a guessed rule', () => {
@@ -141,5 +141,64 @@ test('milk and rice accepted dates survive durable retry without recomputing a y
   assert.deepEqual(restored.input, input);
   assert.deepEqual(restored.input.items.map(row => row.item.expiresOn), ['2026-10-26', '2027-10-19', '2027-04-17']);
   assert.doesNotMatch(JSON.stringify(restored.input), /ruleId|sourceUrl|confirmationLabel|condition/);
+  await store.clear(); assert.equal(values.size, 0);
+});
+
+test('showcase covers exactly twenty supported foods with one explicit condition per named entry', () => {
+  const fixture = RECEIPT_LAYOUT_FIXTURES.find(row => row.name === 'Project showcase (20 foods)');
+  const rows = parseReceiptCandidates(fixture.lines).candidates;
+  const names = ['Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries', 'Pears', 'Spinach', 'Lettuce', 'Carrots', 'Broccoli',
+    'Cabbage', 'Potatoes', 'Onions', 'Chicken breast', 'Fish', 'Beef steak', 'Eggs', 'Milk', 'White rice', 'Brown rice'];
+  const days = [21, 3, 10, 7, 2, 5, 2, 2, 7, 3, 3, 14, 14, 1, 1, 3, 21, 7, 365, 180];
+  assert.equal(rows.length, 20); assert.deepEqual(rows.map(row => row.draft.name), names);
+  const ruleIds = new Set();
+  rows.forEach((row, index) => {
+    const choices = receiptStorageRules(row.draft.name); assert.equal(choices.length, 1, row.draft.name);
+    assert.equal(choices[0].rangeDays[0], days[index], row.draft.name); ruleIds.add(choices[0].id);
+    assert.equal(row.reviewed, false); assert.equal(row.selected, false); assert.equal(row.draft.expiresOn, '');
+  });
+  assert.equal(ruleIds.size, RECEIPT_STORAGE_RULES.length); // No hidden extra estimate foods outside the documented showcase.
+  assert.equal(RECEIPT_STORAGE_RULES.reduce((total, rule) => total + rule.foodIds.length, 0), 20);
+  for (const name of ['Mangoes', 'Guava', 'Mushrooms', 'Prawns', 'Mutton', 'Pork', 'Bread', 'Yogurt']) assert.deepEqual(receiptStorageRules(name), []);
+});
+test('six additional foods use strict purchase dates and exact calendar arithmetic without mutating drafts', () => {
+  for (const [name, id, date] of [['Apples', 'apples', '2026-11-09'], ['Bananas', 'bananas', '2026-10-22'],
+    ['Oranges', 'oranges', '2026-10-29'], ['Grapes', 'grapes', '2026-10-26'], ['Fish', 'fish', '2026-10-20'], ['Beef steak', 'beef-cuts', '2026-10-22']]) {
+    const row = parseReceiptCandidates([`${name} Rs. 100.00`]).candidates[0], current = blank();
+    const fields = applyReceiptStorageRule(name, id, today, today, current);
+    const saved = saveReceiptCandidate({ ...row, draft: { ...row.draft, quantity: '1', unit: 'pack' } }, fields);
+    assert.equal(saved.draft.expiresOn, date, name); assert.deepEqual(receiptExpiryDraft(saved), fields);
+    assert.deepEqual(current, blank()); assert.equal(row.draft.expiresOn, '');
+    assert.throws(() => applyReceiptStorageRule(name, id, '2026-02-30', today, current));
+    assert.throws(() => applyReceiptStorageRule(name, id, '2026-10-20', today, current), /future/);
+    for (const higher of [{ packageDate: '2026-10-20' }, { userDate: '2026-10-21' }]) {
+      assert.throws(() => applyReceiptStorageRule(name, id, today, today, { ...current, ...higher }), /priority/);
+    }
+  }
+});
+test('new whole-food conditions never become estimates for incompatible fruit or meat preparations', () => {
+  for (const name of ['Apple pie', 'Apple cider', 'Candied apples', 'Caramel apples', 'Apple juice', 'Apple smoothie', 'Sliced apples',
+    'Unripe bananas', 'Peeled bananas', 'Banana drink', 'Orange nectar', 'Frozen grapes', 'Dried grapes',
+    'Fish fingers', 'Fish balls', 'Fish sticks', 'Fish curry', 'Smoked fish', 'Thawed fish', 'Ground beef', 'Minced beef', 'Beef stew',
+    'Beef liver', 'Beef jerky', 'Corned beef', 'Cooked beef']) assert.deepEqual(receiptStorageRules(name), [], name);
+});
+test('twenty-food local review preserves exact estimates and mixed known/unknown/free values through durable restart', async () => {
+  const fixture = RECEIPT_LAYOUT_FIXTURES.find(row => row.name === 'Project showcase (20 foods)');
+  const rows = parseReceiptCandidates(fixture.lines).candidates.map((row, index) => {
+    const rule = receiptStorageRules(row.draft.name)[0];
+    return saveReceiptCandidate({ ...row, draft: { ...row.draft, quantity: '1', unit: 'pack', price: index === 0 ? '' : index === 1 ? '0.00' : row.draft.price } },
+      applyReceiptStorageRule(row.draft.name, rule.id, today, today, blank()));
+  });
+  const input = { ...reviewedReceiptInput(rows), confirmed: true }, values = new Map();
+  const io = { get: async key => values.get(key) ?? null, set: async (key, value) => { values.set(key, value); }, remove: async key => { values.delete(key); } };
+  const store = createReceiptImportStorage(io, 'twenty-food-showcase');
+  await store.save(input, 'twenty-food-retry-123456', true);
+  const restored = await createReceiptImportStorage(io, 'twenty-food-showcase').load();
+  assert.deepEqual(restored.input, input); assert.equal(restored.input.items.length, 20);
+  const byName = new Map(restored.input.items.map(row => [row.item.name, row.item]));
+  assert.equal(byName.get('Apples').expiresOn, '2026-11-09'); assert.equal(byName.get('Apples').totalCostMinor, null);
+  assert.equal(byName.get('Bananas').totalCostMinor, 0); assert.equal(byName.get('Fish').expiresOn, '2026-10-20');
+  assert.ok(restored.input.items.every(row => row.item.expirySelection.preset.baseDate === today));
+  assert.doesNotMatch(JSON.stringify(restored.input), /ruleId|sourceUrl|condition|original/);
   await store.clear(); assert.equal(values.size, 0);
 });

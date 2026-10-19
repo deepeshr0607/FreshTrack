@@ -11,4 +11,8 @@ export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[] }[] = [
   { name: 'Food category review', lines: ['ITEM DESCRIPTION', 'Apples Rs. 40.00', 'MKL LOPFT 1L Rs. 60.00', 'CHKN BRST Rs. 120.00', 'Whole wheat bread Rs. 30.00', 'Milk biscuits Rs. 25.00', 'Frozen spinach Rs. 50.00', 'Chicken soup Rs. 80.00', 'Rice Rs. 100.00', 'Unknown product XYZ Rs. 15.00', 'Milk cheese Rs. 70.00', 'TOTAL 690.00'] },
   { name: 'Storage expiry review', lines: ['ITEM DESCRIPTION', 'Spinach Rs. 30.00', 'Chicken breast Rs. 120.00', 'Potatoes Rs. 40.00', 'Milk Rs. 60.00', 'Milk biscuits Rs. 25.00', 'Frozen spinach Rs. 50.00', 'TOTAL 325.00'] },
   { name: 'Milk and rice expiry review', lines: ['ITEM DESCRIPTION', 'Milk Rs. 60.00', 'Rice Rs. 100.00', 'Brown rice Rs. 90.00', 'Cooked rice Rs. 40.00', 'UHT milk Rs. 70.00', 'Raw milk Rs. 50.00', 'Milk biscuits Rs. 25.00', 'TOTAL 435.00'] },
+  { name: 'Project showcase (20 foods)', lines: ['ITEM DESCRIPTION', ...[
+    'Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries', 'Pears', 'Spinach', 'Lettuce', 'Carrots', 'Broccoli',
+    'Cabbage', 'Potatoes', 'Onions', 'Chicken breast', 'Fish', 'Beef steak', 'Eggs', 'Milk', 'White rice', 'Brown rice',
+  ].map(name => `${name} Rs. 100.00`), 'TOTAL 2000.00'] },
 ];
