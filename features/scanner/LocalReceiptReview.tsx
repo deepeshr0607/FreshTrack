@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import PantryExpiryFields from '@/components/PantryExpiryFields';
+import ReceiptExpirySuggestion from './ReceiptExpirySuggestion';
 import { expiryDraft } from '@/lib/pantryExpiry';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
@@ -76,7 +77,8 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
     <FormInput label="Quantity" accessibilityLabel="Reviewed quantity" keyboardType="decimal-pad" value={editor.draft.quantity} onChangeText={v => change('quantity', v)} />
     <FormInput label="Unit (e.g. piece, bag, kg)" accessibilityLabel="Reviewed unit" maxLength={32} value={editor.draft.unit} onChangeText={v => change('unit', v)} />
     <FormInput label="Whole-entry purchase value (₹, optional)" accessibilityLabel="Reviewed purchase value" keyboardType="decimal-pad" value={editor.draft.price} onChangeText={v => change('price', v)} />
-    <PantryExpiryFields name={editor.draft.name} category={editor.draft.category.toUpperCase() as Parameters<typeof PantryExpiryFields>[0]['category']}
+    <ReceiptExpirySuggestion key={`${editor.id}:${editor.draft.name}`} name={editor.draft.name} value={expiry} onChange={value => { setExpiry(value); setError(''); }} />
+    <PantryExpiryFields useLegacyPresets={false} name={editor.draft.name} category={editor.draft.category.toUpperCase() as Parameters<typeof PantryExpiryFields>[0]['category']}
       value={expiry} onChange={value => { setExpiry(value); setError(''); }} />
     <Text style={ui.text}>Enter a package date only after checking the printed use-by or best-before label. A receipt date does not verify package expiry. Estimates are optional tracking assumptions.</Text>
     {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}

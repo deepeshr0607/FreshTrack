@@ -9,4 +9,5 @@ export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[] }[] = [
   { name: 'Foreign currency receipt', lines: ['Amount (RM)', 'Milk 9.00', 'Bread RM4.50', 'Bananas', '2.50', 'TOTAL 16.00'] },
   { name: 'Long receipt (50 items)', lines: ['ITEM DESCRIPTION', ...Array.from({ length: 50 }, (_, index) => `Long Receipt Rice ${String(index + 1).padStart(2, '0')} Rs. ${index + 1}.00`), 'TOTAL 1275.00'] },
   { name: 'Food category review', lines: ['ITEM DESCRIPTION', 'Apples Rs. 40.00', 'MKL LOPFT 1L Rs. 60.00', 'CHKN BRST Rs. 120.00', 'Whole wheat bread Rs. 30.00', 'Milk biscuits Rs. 25.00', 'Frozen spinach Rs. 50.00', 'Chicken soup Rs. 80.00', 'Rice Rs. 100.00', 'Unknown product XYZ Rs. 15.00', 'Milk cheese Rs. 70.00', 'TOTAL 690.00'] },
+  { name: 'Storage expiry review', lines: ['ITEM DESCRIPTION', 'Spinach Rs. 30.00', 'Chicken breast Rs. 120.00', 'Potatoes Rs. 40.00', 'Milk Rs. 60.00', 'Milk biscuits Rs. 25.00', 'Frozen spinach Rs. 50.00', 'TOTAL 325.00'] },
 ];
