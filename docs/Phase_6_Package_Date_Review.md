@@ -1,6 +1,6 @@
 # Phase 6 — unchecked package-date review
 
-19 October 2026. Automated verification complete; new local iPhone checklist pending.
+19 October 2026. Automated verification complete; all nine local iPhone checks passed by user report.
 
 ## Behavior
 
@@ -44,7 +44,9 @@ Existing receipt card, theme, button, form and keyboard/safe-area shell reused. 
 
 No actual persisted phone import or new native build performed for this mobile-only slice. Existing source/provenance restoration has automated evidence, not a new live database claim.
 
-## Local iPhone checklist (pending)
+## Local iPhone checklist (passed by user report)
+
+The user answered “All checks passed” to the nine-step synthetic exercise below. This records user-reported local UI acceptance, not direct agent observation, real-receipt/package-label recognition accuracy or new persisted-import acceptance. No runtime changes or test reruns were needed for this documentation-only update; `git diff --check` passed.
 
 Keep the laptop awake; use FreshTrack Dev on the same Wi-Fi. If needed, enter `http://192.168.1.14:8087` in its development launcher. Use synthetic values only; this does not assert any actual food label was checked.
 
@@ -60,4 +62,4 @@ Keep the laptop awake; use FreshTrack Dev on the same Wi-Fi. If needed, enter `h
 
 ## Remaining / next
 
-Record the package-review phone result, then real-receipt accuracy/recovery and final native/failure/accessibility/performance review. The twenty-food coverage scope is closed, with its new phone test explicitly waived; do not expand it. Barcode follow-up stays deferred. Phase 6 remains incomplete; no Phase 9 or store publishing.
+Real-receipt accuracy/recovery and final native/failure/accessibility/performance review. The twenty-food coverage scope is closed, with its new phone test explicitly waived; do not expand it. Barcode follow-up stays deferred. Phase 6 remains incomplete; no Phase 9 or store publishing.
