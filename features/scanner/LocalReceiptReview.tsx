@@ -10,6 +10,7 @@ import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import type { ReceiptReviewInput } from '@/types/api';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
 import { manualReceiptCandidate, parseReceiptCandidates, suggestReceiptNameOnlyItems, pairReceiptLines, usedReceiptLineIds, receiptReviewSummary, receiptExpiryDraft, saveReceiptCandidate, receiptExpiryLabel, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
+import { receiptQuantityHint, applyReceiptQuantityHint } from '@/lib/receiptQuantity';
 
 /** OCR stays local; only an explicit reviewed-fields handoff can prepare a server import. */
 export default function LocalReceiptReview({ lines, onPrepare, localOnly = false }: { lines: string[]; onPrepare(input: ReceiptReviewInput): void; localOnly?: boolean }) {
@@ -25,6 +26,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
   const next = useRef(0);
   const plan = receiptReviewSummary(rows);
   const usedLines = usedReceiptLineIds(rows);
+  const quantityHint = editor ? receiptQuantityHint(editor.draft.name) : null;
   const remaining = parsed.remaining.filter(line => !usedLines.has(line.id));
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null); setError('');
@@ -35,7 +37,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
     <Text accessibilityRole="header" style={ui.heading}>Review Grocery</Text>
     {!!editor.original && <Text selectable style={ui.text}>Original OCR: {editor.original}</Text>}
     {editor.sourceLineIds?.length === 2 && <Text style={ui.text}>You matched two separate OCR lines. Check the name and amount against your receipt photo; text order does not establish a match.</Text>}
-    <Text style={ui.text}>Verify every field. Quantity, unit and expiry are not read from the receipt. Category starts as Other. Value applies to the whole entry in INR; blank means unknown, zero means free.</Text>
+    <Text style={ui.text}>Verify every field. Clear quantity text can be offered as a suggestion; apply it only after checking the receipt. Expiry is not read from the receipt. Category starts as Other. Value applies to the whole entry in INR; blank means unknown, zero means free.</Text>
     {editor.detectedPrice && <Text style={ui.text}>Detected amount: {editor.detectedPrice} ({editor.currency === 'INR' ? 'INR marker detected' : editor.currency === 'unsupported' ? 'foreign currency — not converted or copied' : 'currency not detected — confirm INR before keeping this value'}). This may be a unit price rather than the entry total.</Text>}
     <FormInput label="Item name" accessibilityLabel="Reviewed item name" value={editor.draft.name} maxLength={120} onChangeText={v => change('name', v)} />
     <Text style={ui.heading}>Category</Text>
@@ -43,6 +45,12 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       accessibilityRole="radio" accessibilityLabel={category.name} accessibilityState={{ checked: category.name === editor.draft.category }}
       style={[ui.pill, category.name === editor.draft.category && { backgroundColor: Colors.primary }]} onPress={() => change('category', category.name)}>
       <Text style={[ui.label, category.name === editor.draft.category && { color: Colors.white }]}>{category.emoji} {category.name}</Text></Pressable>)}</View>
+    {quantityHint && <View style={ui.card}>
+      <Text style={ui.text}>Detected quantity: {quantityHint.quantity}{quantityHint.unit ? ` ${quantityHint.unit}` : ' · unit not detected; choose it yourself'}. Confirm this is the purchased quantity, not a package size. Purchase value is not multiplied.</Text>
+      <PrimaryButton label="Use Detected Quantity" variant="ghost" onPress={() => {
+        setEditor(previous => previous ? { ...previous, draft: applyReceiptQuantityHint(previous.draft) } : null); setError('');
+      }} />
+    </View>}
     <FormInput label="Quantity" accessibilityLabel="Reviewed quantity" keyboardType="decimal-pad" value={editor.draft.quantity} onChangeText={v => change('quantity', v)} />
     <FormInput label="Unit (e.g. piece, bag, kg)" accessibilityLabel="Reviewed unit" maxLength={32} value={editor.draft.unit} onChangeText={v => change('unit', v)} />
     <FormInput label="Whole-entry purchase value (₹, optional)" accessibilityLabel="Reviewed purchase value" keyboardType="decimal-pad" value={editor.draft.price} onChangeText={v => change('price', v)} />

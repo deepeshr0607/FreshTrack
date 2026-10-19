@@ -9,6 +9,8 @@ import { expiryDraft, expirySelection, resolveExpiry } from './pantryExpiry.ts';
 import type { ExpiryDraft } from './pantryExpiry';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { isPossibleReceiptFoodName } from './receiptItemNames.ts';
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { receiptQuantityHint } from './receiptQuantity.ts';
 
 export interface LocalReceiptCandidate {
   id: string;
@@ -71,7 +73,10 @@ export function suggestReceiptNameOnlyItems(parsed: ReceiptParseResult): LocalRe
   for (const line of parsed.remaining) {
     if (rows.length >= 20) break;
     const name = normalizedLine(line.original);
-    if (line.kind !== 'name' || used.has(line.id) || !validName(name) || /[\dOo][.,][\dOo]/.test(name) || !isPossibleReceiptFoodName(name)) continue;
+    const quantity = receiptQuantityHint(name);
+    // A clear leading weight may contain a decimal; keep its quantity unfilled until review.
+    if ((line.kind !== 'name' && !quantity) || used.has(line.id) || !validName(name) ||
+      /[\dOo][.,][\dOo]/.test(quantity?.itemText ?? name) || !isPossibleReceiptFoodName(name)) continue;
     rows.push({ id: line.id, original: line.original, sourceLineIds: [line.id],
       draft: emptyDraft(name), detectedPrice: null, currency: 'unspecified', reviewed: false, selected: false });
     used.add(line.id);
