@@ -1,5 +1,7 @@
 # Phase 6 — real receipt accuracy check
 
+**Historical checkpoint.** Current parser/Vision replay and the verified non-food fix are recorded in [the accuracy recheck](Phase_6_Receipt_Accuracy_Recheck.md). Currency/name-only observations below describe the earlier implementation, not the current parser.
+
 19 October 2026. Two public samples tested locally at the user’s request; iPhone real-photo checks remain unverified. Barcode follow-up remains deferred.
 
 ## Scope

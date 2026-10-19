@@ -11,7 +11,7 @@ import type { ReceiptPackageDateReview } from './receiptPackageDates';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { validateReceiptPackageDateReview } from './receiptPackageDates.ts';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
-import { isPossibleReceiptFoodName } from './receiptItemNames.ts';
+import { isPossibleReceiptFoodName, isNonFoodReceiptName } from './receiptItemNames.ts';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { receiptQuantityHint } from './receiptQuantity.ts';
 
@@ -65,6 +65,7 @@ export function parseReceiptCandidates(value: unknown): ReceiptParseResult {
     const id = `line-${index}`;
     const match = money.exec(line);
     const name = match?.[1]?.trim() ?? '';
+    if (match && isNonFoodReceiptName(name)) { remaining.push({ id, original, kind: 'other', reason: 'Likely non-food product — not selected' }); continue; }
     if (nonItem.test(line) || currencyHeader.test(line) || columnHeading.test(line) || (match && columnHeading.test(name)) || /\b(?:discount|coupon|refund|savings?)\b|[-−+]\s*$/i.test(name)) { remaining.push({ id, original, kind: 'other', reason: 'Likely header, payment, adjustment or summary — not selected' }); continue; }
     const standalone = amountOnly.exec(line);
     if (standalone) { remaining.push({ id, original, kind: 'amount', currency: priceInfo(standalone[2]!, `${standalone[1] ?? ''}${standalone[3] ?? ''}`, context).currency, reason: 'Separate amount — choose its matching item name against the photo' }); continue; }

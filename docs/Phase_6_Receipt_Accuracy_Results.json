@@ -1,0 +1,56 @@
+{
+  "method": "macOS Vision strings; fixed public samples; not iPhone or broad OCR acceptance",
+  "results": [
+    {
+      "sample": "014",
+      "groceryPurchaseRows": 9,
+      "visionStrings": 110,
+      "exactNamesOneToOne": 5,
+      "sameLineCandidates": 0,
+      "nameOnlySuggestions": 2,
+      "falseSuggestions": 0,
+      "allStringsPreserved": true,
+      "foreignStandaloneAmounts": 37,
+      "explicitManualRecoveryRows": 9,
+      "before": {
+        "sameLine": 0,
+        "suggestions": 2,
+        "falseSuggestions": 0
+      }
+    },
+    {
+      "sample": "031",
+      "groceryPurchaseRows": 1,
+      "visionStrings": 39,
+      "exactNamesOneToOne": 1,
+      "sameLineCandidates": 0,
+      "nameOnlySuggestions": 0,
+      "falseSuggestions": 0,
+      "allStringsPreserved": true,
+      "foreignStandaloneAmounts": 0,
+      "explicitManualRecoveryRows": 1,
+      "before": {
+        "sameLine": 0,
+        "suggestions": 0,
+        "falseSuggestions": 0
+      }
+    },
+    {
+      "sample": "000",
+      "groceryPurchaseRows": 0,
+      "visionStrings": 43,
+      "exactNamesOneToOne": 0,
+      "sameLineCandidates": 0,
+      "nameOnlySuggestions": 0,
+      "falseSuggestions": 0,
+      "allStringsPreserved": true,
+      "foreignStandaloneAmounts": 7,
+      "explicitManualRecoveryRows": 0,
+      "before": {
+        "sameLine": 0,
+        "suggestions": 1,
+        "falseSuggestions": 1
+      }
+    }
+  ]
+}
