@@ -1,6 +1,6 @@
 # Phase 9 — receipt retention and restart cleanup
 
-Implemented 20 October 2026. Native iPhone verification is pending; Phase 9 remains incomplete. No store publishing.
+Implemented 20 October 2026. All eight requested iPhone checks passed by user report on 20 October; Phase 9 remains incomplete. No store publishing.
 
 ## Change
 
@@ -53,9 +53,15 @@ Initial backend HTTP checks failed with sandbox `listen EPERM`; rerunning with l
 
 Eleven new tests use disposable filesystem fixtures. They cover cold restart cleanup, original/unrelated/retry preservation, copy/move policy, live OCR protection, in-flight transfer protection, deletion and listing failures/recovery, partial-transfer cleanup, canonical paths/traversal rejection and filename collisions. A real OCR-store/import-controller/storage test confirms review/Cancel preserves the scan, confirmed pending import clears it, and restored retry fields remain intact without image URI/raw OCR or network/Pantry writes. Fixtures are removed after tests.
 
+## iPhone acceptance — 20 October
+
+User answered “All checks passed” to the eight-step checklist: opening the normal development app, zero-count/manual cleanup, selecting and reading a receipt, preview retention across resume/picker Cancel, Clear removing photo/text with zero managed copies, force-closing while a preview was visible and reopening with zero copies/no previous scan, Back cleanup, and original Photos-library preservation with Pantry unchanged.
+
+This is user-reported functional evidence, not direct agent observation or filesystem forensics. Confirmed-import photo cleanup is covered by the automated controller test, not this phone checklist. Android runtime and SDK pre-return/legacy/backup cleanup remain unverified or outside scope. No runtime changes or automated test reruns were needed to record this acceptance; `git diff --check` was run.
+
 ## Next step
 
-Run the iPhone Clear/navigation, active resume, force-close/reopen and original-photo preservation checklist. Treat UI counter results as native functional evidence, not filesystem forensics. After user review, continue Phase 9 security/tooling/reliability and personal-use-build work. Barcode follow-up remains deferred, twenty-food coverage unchanged, and store submission is excluded.
+Continue with the Phase 9 security and household-authorization review, followed by tooling/reliability and personal-use-build work. Barcode follow-up remains deferred, twenty-food coverage unchanged, and store submission is excluded.
 
 ## SDK references
 

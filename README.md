@@ -193,11 +193,13 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; receipt estimates checked on iPhone; package/manual expiry checked on iPhone; barcode review/save connected; phone and broader QA remain |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
-| 9 | Settings, privacy, release preparation | 🔄 In progress; cleanup/deletion accepted, receipt retention phone check pending |
+| 9 | Settings, privacy, release preparation | 🔄 In progress; cleanup/deletion/receipt retention accepted; security and build work remain |
 
 ---
 
 ## Project Status
+
+**Phase 9 receipt cleanup passed all eight iPhone checks by user report (20 October).** User reported the Privacy counter/manual cleanup, OCR preview across resume and picker Cancel, Clear Photo & Text, force-close/reopen recovery, Back cleanup, original library photo preservation and unchanged Pantry all passed. This is user-reported functional acceptance, not agent observation, filesystem forensics, Android runtime evidence or a phone test of confirmed-import cleanup. Implementation checkpoint `3065132` and prior automated results are in the [retention report](docs/Phase_9_Receipt_Retention.md): root384/384, backend151/151, health1/1, both TypeScript/build and all-platform41-route exports passed. Those checks were not rerun for this documentation-only update. SDK pre-return files, legacy untracked copies and OS backups remain outside the guarantee. Phase9 remains incomplete. Next: security/household-authorization review, then tooling/reliability/personal-use-build work; no store publishing.
 
 **Phase 9 managed receipt-photo retention implemented (20 October); iPhone verification pending.** New owned-cache recovery clears abandoned copies on startup/resume, protects active preview/OCR/transfer files, and clears photo/raw OCR after confirmed import while preserving reviewed retry fields. Privacy & Data shows real managed-copy counts and safe manual cleanup. Root384/384, backend151/151, health1/1, both TypeScript/backend build and all-platform41-route exports pass; details are in the [retention report](docs/Phase_9_Receipt_Retention.md). Doctor20/21 and missing ESLint remain. SDK files created before returning control, legacy untracked copies and OS backups are outside the cleanup guarantee; originals are preserved. No backend/schema/dependency/native-build/deployment or household changes. Phase9 remains incomplete. Next: numbered iPhone cleanup checks, then remaining security/tooling/reliability/personal-use-build work. No store publishing.
 
