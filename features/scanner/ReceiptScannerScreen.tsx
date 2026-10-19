@@ -1,3 +1,4 @@
+import { bindConfirmedReceiptImageCleanup } from '@/lib/receiptImageCache';
 import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Image, Linking, Text, View } from 'react-native';
@@ -38,6 +39,7 @@ function ReceiptSession({ subject, diagnostics }: { subject: string; diagnostics
     return current.status === 'authenticated' && current.user?.id === subject && !current.demo;
   }), [session, subject]);
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  useEffect(() => bindConfirmedReceiptImageCleanup(importer, () => { store.clear(); setShowText(false); }), [importer, store]);
   useFocusEffect(useCallback(() => {
     focused.current = true; void importer.restore();
     return () => { focused.current = false; store.clear(); setShowText(false); importer.leave(); };

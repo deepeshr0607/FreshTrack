@@ -1,3 +1,4 @@
+import { nativeReceiptImages } from '@/features/scanner/nativeReceiptImages';
 import * as SecureStore from 'expo-secure-store';
 import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeReceiptImportStorage } from '@/features/scanner/nativeReceiptImport';
@@ -8,6 +9,7 @@ import { notificationOutboxKey, type createNotificationOutbox } from '@/lib/noti
 
 /** Session is locked before this runs; await writers before deleting their storage keys. */
 export async function clearDeletedAccountDeviceData(subject: string, outbox: ReturnType<typeof createNotificationOutbox> | null) {
+  if (nativeReceiptImages()?.recover().failed) throw Error('RECEIPT_CLEANUP_FAILED');
   await nativeExpiryScheduler?.cancel();
   await outbox?.clear();
   await SecureStore.deleteItemAsync(notificationOutboxKey(notificationScope(subject)));

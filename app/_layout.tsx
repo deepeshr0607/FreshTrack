@@ -1,3 +1,4 @@
+import { bindReceiptImageRecovery } from '@/features/scanner/nativeReceiptImages';
 import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import {
   PlusJakartaSans_400Regular,
@@ -34,6 +35,7 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  useEffect(() => bindReceiptImageRecovery(), []);
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_600SemiBold,

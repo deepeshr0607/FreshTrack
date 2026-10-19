@@ -193,11 +193,13 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; receipt estimates checked on iPhone; package/manual expiry checked on iPhone; barcode review/save connected; phone and broader QA remain |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
-| 9 | Settings, privacy, release preparation | ⬜ Not started |
+| 9 | Settings, privacy, release preparation | 🔄 In progress; cleanup/deletion accepted, receipt retention phone check pending |
 
 ---
 
 ## Project Status
+
+**Phase 9 managed receipt-photo retention implemented (20 October); iPhone verification pending.** New owned-cache recovery clears abandoned copies on startup/resume, protects active preview/OCR/transfer files, and clears photo/raw OCR after confirmed import while preserving reviewed retry fields. Privacy & Data shows real managed-copy counts and safe manual cleanup. Root384/384, backend151/151, health1/1, both TypeScript/backend build and all-platform41-route exports pass; details are in the [retention report](docs/Phase_9_Receipt_Retention.md). Doctor20/21 and missing ESLint remain. SDK files created before returning control, legacy untracked copies and OS backups are outside the cleanup guarantee; originals are preserved. No backend/schema/dependency/native-build/deployment or household changes. Phase9 remains incomplete. Next: numbered iPhone cleanup checks, then remaining security/tooling/reliability/personal-use-build work. No store publishing.
 
 **Phase 9 account/data deletion passed all nine disposable-account iPhone checks by user report (20 October).** User confirmed review/Cancel, final-dialog Cancel, wrong-password protection with the test grocery preserved, Neon deletion returning to Welcome, signed-out restart, rejected deleted-account login and the main account's groceries unchanged. This is user-reported end-to-end acceptance, not agent observation, a provider-console audit, native storage forensics or Android/failure-path acceptance. Implementation/checks are recorded in [deletion report](docs/Phase_9_Account_Deletion.md) and checkpoint `701a32f`: root373/373, backend151/151, health1/1, live deletion5/5, household5/5, both TypeScript/build and all-platform41-route exports passed. Those automated checks were not rerun for this documentation-only update. Shared-household/passwordless deletion remains unsupported; partial-provider recovery remains covered by injected tests, not this successful phone path. Phase9 remains incomplete. Next: receipt retention and abrupt-termination cache cleanup, then remaining security/tooling/reliability/personal-use-build work. No store publishing.
 

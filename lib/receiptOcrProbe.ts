@@ -2,11 +2,12 @@
 import { receiptTextBoxes } from './receiptTextBoxes.ts';
 import type { ReceiptTextBox } from './receiptTextBoxes';
 export type OcrPhotoSource = 'camera' | 'library';
-export type OcrErrorCode = 'PERMISSION' | 'IMAGE' | 'UNAVAILABLE' | 'READ';
+export type OcrErrorCode = 'PERMISSION' | 'IMAGE' | 'UNAVAILABLE' | 'READ' | 'CLEANUP';
 export class ReceiptOcrError extends Error {
   readonly code: OcrErrorCode;
   constructor(code: OcrErrorCode) {
     super({ PERMISSION: 'Photo access was not granted. Retry or open device settings.',
+      CLEANUP: 'Temporary receipt photos could not be prepared or cleared. Retry or use manual entry.',
       IMAGE: 'Choose a smaller, clear still image and try again.', UNAVAILABLE: 'On-device OCR requires an updated FreshTrack development build.',
       READ: 'The image could not be read. Retry or take a clearer photo.' }[code]);
     this.code = code;

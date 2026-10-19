@@ -1,3 +1,4 @@
+import { bindReceiptImageSession } from '@/features/scanner/nativeReceiptImages';
 import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
@@ -20,12 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const stopCacheCleanup = disk ? bindPantryCacheCleanup(session, () => disk.clear()) : () => undefined;
     const stopScheduleCleanup = bindExpiryScheduleSession(session);
     const stopReceiptCleanup = bindReceiptImportCleanup(session);
+    const stopImageCleanup = bindReceiptImageSession(session);
     const stopBarcodeCleanup = bindBarcodeRetryCleanup(session);
     void session.refresh().catch(() => undefined);
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'active' && !session.getSnapshot().checking) void session.refresh().catch(() => undefined);
     });
-    return () => { subscription.remove(); stopCacheCleanup(); stopScheduleCleanup(); stopReceiptCleanup(); stopBarcodeCleanup(); };
+    return () => { subscription.remove(); stopCacheCleanup(); stopScheduleCleanup(); stopReceiptCleanup(); stopImageCleanup(); stopBarcodeCleanup(); };
   }, [session]);
   return <Context.Provider value={{ session, state, allowDemo }}>{children}</Context.Provider>;
 }
