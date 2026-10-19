@@ -1082,7 +1082,7 @@ Phase 5 has not started.
 
 ## Phase 9 — Settings, privacy, reliability, and release preparation
 
-**19 October user scope update:** Store submission and publishing tasks below are excluded from current scope. Settings, privacy, device-build quality and personal device use remain relevant. The first Phase9 normal-app cleanup slice is implemented; phone verification is pending. Diagnostics/Demo require an explicit development opt-in, real Settings uses current data-handling copy, and unconnected social/digest controls are hidden in normal use. See [cleanup report](Phase_9_Normal_App_Cleanup.md). Remaining tasks/acceptance below are not complete. Root364/364, backend144/144, health1/1, both TypeScript/build and all-platform40-route exports pass; existing Doctor20/21/missing ESLint remain.
+**19 October user scope update:** Store submission and publishing tasks below are excluded from current scope. Settings, privacy, device-build quality and personal device use remain relevant. The first Phase9 normal-app cleanup slice passed all seven requested iPhone checks by user report. This verifies the reported normal flow, not diagnostic deep links or a standalone build. Acceptance documentation only; prior automated checks below were not rerun. Next: authenticated account/data deletion. Diagnostics/Demo require an explicit development opt-in, real Settings uses current data-handling copy, and unconnected social/digest controls are hidden in normal use. See [cleanup report](Phase_9_Normal_App_Cleanup.md). Remaining tasks/acceptance below are not complete. Root364/364, backend144/144, health1/1, both TypeScript/build and all-platform40-route exports pass; existing Doctor20/21/missing ESLint remain.
 
 ### Tasks
 

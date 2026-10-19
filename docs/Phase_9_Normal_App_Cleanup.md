@@ -1,6 +1,6 @@
 # Phase 9 — normal app cleanup
 
-19 October 2026. First small Phase9 slice, authorized after the receipt-focused Phase6 review. Phone acceptance is pending. This does not deliver a standalone app, account deletion or completed Phase9. App Store submission/publishing stays excluded.
+19 October 2026. First small Phase9 slice, authorized after the receipt-focused Phase6 review. All seven requested iPhone checks passed by user report. This does not deliver a standalone app, account deletion or completed Phase9. App Store submission/publishing stays excluded.
 
 ## Changes
 
@@ -38,13 +38,23 @@ Restart Metro after changing the flag. A release bundle always disables diagnost
 - `git diff --check`: passed.
 - Updated iOS manifest and bundle served successfully by Metro on port8087. No native rebuild/install or standalone launch performed.
 
-## Phone check pending
+## Phone acceptance recorded
 
-Use FreshTrack Dev with the normal-mode server, not Expo Go. Verify that normal Settings, Pantry/details, Scanner/Receipt OCR and authentication work without test controls; privacy/navigation and sign-out/restart should work. No grocery changes or new account are needed. Diagnostic deep-link protection is implemented but native route-redirection behavior is not claimed observed. Record the actual user result before calling phone acceptance passed.
+The user answered “All checks passed” to the seven-step normal-mode FreshTrack Dev check:
+
+1. Open/reload the existing development build using Metro.
+2. Actual account/reminder settings visible; backend test controls and Demo digest form absent.
+3. Pantry/item details accessible without diagnostic/cache/notification-test buttons, without changing groceries.
+4. Normal Scanner/Receipt OCR controls and photo-picker cancellation/navigation work without scanner-test buttons.
+5. Privacy & Data opens and Done returns.
+6. Sign-out returns to clean Welcome/account forms without Demo/test links, social buttons or real-sign-up digest opt-in.
+7. Existing-account login with Remember checked restores after closing/reopening.
+
+This is user-reported acceptance, not agent observation, native deep-link redirection testing, a new import/delivery test or standalone-build verification. No remaining phone checklist for this slice. This acceptance update changes documentation only: no runtime/data changes or fresh automated reruns; verification results above belong to implementation checkpoint `c939669`.
 
 ## Next steps and limits
 
-1. Finish this normal-flow iPhone acceptance; fix any regression.
+1. Normal-flow iPhone acceptance is recorded complete for this slice; remaining Phase9 implementation starts with account/data deletion.
 2. Implement authenticated account/data deletion with provider constraints and household ownership rules. It is not available yet.
 3. Complete retention/abrupt-termination image cleanup and security/authorization review against remaining Phase9 criteria.
 4. Resolve existing lint/SDK patch issues deliberately, with relevant native regression checks.
