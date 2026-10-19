@@ -1,6 +1,6 @@
 # Phase 6 — native receipt positions and explicit column review
 
-19 October 2026. Implemented, checked, compiled, signed, installed and launched FreshTrack Dev on the connected iPhone. **Visible phone behavior and the checklist below remain pending user verification.** Phase 6 is not complete.
+19 October 2026. Implemented, checked, compiled, signed, installed and launched FreshTrack Dev on the connected iPhone. **The user subsequently reported “All checks passed” for the seven-step phone checklist below.** Phase 6 is not complete.
 
 ## Changes
 
@@ -56,7 +56,7 @@ This macOS core replay does not establish iPhone camera/JPEG/bridge behavior or 
 - Backend `npm run lint`: exit **127**, existing missing ESLint; root has no lint script.
 - `git diff --check`: pass.
 
-## Pending iPhone checklist — no Pantry writes
+## iPhone checklist — passed by user report, no Pantry writes
 
 Use FreshTrack Dev, connected to the laptop's network. Current launcher: `http://192.168.1.14:8087`. The updated app was installed and opened; keep the laptop awake.
 
@@ -68,8 +68,8 @@ Use FreshTrack Dev, connected to the laptop's network. Current launcher: `http:/
 6. Open Bread's column match → Cancel. Preview Reviewed Haul: only Milk should be selected. Tap **Preview Confirmed Fields (Local Only)**: expect one Milk, 1 piece, ₹60.50, 2026-11-30. Nothing is sent or saved.
 7. Back to Review → **Reset Layout Check**: edits/preview disappear and the fixture starts over. Leave to Pantry and confirm no sample Milk/Bread was added. Return to normal Scanner → Receipt OCR and confirm photograph/choose/manual entry remain available. Do not import during this check.
 
-Report the failing step/error or that all checks passed. Credentials and receipt contents stay private. These results will be recorded as user-reported phone evidence, separately from automated/native build results.
+The user answered “All checks passed” on 19 October. Recorded as user-reported acceptance of position-aware recognition/clear, both layout choices, cancellation, explicit reviewed replacement without a duplicate Milk card, exact local preview, Reset and unchanged Pantry. No private receipt contents or credentials were collected. This is not direct agent observation, a broad camera-recognition accuracy benchmark, Android verification or new persisted-import evidence. No runtime/native/environment/data changes or repeat test/build runs were needed for this documentation-only update; the automated/native results above remain the implementation checkpoint evidence.
 
 ## Next
 
-After the iPhone checklist passes, continue the remaining Phase6 permission/error/cancellation/cleanup/accessibility/performance review and document partial real-receipt accuracy/manual fallback. Barcode follow-up remains deferred; no later phase starts automatically.
+Continue the remaining Phase6 permission/error/cancellation/cleanup/accessibility/performance review and document partial real-receipt accuracy/manual fallback. Barcode follow-up remains deferred; no later phase starts automatically.
