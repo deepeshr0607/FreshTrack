@@ -1,6 +1,6 @@
 # Phase 6 — receipt expiry choices and provenance
 
-19 October 2026. Implemented/automatically verified; iPhone expiry checklists pending.
+19 October 2026. Estimate iPhone checklist passed by user report; package/manual checklist pending.
 
 ## Scope
 
@@ -52,7 +52,8 @@ refresh/notification/overdue behavior after receipt import is preserved. Demo re
 | Expo Doctor | 20/21, exit1: same five existing patch recommendations |
 | Actual iOS manifest/bundle at172.20.10.3:8087 | HTTP200, FreshTrack Dev and new expiry form copy |
 | `git diff --check` and secret/logging review | Passed |
-| iPhone expiry estimate/package/manual acceptance | Pending; earlier manual-only import checks are separate evidence |
+| iPhone estimate acceptance | User reported “All checks passed” to the 13-step checklist; not directly observed |
+| iPhone package-priority/manual-override acceptance | Pending |
 
 New tests verify explicit-only estimates and labels; priority and chosen-only rehydration; invalid
 calendar/duration/lower-priority choices; date/source mismatch rejection; valid legacy payload
@@ -93,7 +94,16 @@ Existing development API remains https://freshtrack-6d1mt9hlm-dragon-2818.vercel
 
 ## Next step
 
-Numbered iPhone estimate checks first: explicit estimate/base date, invalid/custom duration, Cancel,
-source labels, confirmed import and exact source/days/base date after restart. Then a separate
-package-priority/manual-override checklist, including discarded lower choices on re-edit. Barcode
+The estimate checklist passed by user report. Next: package-priority/manual-override checklist,
+including discarded lower choices on re-edit. Barcode
 camera/catalog decision and broader Phase6 native/failure QA remain. Phase6 is incomplete; no Phase9.
+
+## Estimate iPhone acceptance — 19 October 2026
+
+User answered “All checks passed” to the 13-step estimate checklist: explicit7-day estimate from
+2026-10-19, zero-duration rejection, custom9 days producing2026-10-28, Cancel retaining that choice,
+Estimated labels in review/confirmation, one imported grocery with unknown value, and exact source,
+base date and duration after restart. This is user-reported evidence without direct observation or
+per-step screenshots. Package-priority/manual-override acceptance remains pending. Documentation
+only; no source/runtime/environment/data change by the agent. Prior automated checks were not
+rerun; git diff --check passed.
