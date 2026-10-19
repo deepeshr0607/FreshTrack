@@ -1,6 +1,6 @@
 # Phase 6 — reviewed barcode entry
 
-19 October 2026. Implemented and deployed to the development Preview; phone acceptance pending.
+19 October 2026. Implemented and deployed to the development Preview; core iPhone acceptance passed by user report.
 
 ## Behavior and scope
 
@@ -51,10 +51,16 @@ Only OPEN_FOOD_FACTS_USER_AGENT and staging OPEN_FOOD_FACTS_ENV were added to th
 
 `https://freshtrack-dh65mrywd-dragon-2818.vercel.app`
 
-Public health returns200; tokenless barcode lookup and duplicate-check return401. Hosted authenticated barcode acceptance remains a phone check. Existing local provider staging probes are recorded in the preceding lookup report, not claimed as hosted tests.
+Public health returns200; tokenless barcode lookup and duplicate-check return401. Hosted authenticated barcode acceptance subsequently passed by user report below. Existing local provider staging probes are recorded in the preceding lookup report, not claimed as hosted tests.
 
 Ignored mobile API URL points to this Preview; Auth settings preserved. Restarted only this task's Metro on8087. Actual iOS manifest and launch bundle return200; name FreshTrack Dev, new Preview URL and barcode retry control are present. Device tool currently lists the iPhone unavailable, so no automatic launch or direct screen inspection is claimed. User can open installed FreshTrack Dev with the current LAN URL supplied in chat.
 
+## Core iPhone acceptance — user report
+
+The user answered “All checks passed” to the 14-step checklist: normal camera entry/cancel, typed known-barcode lookup and attribution, category validation, reviewed sample A with 0.5 bag/₹60.50/manual expiry 2026-11-30, deliberately paused local confirmation with no Pantry addition, restart/Resume Barcode Save and explicit retry, BARCODE source and exact fields after saving, and one purchase after another restart. The checklist also covered changed-name/date sample B (2 bags/₹80.00/manual expiry 2026-12-05) triggering barcode duplicate review, Cancel preserving the original, explicit Add Separately preserving both purchases after restart, and unknown-barcode/manual fallback cancellation without adding anything.
+
+This is user-reported checklist evidence, not direct agent observation or independently captured per-step results. Sign-out with a still-pending barcode confirmation, provider-failure UI, Android/native edge cases and broader Phase6 review remain unverified. No application/runtime/environment/deployment change or agent data write in this acceptance update. Implementation-checkpoint automated results above were not rerun for documentation-only changes.
+
 ## Remaining / next step
 
-Run the numbered iPhone lookup/review/paused-confirmation/restart/save/duplicate/manual-fallback checklist, then record actual user-reported results. Follow with sign-out cleanup and error/native QA. Staging catalog coverage differs from production; a shared deployment-wide provider quota guard remains a public-rollout prerequisite. Android hardware tests, automatic package-stamp OCR, live multi-item barcode queue and broader Phase6 review remain. Separate purchase-date tracking was not added: current purchaseDate continues to hold an explicit estimate's start date; package/manual items retain the existing added timestamp. Resolve any further purchase-date UX requirement before claiming all barcode criteria complete. No Phase9 work.
+Next: barcode sign-out cleanup and error/native QA. Staging catalog coverage differs from production; a shared deployment-wide provider quota guard remains a public-rollout prerequisite. Android hardware tests, automatic package-stamp OCR, live multi-item barcode queue and broader Phase6 review remain. Separate purchase-date tracking was not added: current purchaseDate continues to hold an explicit estimate's start date; package/manual items retain the existing added timestamp. Resolve any further purchase-date UX requirement before claiming all barcode criteria complete. No Phase9 work.
