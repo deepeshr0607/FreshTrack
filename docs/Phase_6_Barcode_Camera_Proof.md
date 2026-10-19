@@ -28,9 +28,13 @@ Researched [Open Food Facts API documentation](https://openfoodfacts.github.io/o
 - `npx expo-doctor` — 20/21; existing five Expo/linking/notifications/router/splash patch mismatches, exit 1. Camera matches SDK.
 - Native prebuild and CocoaPods — pass, 115 pods. Original package start scripts preserved. Generated iOS files remain ignored. Pods emits path-with-space find warnings; native build result recorded below.
 - Native build succeeded with zero errors/two warnings (duplicate C++ library and existing dev-launcher script dependency analysis). Code-signature verification passes. Expo CLI stalled at connecting after compilation and was stopped; direct `xcrun devicectl device install app` succeeded.
-- Local iOS manifest and actual launch JavaScript bundle HTTP 200, manifest name FreshTrack Dev and launch asset present. Bundle includes the new screen. iPhone visible behavior and physical scan acceptance remain pending.
+- Local iOS manifest and actual launch JavaScript bundle HTTP 200, manifest name FreshTrack Dev and launch asset present. Bundle includes the new screen. The user subsequently reported all ten numbered iPhone checks passed; see acceptance below.
 - Root lint script and backend ESLint configuration remain unavailable; lint is not claimed.
+
+## iPhone acceptance — user report
+
+The user answered “All checks passed” to the ten-step checklist: real-account entry, explicit start/permission, physical package capture and camera stop, no repeated results, explicit rescan, torch on/off and cancellation, background/return stopped, manual add form/back without saving, and unchanged Pantry. This is user-reported evidence, not direct agent observation or an accuracy benchmark. Denied/blocked permission and Android runtime were not explicitly covered by this checklist. No new code, runtime or deployment change in this acceptance update; automated results above are from the implementation checkpoint, not rerun for documentation.
 
 ## Remaining
 
-Complete numbered iPhone camera checks. Then implement selected backend catalog lookup, explicit editable barcode product/expiry review, household duplicate handling and idempotent BARCODE-source save. Android runtime, permission-denied, physical barcode coverage and broader native QA remain. No Phase 9 work.
+Implement selected backend catalog lookup, explicit editable barcode product/expiry review, household duplicate handling and idempotent BARCODE-source save. Android runtime, permission-denied, physical barcode coverage and broader native QA remain. No Phase 9 work.
