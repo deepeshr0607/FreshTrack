@@ -37,8 +37,14 @@
       "expo-font",
       "expo-secure-store",
       "expo-notifications",
+      ["expo-camera", {
+        "cameraPermission": "Allow FreshTrack to scan grocery barcodes and photograph receipts on your device.",
+        "microphonePermission": false,
+        "recordAudioAndroid": false,
+        "barcodeScannerEnabled": true
+      }],
       ["expo-image-picker", {
-        "cameraPermission": "Allow FreshTrack to photograph grocery receipts for on-device text recognition.",
+        "cameraPermission": "Allow FreshTrack to scan grocery barcodes and photograph receipts on your device.",
         "photosPermission": "Allow FreshTrack to read a receipt photo you select.",
         "microphonePermission": false
       }]
