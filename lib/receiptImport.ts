@@ -1,17 +1,19 @@
 import type { ReceiptReviewInput, ReceiptImportInput, ReceiptDuplicateRow, ReceiptImportData } from '../types/api';
 import type { CacheStorage } from './pantryDiskCache';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
-import { receiptCandidateIssue, receiptReviewSummary } from './receiptCandidates.ts';
+import { receiptCandidateIssue, receiptReviewSummary, receiptCandidateExpiry } from './receiptCandidates.ts';
 import type { LocalReceiptCandidate } from './receiptCandidates';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { manualPantryInput, pantryRetryKey } from './pantryApi.ts';
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { resolveExpiry } from './pantryExpiry.ts';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { NeonAuthError } from './neonAuth.ts';
 
 export function reviewedReceiptInput(rows: LocalReceiptCandidate[]): ReceiptReviewInput {
   const plan = receiptReviewSummary(rows);
   if (plan.error) throw new NeonAuthError('RECEIPT_REVIEW', plan.error);
-  return cleanReceiptInput({ items: plan.rows.map(row => ({ rowId: row.id, item: manualPantryInput(row.draft) })) });
+  return cleanReceiptInput({ items: plan.rows.map(row => ({ rowId: row.id, item: { ...manualPantryInput(row.draft), ...(row.expirySelection ? { expirySelection: receiptCandidateExpiry(row).selection } : {}) } })) });
 }
 /** Strict storage/wire whitelist: source OCR, images and credentials cannot enter saved retries. */
 export function cleanReceiptInput(value: unknown): ReceiptReviewInput {
@@ -20,7 +22,7 @@ export function cleanReceiptInput(value: unknown): ReceiptReviewInput {
   if (!Array.isArray(input.items) || !input.items.length || input.items.length > 20) throw Error('INVALID_RECEIPT');
   const items = input.items.map(row => {
     if (!row || Object.keys(row).some(key => !['rowId', 'item'].includes(key)) || typeof row.rowId !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(row.rowId) ||
-      !row.item || Object.keys(row.item).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'duplicateConfirmation'].includes(key))) throw Error('INVALID_RECEIPT');
+      !row.item || Object.keys(row.item).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'duplicateConfirmation', 'expirySelection'].includes(key))) throw Error('INVALID_RECEIPT');
     const item = row.item;
     if (typeof item.name !== 'string' || typeof item.unit !== 'string' || typeof item.quantity !== 'string' || typeof item.expiresOn !== 'string' ||
       /[\u0000-\u001f\u007f]/.test(item.name + item.unit) || !['PRODUCE', 'DAIRY', 'BAKERY', 'SNACKS', 'MEAT', 'FROZEN', 'OTHER'].includes(item.category) ||
@@ -30,9 +32,14 @@ export function cleanReceiptInput(value: unknown): ReceiptReviewInput {
       category: (item.category[0]! + item.category.slice(1).toLowerCase()) as LocalReceiptCandidate['draft']['category'],
       price: cost === null ? '' : `${Math.floor(cost / 100)}.${String(cost % 100).padStart(2, '0')}` };
     if (receiptCandidateIssue(draft)) throw Error('INVALID_RECEIPT');
+    let expiry;
+    if (item.expirySelection !== undefined) {
+      expiry = resolveExpiry(item.expirySelection);
+      if (expiry.expiresOn !== item.expiresOn) throw Error('INVALID_RECEIPT_EXPIRY');
+    }
     const decision = item.duplicateConfirmation;
     if (decision !== undefined && (!decision || Object.keys(decision).some(key => !['confirmed', 'action'].includes(key)) || decision.confirmed !== true || decision.action !== 'add_separately')) throw Error('INVALID_RECEIPT');
-    return { rowId: row.rowId, item: { ...manualPantryInput(draft), ...(decision ? { duplicateConfirmation: { confirmed: true as const, action: 'add_separately' as const } } : {}) } };
+    return { rowId: row.rowId, item: { ...manualPantryInput(draft), ...(expiry ? { expirySelection: expiry.selection } : {}), ...(decision ? { duplicateConfirmation: { confirmed: true as const, action: 'add_separately' as const } } : {}) } };
   }).sort((a, b) => a.rowId.localeCompare(b.rowId, 'en'));
   if (new Set(items.map(row => row.rowId)).size !== items.length) throw Error('INVALID_RECEIPT');
   return { items };

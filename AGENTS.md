@@ -166,6 +166,8 @@ All screen designs are in `design-reference/`. Inspect every image before implem
 
 ## 8. Current Phase and Status
 
+**Phase 6 receipt expiry choices implemented (19 October); iPhone checks pending.** Receipt grocery review reuses Pantry package/manual/explicit shelf-life fields and saves only the winning choice. Estimate/package/manual labels and validated expirySelection survive confirmation and durable retries; legacy date-only retries remain compatible. Both TypeScript/build, root231/231, live client3/3 with fixture cleanup and all-platform/37-route exports pass; Doctor20/21 retains five patches. Actual iOS manifest/bundle200 includes the form. No backend/native/dependency/environment/deployment change or user-data writes by the agent. See [receipt expiry report](docs/Phase_6_Receipt_Expiry_Review.md). Next: estimate then package/manual iPhone checks, followed by barcode/native work; no Phase9.
+
 **Phase 6 normal Scanner receipt entry passed iPhone checks by user report (19 October).** Real accounts open protected /scanner/receipt from Receipt OCR; Demo retains the sample flow. The normal and diagnostic pages share the verified OCR/review/import/retry implementation; test-only confirmation controls stay diagnostic, with normal recovery for an existing paused retry. Both TypeScript checks, root227/227 and all-platform/37-route exports pass; Doctor20/21 retains five patches. Fixed an older date-sensitive prototype test fixture without changing assertions. Actual iOS manifest/bundle and existing API health200 pass. No backend/native/dependency/environment/deployment change. See [normal-entry report](docs/Phase_6_Normal_Receipt_Entry.md). User answered “All checks passed” to the 13-step normal-entry checklist covering capture/cancel, text visibility, reviewed import/restart, hidden test controls, manual fallback and Demo separation. This is user-reported evidence, not direct observation. Next: receipt expiry presets/package-date review, then barcode/native work; no Phase9.
 
 **Phase 6 receipt-import slice passed all three iPhone checklists by user report (16 October).** Real-account development OCR review now reaches household duplicate Skip/Add Separately choices and explicit atomic import. Confirmed fields/key are saved in account/branch-scoped SecureStore before sending; restart restores an immutable explicit retry, with sign-out cleanup and no saved photos/raw OCR. Both TypeScript/build, root227/227, live mobile-controller2/2 with fixture cleanup and all-platform/36-route exports pass; Doctor20/21 retains five patches. Preview Ready, health200/tokenless receipt endpoints401; ignored API URL updated with Auth preserved. See [mobile receipt report](docs/Phase_6_Mobile_Receipt_Import.md). User answered “All checks passed” to the 15-step core checklist: Cancel, persisted paused retry/restart, explicit import, exact known/unknown values and single purchases after restart. This is user-reported evidence, not direct observation. User also answered “All checks passed” to the 12-step duplicate checklist: Cancel, Skip Bread, Add Milk Separately, preserved original values and exactly three purchases after restart. User also reported the 12-step sign-out cleanup checklist passed: paused retry removed after sign-out/relogin, unimported sample absent and prior purchases preserved. Next: normal Scanner receipt entry integration, followed by remaining expiry/barcode/native work. Barcode/normal scanner integration and wider native QA remain; no Phase9.
@@ -299,13 +301,12 @@ selection reset pass; see
 - [ ] Analytics (Phase 8)
 - [ ] Settings, privacy, release (Phase 9)
 
-### Current phase: Phase 6 — normal receipt entry passed by user report
+### Current phase: Phase 6 — receipt expiry choices implemented, iPhone checks pending
 
-See docs/Phase_6_Normal_Receipt_Entry.md. Both TypeScript checks, root227/227 and exports37
-pass. Doctor20/21 retains five patches; local manifest/bundle and existing API health200 pass.
-Normal Receipt OCR entry passed the 13-step checklist by user report. Next: receipt expiry
-presets/package-date review, then barcode/native work.
-No backend/native/dependency/environment/deployment change. Phase9 has not started.
+See docs/Phase_6_Receipt_Expiry_Review.md. Both TypeScript/build, root231/231, live client3/3
+with cleanup and exports37 pass. Doctor20/21 retains five patches. Current launcher172.20.10.3:8087.
+Next: estimate and package/manual phone checklists, then barcode/native work. No backend/native/
+dependency/environment/deployment change. Phase9 has not started.
 
 ### Phase 4 previous slice — duplicate review verified on iPhone
 

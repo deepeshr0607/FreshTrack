@@ -59,3 +59,32 @@ check('mobile duplicate Skip/Add Separately submits only selected fields and pre
   const { householdId } = await db.householdMember.findUniqueOrThrow({ where: { authSubject: user.id } });
   assert.equal(await db.receiptScan.count({ where: { householdId } }), 2); assert.equal(await db.pantryItem.count({ where: { householdId } }), 3); assert.equal(await db.pantryItemEvent.count({ where: { householdId } }), 3);
 });
+check('receipt expiry choices survive client storage/restart and persist exact provenance and event snapshots', async () => {
+  const { createReceiptImportStorage, createReceiptImportController, reviewedReceiptInput } = await modules();
+  const { saveReceiptCandidate, manualReceiptCandidate } = await import('../../lib/receiptCandidates.ts');
+  const user = await account(), service = createPantryService(db), values = new Map();
+  const makeRow = (id, name, category, form) => saveReceiptCandidate({ ...manualReceiptCandidate(id), draft: { name, category, quantity: '0.5', unit: 'bag', price: '', expiresOn: '' } }, form);
+  const rows = [makeRow('estimated', 'Receipt Estimate Milk', 'Dairy', { packageDate: '', userDate: '', baseDate: '2026-10-19', days: '7' }),
+    makeRow('printed', 'Receipt Package Bread', 'Bakery', { packageDate: '2026-10-30', userDate: '2026-10-28', baseDate: '2026-10-19', days: '5' }),
+    makeRow('manual', 'Receipt Manual Rice', 'Other', { packageDate: '', userDate: '2026-11-01', baseDate: '', days: '' })];
+  const body = reviewedReceiptInput(rows);
+  const storage = createReceiptImportStorage({ get: async key => values.get(key) ?? null, set: async (key, value) => { values.set(key, value); }, remove: async key => { values.delete(key); } }, user.id);
+  const make = () => createReceiptImportController({ storage, active: () => true, review: input => service.receiptReview(user, input), send: (input, key) => service.receiptImport(user, input, key) }, randomUUID);
+  const first = make(); await first.restore(); await first.review(body); await first.confirm(true);
+  const frozen = await storage.load(); assert.ok(frozen); assert.equal(frozen.input.items.find(row => row.rowId === 'printed').item.expirySelection.preset, null);
+  const restarted = make(); await restarted.restore(); await restarted.retry(true); assert.equal(restarted.getSnapshot().stage, 'saved');
+  const result = restarted.getSnapshot().result;
+  const estimated = result.items.find(item => item.name === 'Receipt Estimate Milk'), printed = result.items.find(item => item.name === 'Receipt Package Bread'), manual = result.items.find(item => item.name === 'Receipt Manual Rice');
+  assert.equal(estimated.expiresOn, '2026-10-26'); assert.equal(estimated.expirySource, 'PRESET_ESTIMATE'); assert.equal(estimated.purchaseDate, '2026-10-19'); assert.equal(estimated.freshnessPresetDays, 7);
+  assert.equal(printed.expiresOn, '2026-10-30'); assert.equal(printed.expirySource, 'PACKAGE_DATE'); assert.equal(printed.freshnessPresetDays, null); assert.equal(printed.purchaseDate, null);
+  assert.equal(manual.expiresOn, '2026-11-01'); assert.equal(manual.expirySource, 'USER_ENTERED'); assert.equal(manual.freshnessPresetDays, null);
+  const { householdId } = await db.householdMember.findUniqueOrThrow({ where: { authSubject: user.id } });
+  for (const item of result.items) {
+    const events = await db.pantryItemEvent.findMany({ where: { householdId, pantryItemId: item.id } }); assert.equal(events.length, 1);
+    assert.equal(events[0].metadata.expirySource, item.expirySource); assert.equal(events[0].expiresOn.toISOString().slice(0, 10), item.expiresOn);
+  }
+  assert.equal((await service.receiptImport(user, frozen.input, frozen.key)).replayed, true);
+  const changed = { ...frozen.input, items: frozen.input.items.map(row => row.rowId === 'estimated' ? { ...row, item: { ...row.item, expiresOn: '2026-10-27', expirySelection: { packageDate: null, userDate: null, preset: { baseDate: '2026-10-19', days: 8 } } } } : row) };
+  await assert.rejects(service.receiptImport(user, changed, frozen.key), error => error.code === 'IDEMPOTENCY_CONFLICT');
+  assert.equal(await db.receiptScan.count({ where: { householdId } }), 1); assert.equal(await db.pantryItem.count({ where: { householdId } }), 3); assert.equal(await db.pantryItemEvent.count({ where: { householdId } }), 3);
+});

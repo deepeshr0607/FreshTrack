@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import PantryExpiryFields from '@/components/PantryExpiryFields';
+import { expiryDraft } from '@/lib/pantryExpiry';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { ui } from '@/components/PrototypeScreen';
@@ -7,13 +9,14 @@ import { Colors } from '@/constants/Theme';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import type { ReceiptReviewInput } from '@/types/api';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
-import { manualReceiptCandidate, parseReceiptCandidates, receiptCandidateIssue, receiptReviewSummary, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
+import { manualReceiptCandidate, parseReceiptCandidates, receiptReviewSummary, receiptExpiryDraft, saveReceiptCandidate, receiptExpiryLabel, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
 
 /** OCR stays local; only an explicit reviewed-fields handoff can prepare a server import. */
 export default function LocalReceiptReview({ lines, onPrepare }: { lines: string[]; onPrepare(input: ReceiptReviewInput): void }) {
   const [parsed] = useState(() => parseReceiptCandidates(lines));
   const [rows, setRows] = useState(parsed.candidates);
   const [editor, setEditor] = useState<LocalReceiptCandidate | null>(null);
+  const [expiry, setExpiry] = useState(expiryDraft());
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(false);
   const [showRemaining, setShowRemaining] = useState(false);
@@ -22,7 +25,8 @@ export default function LocalReceiptReview({ lines, onPrepare }: { lines: string
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null); setError('');
   };
-  const add = (original = '') => { if (rows.length >= 20) return; setEditor(manualReceiptCandidate(`manual-${++next.current}`, original)); setError(''); };
+  const edit = (row: LocalReceiptCandidate) => { setEditor({ ...row, draft: { ...row.draft } }); setExpiry(receiptExpiryDraft(row)); setError(''); };
+  const add = (original = '') => { if (rows.length >= 20) return; edit(manualReceiptCandidate(`manual-${++next.current}`, original)); };
   if (editor) return <View style={ui.card}>
     <Text accessibilityRole="header" style={ui.heading}>Review Grocery</Text>
     {!!editor.original && <Text selectable style={ui.text}>Original OCR: {editor.original}</Text>}
@@ -37,12 +41,13 @@ export default function LocalReceiptReview({ lines, onPrepare }: { lines: string
     <FormInput label="Quantity" accessibilityLabel="Reviewed quantity" keyboardType="decimal-pad" value={editor.draft.quantity} onChangeText={v => change('quantity', v)} />
     <FormInput label="Unit (e.g. piece, bag, kg)" accessibilityLabel="Reviewed unit" maxLength={32} value={editor.draft.unit} onChangeText={v => change('unit', v)} />
     <FormInput label="Whole-entry purchase value (₹, optional)" accessibilityLabel="Reviewed purchase value" keyboardType="decimal-pad" value={editor.draft.price} onChangeText={v => change('price', v)} />
-    <FormInput label="Manual expiry (YYYY-MM-DD)" accessibilityLabel="Reviewed expiry date" placeholder="YYYY-MM-DD" maxLength={10} value={editor.draft.expiresOn} onChangeText={v => change('expiresOn', v)} />
-    <Text style={ui.text}>Use a date you confirm. A receipt does not verify the package use-by date; this slice does not estimate expiry.</Text>
+    <PantryExpiryFields name={editor.draft.name} category={editor.draft.category.toUpperCase() as Parameters<typeof PantryExpiryFields>[0]['category']}
+      value={expiry} onChange={value => { setExpiry(value); setError(''); }} />
+    <Text style={ui.text}>Enter a package date only after checking the printed use-by or best-before label. A receipt date does not verify package expiry. Estimates are optional tracking assumptions.</Text>
     {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
     <PrimaryButton label="Save Grocery Review" onPress={() => {
-      const issue = receiptCandidateIssue(editor.draft); if (issue) { setError(issue); return; }
-      const saved = { ...editor, reviewed: true, selected: true };
+      let saved: LocalReceiptCandidate;
+      try { saved = saveReceiptCandidate(editor, expiry); } catch (error) { setError((error as Error).message); return; }
       setRows(previous => previous.some(row => row.id === saved.id) ? previous.map(row => row.id === saved.id ? saved : row) : [...previous, saved]);
       setEditor(null); setError('');
     }} />
@@ -54,7 +59,7 @@ export default function LocalReceiptReview({ lines, onPrepare }: { lines: string
     {summary ? <>
       <Text style={ui.heading}>{plan.rows.length} reviewed groceries</Text>
       {plan.rows.map(row => <View key={row.id} style={ui.card}><Text style={ui.heading}>{row.draft.name}</Text>
-        <Text style={ui.text}>{row.draft.category} · {row.draft.quantity} {row.draft.unit} · {row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · User set: {row.draft.expiresOn}</Text></View>)}
+        <Text style={ui.text}>{row.draft.category} · {row.draft.quantity} {row.draft.unit} · {row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · {receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection })}</Text></View>)}
       {!!plan.repeated.length && <Text style={ui.text}>Repeated names in this haul: {plan.repeated.join(', ')}. These rows remain separate. The next step checks household duplicates and requires separate-purchase choices.</Text>}
       <Text style={ui.text}>Nothing has been saved to Pantry. Continue to household duplicate review before confirming.</Text>
       <PrimaryButton label="Check Duplicates & Continue" onPress={() => {
@@ -67,9 +72,9 @@ export default function LocalReceiptReview({ lines, onPrepare }: { lines: string
       {!rows.length && <Text style={ui.text}>No supported item/price pairs found. Review unassigned lines or add a missing grocery.</Text>}
       {rows.map(row => <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
         <Text style={ui.heading}>{row.draft.name || 'Unnamed grocery'}</Text>
-        <Text style={ui.text}>{row.reviewed ? `${row.draft.quantity} ${row.draft.unit} · ${row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · ${row.draft.expiresOn}` : 'Needs review · quantity, unit, category, value and expiry unverified'}</Text>
+        <Text style={ui.text}>{row.reviewed ? `${row.draft.quantity} ${row.draft.unit} · ${row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · ${receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection })}` : 'Needs review · quantity, unit, category, value and expiry unverified'}</Text>
         <Text selectable style={ui.text}>Original OCR: {row.original || 'Added manually'}</Text>
-        <PrimaryButton label={row.reviewed ? 'Edit Grocery' : 'Review Grocery'} variant="ghost" onPress={() => { setEditor({ ...row, draft: { ...row.draft } }); setError(''); }} />
+        <PrimaryButton label={row.reviewed ? 'Edit Grocery' : 'Review Grocery'} variant="ghost" onPress={() => edit(row)} />
         {row.reviewed && <Pressable accessibilityRole="checkbox" accessibilityLabel={`Include ${row.draft.name}`} accessibilityState={{ checked: row.selected }} style={ui.pill}
           onPress={() => setRows(previous => previous.map(item => item.id === row.id ? { ...item, selected: !item.selected } : item))}>
           <Text style={ui.label}>{row.selected ? '☑ Included' : '☐ Excluded'}</Text></Pressable>}

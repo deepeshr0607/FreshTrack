@@ -190,7 +190,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
-| 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; expiry/barcode remain |
+| 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; expiry choices implemented pending phone checks; barcode remains |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 6 receipt expiry choices implemented (19 October); iPhone checks pending.** Receipt grocery review reuses Pantry package/manual/explicit shelf-life fields and saves only the winning choice. Estimate/package/manual labels and validated expirySelection survive confirmation and durable retries; legacy date-only retries remain compatible. Both TypeScript/build, root231/231, live client3/3 with fixture cleanup and all-platform/37-route exports pass; Doctor20/21 retains five patches. Actual iOS manifest/bundle200 includes the form. No backend/native/dependency/environment/deployment change or user-data writes by the agent. See [receipt expiry report](docs/Phase_6_Receipt_Expiry_Review.md). Next: estimate then package/manual iPhone checks, followed by barcode/native work; no Phase9.
 
 **Phase 6 normal Scanner receipt entry passed iPhone checks by user report (19 October).** Real accounts open protected /scanner/receipt from Receipt OCR; Demo retains the sample flow. The normal and diagnostic pages share the verified OCR/review/import/retry implementation; test-only confirmation controls stay diagnostic, with normal recovery for an existing paused retry. Both TypeScript checks, root227/227 and all-platform/37-route exports pass; Doctor20/21 retains five patches. Fixed an older date-sensitive prototype test fixture without changing assertions. Actual iOS manifest/bundle and existing API health200 pass. No backend/native/dependency/environment/deployment change. See [normal-entry report](docs/Phase_6_Normal_Receipt_Entry.md). User answered “All checks passed” to the 13-step normal-entry checklist covering capture/cancel, text visibility, reviewed import/restart, hidden test controls, manual fallback and Demo separation. This is user-reported evidence, not direct observation. Next: receipt expiry presets/package-date review, then barcode/native work; no Phase9.
 

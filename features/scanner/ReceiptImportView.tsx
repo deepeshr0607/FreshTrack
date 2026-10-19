@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import PrimaryButton from '@/components/PrimaryButton';
 import { ui } from '@/components/PrototypeScreen';
 import { Colors } from '@/constants/Theme';
+import { receiptExpiryLabel } from '@/lib/receiptCandidates';
 import { rupeeValue } from '@/lib/pantryApi';
 import type { createReceiptImportController } from '@/lib/receiptImport';
 
@@ -26,7 +27,7 @@ export default function ReceiptImportView({ controller, state, readOnly, onNewRe
     </> : state.stage === 'pending' ? <>
       <Text style={ui.text}>{state.pending!.paused ? (diagnostics ? 'Receipt sync paused for the development retry test. No import has been sent by this test yet.' : 'Your confirmed receipt is saved on this device and waiting to be sent.') : 'This confirmed haul is saved on this device. Its server result may be uncertain. Retry the unchanged request to recover the result.'}</Text>
       {state.pending!.input.items.map(row => <View key={row.rowId} style={ui.card}><Text style={ui.heading}>{row.item.name}</Text>
-        <Text style={ui.text}>{row.item.quantity} {row.item.unit} · {rupeeValue(row.item.totalCostMinor)} · {row.item.expiresOn}</Text></View>)}
+        <Text style={ui.text}>{row.item.quantity} {row.item.unit} · {rupeeValue(row.item.totalCostMinor)} · {receiptExpiryLabel(row.item)}</Text></View>)}
       <Text style={ui.text}>Editing and new receipt imports are locked until this request is resolved. Closing and reopening the app keeps this retry. Signing out removes its local copy; groceries already saved online remain.</Text>
       {(!state.pending!.paused || diagnostics) && <PrimaryButton label="Retry Saved Import" loading={state.busy} disabled={readOnly} onPress={() => void controller.retry()} />}
       {state.pending!.paused && <PrimaryButton label={diagnostics ? 'End Retry Test & Import' : 'Continue Saved Import'} disabled={retryDisabled} onPress={() => void controller.retry(true)} />}
@@ -37,7 +38,7 @@ export default function ReceiptImportView({ controller, state, readOnly, onNewRe
         const needsChoice = !!duplicate && (duplicate.total > 0 || duplicate.withinHaul.length > 0);
         return <View key={row.rowId} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
           <Text style={ui.heading}>{row.item.name}</Text>
-          <Text style={ui.text}>{row.item.category} · {row.item.quantity} {row.item.unit} · {rupeeValue(row.item.totalCostMinor)} · {row.item.expiresOn}</Text>
+          <Text style={ui.text}>{row.item.category} · {row.item.quantity} {row.item.unit} · {rupeeValue(row.item.totalCostMinor)} · {receiptExpiryLabel(row.item)}</Text>
           {needsChoice && <>
             <Text style={ui.text}>Possible duplicate: {duplicate.total} existing purchases; {duplicate.withinHaul.length} matching rows in this haul.</Text>
             {duplicate.matches.map(item => <Text key={item.id} style={ui.text}>Existing: {item.name} · {item.quantity} {item.unit} · {rupeeValue(item.totalCostMinor)} · {item.expiresOn}</Text>)}

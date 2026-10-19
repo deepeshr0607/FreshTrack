@@ -3,11 +3,16 @@ import { ocrLines } from './receiptOcrProbe.ts';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { validatePantryDraft } from './pantry.ts';
 import type { PantryDraft } from './pantry';
+import type { ExpirySelection } from '../types/api';
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { expiryDraft, expirySelection, resolveExpiry } from './pantryExpiry.ts';
+import type { ExpiryDraft } from './pantryExpiry';
 
 export interface LocalReceiptCandidate {
   id: string;
   original: string;
   draft: PantryDraft;
+  expirySelection?: ExpirySelection;
   detectedPrice: string | null;
   currency: 'INR' | 'unspecified' | 'unsupported';
   reviewed: boolean;
@@ -44,6 +49,34 @@ export function parseReceiptCandidates(value: unknown): ReceiptParseResult {
 export function manualReceiptCandidate(id: string, original = ''): LocalReceiptCandidate {
   return { id, original, detectedPrice: null, currency: 'unspecified', draft: emptyDraft(), reviewed: false, selected: false };
 }
+/** Legacy date-only reviews remain manual; OCR never infers an expiry source. */
+export function receiptCandidateExpiry(row: { draft: PantryDraft; expirySelection?: ExpirySelection }) {
+  const resolved = resolveExpiry(row.expirySelection ?? { packageDate: null, userDate: row.draft.expiresOn, preset: null });
+  if (resolved.expiresOn !== row.draft.expiresOn) throw Error('Expiry date does not match the reviewed choice.');
+  return resolved;
+}
+export function receiptExpiryDraft(row: LocalReceiptCandidate): ExpiryDraft {
+  if (!row.expirySelection) return { ...expiryDraft(), userDate: row.draft.expiresOn };
+  const resolved = receiptCandidateExpiry(row);
+  return { packageDate: resolved.expirySource === 'PACKAGE_DATE' ? resolved.expiresOn : '',
+    userDate: resolved.expirySource === 'USER_ENTERED' ? resolved.expiresOn : '',
+    baseDate: resolved.expirySource === 'PRESET_ESTIMATE' ? resolved.purchaseDate! : '',
+    days: resolved.expirySource === 'PRESET_ESTIMATE' ? String(resolved.freshnessPresetDays) : '' };
+}
+/** Save only the winning source. Clearing it later cannot revive an unused lower choice. */
+export function saveReceiptCandidate(row: LocalReceiptCandidate, form: ExpiryDraft): LocalReceiptCandidate {
+  const resolved = resolveExpiry(expirySelection(form));
+  const chosen: ExpirySelection = { packageDate: resolved.expirySource === 'PACKAGE_DATE' ? resolved.expiresOn : null,
+    userDate: resolved.expirySource === 'USER_ENTERED' ? resolved.expiresOn : null,
+    preset: resolved.expirySource === 'PRESET_ESTIMATE' ? { baseDate: resolved.purchaseDate!, days: resolved.freshnessPresetDays! } : null };
+  const draft = { ...row.draft, expiresOn: resolved.expiresOn };
+  const issue = receiptCandidateIssue(draft); if (issue) throw Error(issue);
+  return { ...row, draft, expirySelection: chosen, reviewed: true, selected: true };
+}
+export function receiptExpiryLabel(item: { expiresOn: string; expirySelection?: ExpirySelection }): string {
+  const source = item.expirySelection ? resolveExpiry(item.expirySelection).expirySource : 'USER_ENTERED';
+  return `${source === 'PACKAGE_DATE' ? 'Package date' : source === 'PRESET_ESTIMATE' ? 'Estimated' : 'User set'}: ${item.expiresOn}`;
+}
 /** Same bounds as the real Pantry form; no expiry, quantity, unit or price is inferred. */
 export function receiptCandidateIssue(draft: PantryDraft): string | null {
   if (draft.name.trim().length > 120 || draft.unit.trim().length > 32) return 'Use a name up to 120 characters and a unit up to 32.';
@@ -61,6 +94,7 @@ export function receiptReviewSummary(rows: LocalReceiptCandidate[]) {
   if (selected.length > 20 || new Set(rows.map(row => row.id)).size !== rows.length) return { error: 'Use at most 20 distinct review rows.', rows: [], repeated: [] };
   for (const row of selected) {
     if (!row.reviewed) return { error: 'Save each selected grocery review first.', rows: [], repeated: [] };
+    try { receiptCandidateExpiry(row); } catch (error) { return { error: (error as Error).message, rows: [], repeated: [] }; }
     const issue = receiptCandidateIssue(row.draft);
     if (issue) return { error: issue, rows: [], repeated: [] };
   }
