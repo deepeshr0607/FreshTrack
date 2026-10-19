@@ -1,6 +1,6 @@
 # Phase 6 — receipt groceries without same-line prices
 
-19 October 2026. First bounded slice of the user’s receipt-first scope update. Phone acceptance pending; barcode follow-up stays deferred.
+19 October 2026. First bounded slice of the user’s receipt-first scope update. Local synthetic iPhone acceptance passed by user report; barcode follow-up stays deferred.
 
 ## Behavior
 
@@ -26,7 +26,7 @@ The base parse retains unassigned name lines. The screen hides sources held by r
 
 Replayed the two previously downloaded public macOS Vision string arrays through the updated review pipeline: sample014 now proposes1 name-only row (previously0); sample031 remains0. Both remain fully unreviewed with unknown prices. This narrow improvement is not broad receipt accuracy, successful image recognition on iPhone or automatic price matching. No source images/full transcripts are committed. See the existing public-receipt QA report for pinned sources and recognition method.
 
-## Phone exercise — pending
+## Phone exercise — passed by user report
 
 Scanner → Test Receipt Layout Review → Items without prices. Expect six candidates:Milk, Bananas, Chicken breast, Whole wheat bread, Basmati rice, Chocolate biscuits. All start unreviewed with unknown value; seven other lines remain unassigned. Review Milk/Cancel leaves no selected grocery. Explicit review with blank value previews unknown. Removing Milk frees its name for matching with the60.00 amount; Cancel leaves both available, while a saved matched review keeps the explicitly chosen amount. Reset restores the six unreviewed suggestions. This route only previews reviewed fields locally; it cannot add Pantry items.
 
@@ -35,3 +35,9 @@ Existing synthetic layout checklists describe the behavior before this suggestio
 ## Remaining receipt-first work
 
 Broader name/layout extraction, abbreviations, quantities/units, discounts/currencies and long receipts; food/category recognition; researched storage-dependent shelf-life rules; confirmed purchase date and automatic editable estimates; package-date/unchecked-date handling; mixed real-receipt and failure/native/accessibility QA; final Phase6 review. Existing expiry defaults are unchanged and not automatically applied by this slice. No Phase9 work.
+
+## Acceptance update
+
+The user answered “All checks passed” to the nine-step local exercise: six common-food suggestions with unknown values and no selected rows; Milk review cancellation; explicit Dairy/1 bottle/manual2026-11-30 review with blank price; local preview preserving unknown value; removal returning the name to matching; explicit60.00 match and editor cancellation without adding a row; Reset restoring six unreviewed suggestions; no Pantry additions.
+
+This is user-reported synthetic UI evidence, not direct agent observation or acceptance of real-photo OCR accuracy. No runtime/backend/environment/deployment or grocery changes in this update. Prior automated results were not rerun for this documentation-only change; `git diff --check` passes. Remaining receipt detection, category recognition and automatic storage-dependent date suggestions are still incomplete.
