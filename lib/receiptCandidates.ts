@@ -7,6 +7,8 @@ import type { ExpirySelection } from '../types/api';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { expiryDraft, expirySelection, resolveExpiry } from './pantryExpiry.ts';
 import type { ExpiryDraft } from './pantryExpiry';
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { isPossibleReceiptFoodName } from './receiptItemNames.ts';
 
 export interface LocalReceiptCandidate {
   id: string;
@@ -58,6 +60,23 @@ export function parseReceiptCandidates(value: unknown): ReceiptParseResult {
 }
 export function usedReceiptLineIds(rows: LocalReceiptCandidate[]): Set<string> {
   return new Set(rows.flatMap(row => row.sourceLineIds ?? []));
+}
+/** Propose known food names without borrowing a price from another OCR line.
+ * Keep the base parse intact so removing a suggestion frees its original line for matching.
+ * Existing same-line candidates take priority within the shared 20-row review limit.
+ */
+export function suggestReceiptNameOnlyItems(parsed: ReceiptParseResult): LocalReceiptCandidate[] {
+  const rows = [...parsed.candidates];
+  const used = usedReceiptLineIds(rows);
+  for (const line of parsed.remaining) {
+    if (rows.length >= 20) break;
+    const name = normalizedLine(line.original);
+    if (line.kind !== 'name' || used.has(line.id) || !validName(name) || /[\dOo][.,][\dOo]/.test(name) || !isPossibleReceiptFoodName(name)) continue;
+    rows.push({ id: line.id, original: line.original, sourceLineIds: [line.id],
+      draft: emptyDraft(name), detectedPrice: null, currency: 'unspecified', reviewed: false, selected: false });
+    used.add(line.id);
+  }
+  return rows;
 }
 /** Strings lack coordinates. User-selected name/amount IDs are required, even for equal-size columns. */
 export function pairReceiptLines(lines: UnassignedReceiptLine[], nameId: string, amountId: string, rows: LocalReceiptCandidate[]): LocalReceiptCandidate {

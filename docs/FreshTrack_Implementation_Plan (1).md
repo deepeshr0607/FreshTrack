@@ -878,6 +878,8 @@ Phase 5 has not started.
 
 ## Phase 6 — Scanner: barcode and receipt OCR
 
+**Phase 6 name-only grocery suggestions implemented (19 October); phone acceptance pending.** Receipt review proposes supported common food names without same-line prices; values remain unknown and every row requires explicit review. Original lines return to matching when suggestions are removed. Root258/258, receipt backend4/4, both TypeScript/build and all-platform/40-route export pass; development iOS manifest/bundle200. Existing lint/Doctor gaps remain. Public OCR replay improves one sample from0 to1 suggestion; the other remains0, so broad accuracy is not claimed. See [name-only report](Phase_6_Receipt_Name_Only.md). No backend/schema/native/dependency/deployment or grocery changes. Next: local phone exercise, then remaining detection and expiry-engine work. Barcode follow-up deferred; no Phase9.
+
 **Phase 6 two public receipt samples evaluated locally (19 October).** At user request, macOS Vision and the unchanged parser processed two public food-purchase receipts:9/1 purchase rows,110/39 recognized strings,0 automatic candidates and all strings retained unassigned. Separate columns and recognition errors prevent automatic item coverage; foreign RM header context remains unsupported. Local manual recovery/payload assertions, root251/251 and both TypeScript checks pass. No Pantry writes or runtime/deployment changes. See [public receipt results](Phase_6_Real_Receipt_QA.md). This is not iPhone camera/OCR acceptance. Next: bounded parser/currency gaps and failure/native QA. Barcode follow-up deferred; no Phase9.
 
 **Phase 6 real-receipt QA prepared (19 October); phone results pending.** Prepared a two-receipt, no-import comparison that distinguishes raw recognition from parser candidates and checks manual correction, cancellation and local cleanup. Fresh mobile/backend TypeScript and root251/251 pass; running iOS manifest200. No runtime/deployment/native/environment or grocery changes. See [real receipt QA](Phase_6_Real_Receipt_QA.md). Barcode follow-up stays deferred; Phase6 remains incomplete, no Phase9.
@@ -923,6 +925,8 @@ Phase 5 has not started.
 5. Barcode scan must navigate to the same review form used by manual and receipt entry.
 
 ### B. Receipt image capture and OCR
+
+**19 October receipt-first scope update:** user prioritizes mixed grocery receipts; barcode follow-up is deferred. Reuse the existing OCR/review/duplicate/atomic-import pipeline. Remaining delivery order: (1) receipt item detection, abbreviations/quantities/layouts and longer receipts; (2) food/category recognition; (3) sourced, storage-dependent shelf-life rules; (4) editable automatic date suggestions; (5) confirmed purchase date as estimate base; (6) package-date handling, including a deliberate decision for unchecked dates; (7) mixed-receipt/failure/native QA; (8) final review. Do not infer production day from purchase day or label estimated dates as verified expiry. The name-only slice advances task1; it does not complete it.
 
 **16 October architecture update:** user chose free on-device OCR after Cloud Vision prepayment requirements. Apple Vision/iOS and ML Kit/Android replace the cloud extraction in tasks2–3 below; keep images/text local, parse/review locally and submit only reviewed fields to authenticated backend import. Cloud Vision steps below are the original design and are not current setup prerequisites. See [OCR proof](Phase_6_On_Device_OCR_Proof.md). No real ingestion acceptance is implied by the first diagnostic.
 

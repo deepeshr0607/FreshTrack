@@ -2,4 +2,5 @@
 export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[] }[] = [
   { name: 'Separate INR columns', lines: ['ITEM DESCRIPTION', 'Layout Test Rice', 'Layout Test Milk', '₹40.00', 'Rs. 60.50', 'TOTAL 100.50', 'UPI 100.50'] },
   { name: 'Foreign amount and uncertain lines', lines: ['ITEM DESCRIPTION', 'Layout Test Yogurt', '$4.29', 'Discount -5.00', 'Rice 1,200.00', 'TOTAL 4.29'] },
+  { name: 'Items without prices', lines: ['FRESHTRACK SAMPLE MARKET', 'ITEM DESCRIPTION', 'Milk', 'Bananas', 'Chicken breast', 'Whole wheat bread', 'Basmati rice', 'Chocolate biscuits', '₹60.00', 'TOTAL 60.00', 'Milk Road', 'Cashier: Milk', 'Unclear product XYZ'] },
 ];

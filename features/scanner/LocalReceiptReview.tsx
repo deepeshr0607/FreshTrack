@@ -9,12 +9,12 @@ import { Colors } from '@/constants/Theme';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import type { ReceiptReviewInput } from '@/types/api';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
-import { manualReceiptCandidate, parseReceiptCandidates, pairReceiptLines, usedReceiptLineIds, receiptReviewSummary, receiptExpiryDraft, saveReceiptCandidate, receiptExpiryLabel, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
+import { manualReceiptCandidate, parseReceiptCandidates, suggestReceiptNameOnlyItems, pairReceiptLines, usedReceiptLineIds, receiptReviewSummary, receiptExpiryDraft, saveReceiptCandidate, receiptExpiryLabel, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
 
 /** OCR stays local; only an explicit reviewed-fields handoff can prepare a server import. */
 export default function LocalReceiptReview({ lines, onPrepare, localOnly = false }: { lines: string[]; onPrepare(input: ReceiptReviewInput): void; localOnly?: boolean }) {
   const [parsed] = useState(() => parseReceiptCandidates(lines));
-  const [rows, setRows] = useState(parsed.candidates);
+  const [rows, setRows] = useState(() => suggestReceiptNameOnlyItems(parsed));
   const [editor, setEditor] = useState<LocalReceiptCandidate | null>(null);
   const [expiry, setExpiry] = useState(expiryDraft());
   const [error, setError] = useState('');
@@ -74,9 +74,11 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       <PrimaryButton label="Back to Review" variant="ghost" onPress={() => setSummary(false)} />
     </> : <>
       <Text style={ui.text}>{rows.length} candidates · {rows.filter(row => row.selected).length} reviewed and selected · no accuracy score inferred</Text>
-      {!rows.length && <Text style={ui.text}>No same-line grocery candidates found. Match separate name/amount lines below or add a missing grocery.</Text>}
+      {!rows.length && <Text style={ui.text}>No grocery candidates found. Match separate name/amount lines below or add a missing grocery.</Text>}
+      <Text style={ui.text}>Common food names can be suggested without a price. Their value stays unknown until you enter it. Check every suggestion; unfamiliar names remain in unassigned lines.</Text>
       {rows.map(row => <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
         <Text style={ui.heading}>{row.draft.name || 'Unnamed grocery'}</Text>
+        {!row.reviewed && row.detectedPrice === null && <Text style={ui.text}>Name detected without a price · value unknown. Review it, or remove this suggestion to match its name with a separate amount below.</Text>}
         <Text style={ui.text}>{row.reviewed ? `${row.draft.quantity} ${row.draft.unit} · ${row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · ${receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection })}` : 'Needs review · quantity, unit, category, value and expiry unverified'}</Text>
         <Text selectable style={ui.text}>Original OCR: {row.original || 'Added manually'}</Text>
         <PrimaryButton label={row.reviewed ? 'Edit Grocery' : 'Review Grocery'} variant="ghost" onPress={() => edit(row)} />
