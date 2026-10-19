@@ -1,6 +1,6 @@
 # Phase 9 — account/data deletion
 
-19 October 2026. Implemented for the existing native development app; **live Neon deletion and iPhone acceptance remain pending on a disposable account**. No existing real account or household was deleted by the agent. This is not completed Phase9, store publishing or a standalone build.
+Implemented 19 October 2026. **All nine disposable-account iPhone checks passed by user report on 20 October**, including live Neon deletion and rejected deleted-account login. No existing real account or household was deleted by the agent. This is not completed Phase9, store publishing or a standalone build.
 
 ## Workflow and boundaries
 
@@ -16,7 +16,7 @@ The form requires the signed-in email, exact `DELETE`, current password and an a
 
 The Postgres transaction and provider request cannot be one atomic transaction. After step3, a later failure is explicitly shown as FreshTrack data deleted/locked with Neon deletion unconfirmed. Review/retry resumes the remaining work without recreating or deleting another household. An acknowledgement-loss API retry is idempotent. A stale confirmation cannot act on another signed-in subject. No provider key, password, token or raw receipt is persisted in a deletion intent.
 
-If the provider completed deletion but its response was lost, the next session verification may return to Welcome because that provider session is gone. Server application data was already removed and device cleanup precedes the provider request. Actual provider failure/restart behavior still needs device acceptance; injected tests do not prove provider configuration.
+If the provider completed deletion but its response was lost, the next session verification may return to Welcome because that provider session is gone. Server application data was already removed and device cleanup precedes the provider request. Successful deletion/restart and rejected old login are now accepted by user report below. Provider-failure/partial-completion recovery remains covered by injected tests; it was not exercised by that successful phone path.
 
 ## Deny marker and legacy API protection
 
@@ -52,11 +52,29 @@ Provider backups, historical deployments/copies and other devices are not remote
 
 Development-only Preview: `https://freshtrack-b0c1jjx67-dragon-2818.vercel.app`, build Ready. Public health200; tokenless account review401 and Pantry401. The ignored mobile public API URL now points here; auth settings/secrets are unchanged. Metro8087 was restarted with diagnostics off. Actual iOS manifest/bundle200 and bundled new API/screen verified; no native rebuild or production deployment.
 
-The branch's public OpenAPI schema returns the documented `/verify-password` and `/delete-user` contracts. An unauthenticated/no-account-identifier capability probe returns401UNAUTHORIZED. This is **not live deletion acceptance** and does not prove the managed branch enables every deletion option. Device acceptance must use a separate, disposable verified email account, never the user's main account.
+The branch's public OpenAPI schema returns the documented `/verify-password` and `/delete-user` contracts. An unauthenticated/no-account-identifier capability probe returns401UNAUTHORIZED. This is **not live deletion acceptance** and does not prove the managed branch enables every deletion option. The subsequent disposable-account phone result is recorded below; no main-account deletion was requested or reported.
+
+## Phone acceptance — 20 October
+
+The user answered “All checks passed” to the nine numbered iPhone steps:
+
+1. Open/reload FreshTrack Dev with the updated development API.
+2. On the main account, open the deletion review and Cancel without confirming deletion.
+3. Sign out and create/verify a separate disposable account.
+4. Add the named test grocery to the disposable account.
+5. Fill the deletion form and Cancel the final destructive dialog; the grocery remains.
+6. Confirm with a wrong password; an error appears and the grocery remains.
+7. Confirm with the correct disposable-account password; deletion returns to Welcome.
+8. Restart signed out; logging in with the deleted account fails.
+9. Log in to the main account; its original groceries remain unchanged.
+
+This records user-reported successful-path end-to-end acceptance, not agent screen observation or a direct audit of the provider directory/native storage. No passwords, OTPs, tokens or account identifiers were requested or recorded. The phone result does not establish Android behavior, provider-outage/verification-email recovery, multi-device erasure, backup erasure or forensic temporary-file deletion. Shared-household/passwordless deletion remains unsupported as documented above.
+
+This acceptance update changes only README, AGENTS, implementation-plan and this report. No code, schema, deployment or household mutations were performed by the agent for this update. Prior automated results above are from implementation checkpoint `701a32f`; they were not rerun. `git diff --check` passed for the documentation update.
 
 ## Next step
 
-Run the numbered disposable-account iPhone check: review/Cancel, destructive-dialog Cancel, wrong password preserving its grocery, real provider deletion, restart/rejected old login, and main account unchanged. If provider deletion is unconfirmed, stop and report the safe label; do not call the feature complete. Then continue remaining Phase9 retention/reliability/security/tooling/personal-use-build work. Barcode follow-up remains deferred, the twenty-food limit remains closed, and store submission/publishing remains excluded.
+Account/data deletion acceptance is recorded complete for this limited native MVP slice. Next is receipt retention and abrupt-termination cache cleanup, followed by the remaining Phase9 security/tooling/reliability/personal-use-build work. Phase9 is not complete and no standalone app is claimed delivered. Barcode follow-up remains deferred, the twenty-food limit remains closed, and store submission/publishing remains excluded.
 
 ## Primary references
 
