@@ -8,10 +8,10 @@ import { kolkataToday, type ExpiryDraft } from '@/lib/pantryExpiry';
 import { receiptStorageRules, receiptStorageNotice, applyReceiptStorageRule } from '@/lib/receiptShelfLife';
 
 /** Storage confirmation is local to this edit; only accepted date/base/days are saved. */
-export default function ReceiptExpirySuggestion({ name, value, onChange }: {
-  name: string; value: ExpiryDraft; onChange(value: ExpiryDraft): void;
+export default function ReceiptExpirySuggestion({ name, value, onChange, confirmedPurchaseDate = '' }: {
+  name: string; value: ExpiryDraft; onChange(value: ExpiryDraft): void; confirmedPurchaseDate?: string;
 }) {
-  const [purchaseDate, setPurchaseDate] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState(confirmedPurchaseDate);
   const [error, setError] = useState('');
   const rules = receiptStorageRules(name);
   const notice = receiptStorageNotice(name);

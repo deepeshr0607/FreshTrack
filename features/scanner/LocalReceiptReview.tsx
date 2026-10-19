@@ -2,7 +2,9 @@ import React, { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import PantryExpiryFields from '@/components/PantryExpiryFields';
 import ReceiptExpirySuggestion from './ReceiptExpirySuggestion';
-import { expiryDraft } from '@/lib/pantryExpiry';
+import ReceiptEstimateBatch from './ReceiptEstimateBatch';
+import { applyReceiptEstimateBatch } from '@/lib/receiptBatchEstimates';
+import { expiryDraft, kolkataToday } from '@/lib/pantryExpiry';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { ui } from '@/components/PrototypeScreen';
@@ -23,6 +25,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
   const [rows, setRows] = useState(() => suggestReceiptNameOnlyItems(parsed));
   const [editor, setEditor] = useState<LocalReceiptCandidate | null>(null);
   const [expiry, setExpiry] = useState(expiryDraft());
+  const [receiptDate, setReceiptDate] = useState('');
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(false);
   const [reviewPage, setReviewPage] = useState(0);
@@ -77,7 +80,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
     <FormInput label="Quantity" accessibilityLabel="Reviewed quantity" keyboardType="decimal-pad" value={editor.draft.quantity} onChangeText={v => change('quantity', v)} />
     <FormInput label="Unit (e.g. piece, bag, kg)" accessibilityLabel="Reviewed unit" maxLength={32} value={editor.draft.unit} onChangeText={v => change('unit', v)} />
     <FormInput label="Whole-entry purchase value (₹, optional)" accessibilityLabel="Reviewed purchase value" keyboardType="decimal-pad" value={editor.draft.price} onChangeText={v => change('price', v)} />
-    <ReceiptExpirySuggestion key={`${editor.id}:${editor.draft.name}`} name={editor.draft.name} value={expiry} onChange={value => { setExpiry(value); setError(''); }} />
+    <ReceiptExpirySuggestion key={`${editor.id}:${editor.draft.name}`} name={editor.draft.name} value={expiry} confirmedPurchaseDate={receiptDate} onChange={value => { setExpiry(value); setError(''); }} />
     <PantryExpiryFields useLegacyPresets={false} name={editor.draft.name} category={editor.draft.category.toUpperCase() as Parameters<typeof PantryExpiryFields>[0]['category']}
       value={expiry} onChange={value => { setExpiry(value); setError(''); }} />
     <Text style={ui.text}>Enter a package date only after checking the printed use-by or best-before label. A receipt date does not verify package expiry. Estimates are optional tracking assumptions.</Text>
@@ -105,6 +108,8 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
       <PrimaryButton label="Back to Review" variant="ghost" onPress={() => setSummary(false)} />
     </> : <>
+      <ReceiptEstimateBatch rows={rows} confirmedDate={receiptDate} onConfirmDate={setReceiptDate}
+        onApply={preview => { setRows(applyReceiptEstimateBatch(rows, preview, kolkataToday())); setError(''); }} />
       <Text style={ui.text}>{rows.length} candidates · {rows.filter(row => row.selected).length} reviewed and selected · no accuracy score inferred</Text>
       {!rows.length && <Text style={ui.text}>No grocery candidates found. Match separate name/amount lines below or add a missing grocery.</Text>}
       <Text style={ui.text}>Common food names can be suggested without a price. Their value stays unknown until you enter it. Check every suggestion; unfamiliar names remain in unassigned lines.</Text>
@@ -115,6 +120,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       </View>}
       {visibleRows.map(row => <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
         <Text style={ui.heading}>{row.draft.name || 'Unnamed grocery'}</Text>
+        {!row.reviewed && !!row.draft.expiresOn && <Text style={ui.text}>Estimated: {row.draft.expiresOn} · Review remaining fields before selecting for import.</Text>}
         {!row.reviewed && <ReceiptCategoryHint name={row.draft.name} />}
         {!row.reviewed && row.detectedPrice === null && <Text style={ui.text}>Name detected without a price · value unknown. Review it, or remove this suggestion to match its name with a separate amount below.</Text>}
         <Text style={ui.text}>{row.reviewed ? `${row.draft.quantity} ${row.draft.unit} · ${row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · ${receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection })}` : 'Needs review · quantity, unit, category, value and expiry unverified'}</Text>
