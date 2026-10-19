@@ -1,6 +1,6 @@
 # Phase 6 — explicit receipt quantity/unit suggestions
 
-19 October 2026. Small receipt-detection slice; local iPhone acceptance pending. Barcode follow-up stays deferred.
+19 October 2026. Small receipt-detection slice; local synthetic iPhone acceptance passed by user report. Barcode follow-up stays deferred.
 
 ## Behavior and limits
 
@@ -35,7 +35,7 @@ Uses existing cards, text, buttons and keyboard-aware form; no visual redesign. 
 
 Temporary logs: `/private/tmp/freshtrack-receipt-quantity-tests.log`, `freshtrack-receipt-quantity-export.log`, `freshtrack-receipt-quantity-doctor.log`; exported artifacts at `/private/tmp/freshtrack-receipt-quantity-export`.
 
-## Local iPhone exercise — pending
+## Local iPhone exercise — passed by user report
 
 Scanner → Test Receipt Layout Review → Quantity review must show five unreviewed candidates. Apply0.750kg on Apples, Cancel and reopen to verify fields stayed blank; apply again and explicitly correct to0.5kg with manual2026-11-30 and value45.00. On2xMilk, Apply suggests2 with no unit and leaves120.00 unchanged; explicitly choose bottle and manual2026-11-30 before saving. Eggs Qty6pcs suggests6piece, Cancel leaves it unselected. Milk500ml has no purchased-quantity hint. Local haul/confirmed-field previews include only the two saved reviews with their exact values. Reset restores unreviewed rows; Pantry is unchanged.
 
@@ -43,4 +43,10 @@ This is synthetic local review verification, not real receipt recognition or per
 
 ## Next step
 
-Record the phone result, then continue bounded retailer abbreviation/name/layout improvements. Longer receipts/currencies/discounts, food classification, sourced storage-dependent shelf lives, confirmed purchase dates/automatic editable date suggestions, package-date handling and failure/native QA remain incomplete. Existing manual expiry defaults were not changed. No Phase9.
+Continue bounded retailer abbreviation/name/layout improvements. Longer receipts/currencies/discounts, food classification, sourced storage-dependent shelf lives, confirmed purchase dates/automatic editable date suggestions, package-date handling and failure/native QA remain incomplete. Existing manual expiry defaults were not changed. No Phase9.
+
+## Acceptance update
+
+The user answered “All checks passed” to the nine-step synthetic exercise. Reported checks cover five initial unreviewed candidates; Apples Apply0.750kg/Cancel/reopen with blank fields, followed by explicit correction to0.5kg and manual2026-11-30 with45.00 unchanged; Milk count2 with unit initially unknown and120.00 unchanged, then explicitly reviewed as bottle; Eggs6piece Apply/Cancel; no purchased-quantity suggestion for Milk500ml package size; local preview preserving only the two saved reviews and exact values/dates; Reset and no Pantry additions.
+
+This is user-reported local UI evidence, not direct agent observation, real-photo OCR accuracy or new persisted-import acceptance. No runtime/backend/environment/deployment or grocery changes in this documentation-only update. Prior automated results were not rerun; `git diff --check` passes. Phase6 remains incomplete, including automatic food classification/expiry suggestions; barcode follow-up remains deferred.
