@@ -1,6 +1,6 @@
 # Phase 6 — receipt recovery and bounded unassigned review
 
-19 October 2026. Focused quality slice implemented and verified automatically; the phone checks below remain pending. Phase 6 final review has not been completed.
+19 October 2026. Focused quality slice implemented and verified automatically; the user subsequently reported “All checks passed” for the seven-step phone checklist below. Phase 6 final review has not been completed.
 
 ## Issues found and focused fixes
 
@@ -35,7 +35,7 @@ No native module, native rebuild, package/lockfile, backend/schema, environment-
 - Recognition failures retain the selected image for explicit retry; unreadable/empty/unknown layouts retain manual entry. The native iOS module bounds local files/pixels/text; Android position recognition and native Android QA remain unverified.
 - Public receipt recognition is still partial: earlier pinned macOS evidence offers four purchase associations, only three exact names+amounts, across ten grocery rows. No broad receipt-accuracy improvement is claimed in this quality slice.
 
-## Pending iPhone checks — no imports or Pantry changes
+## iPhone checks — passed by user report, no imports or Pantry changes
 
 Use FreshTrack Dev, not Expo Go; keep the laptop awake and both devices on the laptop's network. Reload using `http://192.168.1.19:8087` in the development launcher if needed. Sign in to the real account.
 
@@ -47,8 +47,8 @@ Use FreshTrack Dev, not Expo Go; keep the laptop awake and both devices on the l
 6. Tap **Review Matched Lines** again. Enter quantity **1**, unit **piece** and manual expiry **2026-11-30**; keep value40.00 and leave package/estimate blank. **Save Grocery Review** should produce exactly one reviewed/selected Alpha grocery, 498 unassigned lines and a valid current page. **Preview Reviewed Haul** → **Preview Confirmed Fields (Local Only)** must show only that grocery, 1 piece / ₹40 / 2026-11-30. Nothing is sent or saved.
 7. **Back to Review** → **Reset Layout Check**: the fixture returns to zero reviewed groceries and 500 available sources. Confirm paging responds without freezing. Return to Pantry: no Alpha sample was added. Restore Camera On if it is not already enabled.
 
-Report any failing step/error without receipt contents or credentials. The result will be recorded as user-reported device evidence, not direct agent observation or automated OS testing.
+On 19 October, the user answered “All checks passed”. Recorded as user-reported acceptance of camera-denial/settings recovery, library/camera cancellation, empty-scan retry and image retention, navigation clearing, 500-source paging with global matching selections, Cancel/exact local preview and Reset/unchanged Pantry. No raw receipt contents or credentials were collected. This is not direct agent observation, verified cache-file deletion, native performance profiling, full screen-reader testing, Android acceptance or a new persisted-import test. No runtime changes or repeat builds/tests were needed for this documentation-only acceptance update; the implementation results above remain separate evidence.
 
 ## Exact next step
 
-Complete and record the iPhone recovery/paging checklist, then perform the final Phase6 scope/acceptance review. Explicitly retain limited receipt accuracy, Android native QA, full screen-reader/large-text testing and device performance profiling as unresolved/deferred limits where evidence is absent. Barcode follow-up stays deferred per user. No Phase9 or store publishing starts automatically.
+Perform the final Phase6 scope/acceptance review. Explicitly retain limited receipt accuracy, Android native QA, full screen-reader/large-text testing and device performance profiling as unresolved/deferred limits where evidence is absent. Barcode follow-up stays deferred per user. No Phase9 or store publishing starts automatically.
