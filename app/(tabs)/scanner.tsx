@@ -65,6 +65,7 @@ export default function ScannerScreen() {
         </View>
         <PrimaryButton label="Enter Item Manually" variant="ghost" onPress={() => router.push('/pantry/add')} />
         {__DEV__ && auth.user && !auth.demo && <PrimaryButton label="Test On-device Receipt OCR" onPress={() => router.push('/scanner/ocr-check')} />}
+        {__DEV__ && auth.user && !auth.demo && <PrimaryButton label="Test Receipt Layout Review" variant="ghost" onPress={() => router.push('/scanner/receipt-layout-check')} />}
         {__DEV__ && auth.user && !auth.demo && <PrimaryButton label="Test Barcode Camera" onPress={() => router.push('/scanner/barcode-check')} />}
 
         {/* Mode selector */}
