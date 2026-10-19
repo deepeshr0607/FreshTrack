@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { resolveExpiry } from '../contracts/expiry';
+import { packageBarcode } from '../contracts/barcode';
 import { Prisma, type PrismaClient, type PantryItem } from '@prisma/client';
 import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination, PantryListFilters, ReceiptReviewInput, ReceiptImportInput, ReceiptDuplicateRow } from '../contracts/api';
 import { InvalidApiInput, pageInfo, paginationOffset } from '../lib/api';
@@ -20,7 +21,7 @@ function expectedVersion(value: unknown): string {
 export function pantryEditInput(value: unknown): PantryEditInput {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid edit.');
   const { expectedUpdatedAt, ...fields } = value as Record<string, unknown>;
-  if ('duplicateConfirmation' in fields) throw new InvalidApiInput('Duplicate confirmation is only for new purchases.');
+  if ('duplicateConfirmation' in fields || 'barcode' in fields) throw new InvalidApiInput('Purchase identity is only set when adding.');
   return { ...pantryInput(fields), expectedUpdatedAt: expectedVersion(expectedUpdatedAt) };
 }
 export function pantryOutcomeInput(value: unknown): PantryOutcomeInput {
@@ -46,7 +47,12 @@ const categories = ['PRODUCE', 'DAIRY', 'BAKERY', 'SNACKS', 'MEAT', 'FROZEN', 'O
 export function pantryInput(value: unknown): PantryCreateInput {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid pantry entry.');
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'expirySelection', 'duplicateConfirmation'].includes(key))) throw new InvalidApiInput('Unexpected request field.');
+  if (Object.keys(body).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'expirySelection', 'duplicateConfirmation', 'barcode'].includes(key))) throw new InvalidApiInput('Unexpected request field.');
+  let barcode: string | undefined;
+  if ('barcode' in body) {
+    if (typeof body['barcode'] !== 'string' || body['barcode'] !== body['barcode'].trim() || !packageBarcode(body['barcode'])) throw new InvalidApiInput('Invalid retail barcode.');
+    barcode = body['barcode'].padStart(14, '0');
+  }
   const text = (key: string, max: number) => {
     const value = body[key];
     if (typeof value !== 'string' || /[\u0000-\u001f\u007f]/.test(value)) throw new InvalidApiInput('Invalid text field.');
@@ -68,7 +74,7 @@ export function pantryInput(value: unknown): PantryCreateInput {
     try { expiry = resolveExpiry(body['expirySelection']); } catch { throw new InvalidApiInput('Invalid expiry choice.'); }
     if (calendarDate(body['expiresOn'] as string) !== expiry.expiresOn) throw new InvalidApiInput('Expiry does not match its source.');
   }
-  return { ...(duplicateConfirmation ? { duplicateConfirmation } : {}), ...(expiry ? { expirySelection: expiry.selection } : {}), name: text('name', 120), category: body['category'] as PantryCreateInput['category'],
+  return { ...(barcode ? { barcode } : {}), ...(duplicateConfirmation ? { duplicateConfirmation } : {}), ...(expiry ? { expirySelection: expiry.selection } : {}), name: text('name', 120), category: body['category'] as PantryCreateInput['category'],
     quantity: quantityString(body['quantity'] as string), unit: text('unit', 32),
     expiresOn: calendarDate(body['expiresOn'] as string), totalCostMinor: minorAmount(body['totalCostMinor']) };
 }
@@ -84,6 +90,7 @@ export function receiptInput(value: unknown, importing = false): ReceiptReviewIn
     if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !['rowId', 'item'].includes(key)) ||
         typeof value.rowId !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(value.rowId)) throw new InvalidApiInput('Invalid receipt row.');
     const item = pantryInput(value.item);
+    if (item.barcode) throw new InvalidApiInput('Receipt rows do not accept barcode identity.');
     if (!importing && item.duplicateConfirmation) throw new InvalidApiInput('Review before confirming separate purchases.');
     return { rowId: value.rowId, item };
   }).sort((a, b) => a.rowId.localeCompare(b.rowId, 'en'));
@@ -94,7 +101,7 @@ function view(item: PantryItem, timezone: string, now = new Date()): PantryItemD
   const expiresOn = serializeCalendarDate(item.expiresOn);
   return { id: item.id, name: item.name, category: item.category, quantity: quantityString(item.quantity.toString()),
     unit: item.unit, expiresOn, totalCostMinor: item.totalCostMinor, currencyCode: 'INR', status: item.status,
-    source: item.source, expirySource: item.expirySource,
+    source: item.source, ...(item.barcode ? { barcode: item.barcode } : {}), expirySource: item.expirySource,
     purchaseDate: item.purchaseDate ? serializeCalendarDate(item.purchaseDate) : null, freshnessPresetDays: item.freshnessPresetDays, ...expiryState(expiresOn, timezone, now),
     createdAt: utcTimestamp(item.createdAt), updatedAt: utcTimestamp(item.updatedAt) };
 }
@@ -197,8 +204,9 @@ export function createPantryService(db: PrismaClient = prisma) {
   }, true);
   const duplicateWhere = (identity: VerifiedIdentity, householdId: string, input: PantryCreateInput): Prisma.PantryItemWhereInput => ({
     householdId, household: { members: { some: { authSubject: identity.id } } }, status: 'ACTIVE', archivedAt: null,
-    normalizedName: input.name.toLowerCase(), category: input.category,
-    expiresOn: new Date(`${input.expiresOn}T00:00:00Z`),
+    ...(input.barcode ? { OR: [{ barcode: input.barcode }, { normalizedName: input.name.toLowerCase(), category: input.category,
+      expiresOn: new Date(`${input.expiresOn}T00:00:00Z`) }] } : { normalizedName: input.name.toLowerCase(), category: input.category,
+      expiresOn: new Date(`${input.expiresOn}T00:00:00Z`) }),
   });
   const receiptMatches = async (tx: Prisma.TransactionClient, identity: VerifiedIdentity, householdId: string, timezone: string, input: ReceiptReviewInput): Promise<ReceiptDuplicateRow[]> => {
     const rows: ReceiptDuplicateRow[] = [];
@@ -315,12 +323,12 @@ export function createPantryService(db: PrismaClient = prisma) {
       const item = await tx.pantryItem.create({ data: { ...fields,
         freshnessPresetDays: expiry?.freshnessPresetDays ?? null, purchaseDate: expiry?.purchaseDate ? new Date(`${expiry.purchaseDate}T00:00:00Z`) : null, expiresOn: new Date(`${expiry?.expiresOn ?? input.expiresOn}T00:00:00Z`),
         householdId: membership.householdId, normalizedName: input.name.toLowerCase(), expirySource: expiry?.expirySource ?? 'USER_ENTERED',
-        costSource: input.totalCostMinor === null ? 'UNKNOWN' : 'PURCHASE', currencyCode: 'INR', source: 'MANUAL' } });
+        costSource: input.totalCostMinor === null ? 'UNKNOWN' : 'PURCHASE', currencyCode: 'INR', source: input.barcode ? 'BARCODE' : 'MANUAL' } });
       await tx.pantryItemEvent.create({ data: { householdId: membership.householdId, pantryItemId: item.id,
         eventType: 'CREATED', previousStatus: null, newStatus: 'ACTIVE', quantity: item.quantity,
         totalCostMinor: item.totalCostMinor, costSource: item.costSource, currencyCode: item.currencyCode,
         category: item.category, expiresOn: item.expiresOn, timezone: membership.household.timezone,
-        source: 'APP', idempotencyKey, metadata: { requestHash: fingerprint, duplicateConfirmed: !!duplicateConfirmation, duplicateMatched: !!existing, expirySource: item.expirySource,
+        source: 'APP', idempotencyKey, metadata: { requestHash: fingerprint, ...(input.barcode ? { barcode: input.barcode, entrySource: 'BARCODE' } : {}), duplicateConfirmed: !!duplicateConfirmation, duplicateMatched: !!existing, expirySource: item.expirySource,
           freshnessPresetDays: item.freshnessPresetDays, purchaseDate: item.purchaseDate ? serializeCalendarDate(item.purchaseDate) : null } } });
       return view(item, membership.household.timezone);
     }, true),

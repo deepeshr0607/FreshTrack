@@ -7,6 +7,7 @@
  * Phase 1: Prototype UI only. No real camera/OCR integration.
  * Mock "scan" results appear after tapping Scan buttons.
  * Phase 6: real receipt entry opens the shared protected on-device review/import route.
+ * Real barcode entry opens the protected single-code camera and reviewed catalog form.
  * Demo receipt and barcode previews remain explicit prototypes.
  */
 import React, { useState } from 'react';
@@ -59,7 +60,7 @@ export default function ScannerScreen() {
         {/* Phase 1 notice */}
         <View style={styles.noticeBanner}>
           <Text style={styles.noticeText}>
-            {realReceipt ? 'Receipt photos are read on your device. Barcode scanning is still a preview.' : 'Demo Scanner · Sample results only · No device camera access requested'}
+            {realReceipt ? 'Receipt text is read on your device. Barcode product details come from the catalog; review all fields before saving.' : 'Demo Scanner · Sample results only · No device camera access requested'}
           </Text>
         </View>
         <PrimaryButton label="Enter Item Manually" variant="ghost" onPress={() => router.push('/pantry/add')} />
@@ -91,7 +92,7 @@ export default function ScannerScreen() {
             {/* Barcode scanner card */}
             <Pressable
               style={({ pressed }) => [styles.modeCard, pressed && styles.pressed]}
-              onPress={() => setMode('barcode')}
+              onPress={() => realReceipt ? router.push('/scanner/barcode') : setMode('barcode')}
               accessibilityRole="button"
               accessibilityLabel="Scan barcode"
             >
@@ -100,11 +101,11 @@ export default function ScannerScreen() {
               </View>
               <Text style={styles.modeCardTitle}>Barcode Scan</Text>
               <Text style={styles.modeCardDesc}>
-                {realReceipt ? 'Preview barcode entry with sample products, or enter a grocery manually.' : 'Try sample barcode products and expiry-date review.'}
+                {realReceipt ? 'Scan a package, review its catalog details and enter your purchase and expiry information.' : 'Try sample barcode products and expiry-date review.'}
               </Text>
               <View style={[styles.modeCardBadge, { backgroundColor: Colors.freshGreenBg }]}>
                 <Text style={[styles.modeCardBadgeText, { color: Colors.freshGreen }]}>
-                  {realReceipt ? 'Preview' : 'Demo'}
+                  {realReceipt ? 'Review first' : 'Demo'}
                 </Text>
               </View>
             </Pressable>

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useSyncExternalS
 import { AppState, Platform } from 'react-native';
 import { createAuthSession } from '@/lib/authSession';
 import { bindReceiptImportCleanup } from '@/features/scanner/nativeReceiptImport';
+import { bindBarcodeRetryCleanup } from '@/features/scanner/nativeBarcodeRetry';
 import { bindPantryCacheCleanup } from '@/lib/pantryDiskCache';
 import { nativePantryDiskCache } from '@/features/pantry/nativeDiskCache';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
@@ -18,11 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const stopCacheCleanup = disk ? bindPantryCacheCleanup(session, () => disk.clear()) : () => undefined;
     const stopScheduleCleanup = bindExpiryScheduleSession(session);
     const stopReceiptCleanup = bindReceiptImportCleanup(session);
+    const stopBarcodeCleanup = bindBarcodeRetryCleanup(session);
     void session.refresh().catch(() => undefined);
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'active' && !session.getSnapshot().checking) void session.refresh().catch(() => undefined);
     });
-    return () => { subscription.remove(); stopCacheCleanup(); stopScheduleCleanup(); stopReceiptCleanup(); };
+    return () => { subscription.remove(); stopCacheCleanup(); stopScheduleCleanup(); stopReceiptCleanup(); stopBarcodeCleanup(); };
   }, [session]);
   return <Context.Provider value={{ session, state, allowDemo }}>{children}</Context.Provider>;
 }

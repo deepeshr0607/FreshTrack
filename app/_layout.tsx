@@ -98,6 +98,7 @@ function SessionNavigation() {
           <Stack.Screen name="analytics/financial" />
           <Stack.Screen name="scanner/receipt" />
           <Stack.Screen name="scanner/barcode-check" />
+          <Stack.Screen name="scanner/barcode" />
           <Stack.Screen name="scanner/ocr-check" />
           <Stack.Screen name="settings/index" />
           <Stack.Screen name="settings/profile" />

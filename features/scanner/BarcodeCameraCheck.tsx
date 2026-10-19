@@ -5,21 +5,23 @@ import { router, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PrimaryButton from '@/components/PrimaryButton';
 import ScreenHeader from '@/components/ScreenHeader';
+import FormInput from '@/components/FormInput';
 import { Colors } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
-import { createBarcodeLatch } from '@/lib/packageBarcode';
+import { createBarcodeLatch, packageBarcode } from '@/lib/packageBarcode';
 
-/** Development camera proof. No catalog lookup, image capture or Pantry writes. */
-export default function BarcodeCameraCheck() {
+/** Shared single-code camera: diagnostic by default; normal mode opens reviewed catalog entry. No image capture. */
+export default function BarcodeCameraCheck({ lookupMode = false }: { lookupMode?: boolean }) {
   const { state: auth } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const latch = useRef(createBarcodeLatch()).current;
   const [scanning, setScanning] = useState(false);
   const [torch, setTorch] = useState(false);
   const [code, setCode] = useState<string | null>(null);
+  const [typedCode, setTypedCode] = useState('');
   const [message, setMessage] = useState('');
   const identity = auth.user?.id;
-  const allowed = __DEV__ && !!auth.user && !auth.demo && !auth.checking;
+  const allowed = (lookupMode || __DEV__) && !!auth.user && !auth.demo && !auth.checking;
   const generation = useRef(0);
   const permitted = useRef(allowed);
   permitted.current = allowed;
@@ -47,11 +49,11 @@ export default function BarcodeCameraCheck() {
   }
 
   return <SafeAreaView style={styles.safe}>
-    <ScreenHeader title="FreshTrack" subtitle="Barcode camera check" showNotification={false} showAvatar={false} />
+    <ScreenHeader title="FreshTrack" subtitle={lookupMode ? 'Barcode Scanner' : 'Barcode camera check'} showNotification={false} showAvatar={false} />
     <ScrollView contentContainerStyle={styles.content}>
-      <PrimaryButton label="Back to Scanner" variant="ghost" onPress={() => { stop(); router.back(); }} />
+      <PrimaryButton label="Back to Scanner" variant="ghost" onPress={() => { stop(); router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/scanner'); }} />
       <Text style={styles.title}>Scan a packaged grocery</Text>
-      <Text style={styles.body}>Development check · Reads the barcode number only. Product lookup and barcode saving are not connected yet. Your Pantry stays unchanged.</Text>
+      <Text style={styles.body}>{lookupMode ? 'Scan one package, look up its product details, then review quantity, purchase value and expiry before saving.' : 'Development camera check · Reads the barcode number only. This diagnostic does not save groceries.'}</Text>
       {!allowed ? <Text style={styles.body}>Use a verified real account in the development app for this check.</Text> : <>
         {Platform.OS === 'web' ? <Text style={styles.body}>Use FreshTrack Dev on your phone for the camera check.</Text> : <>
           {scanning && <View style={styles.preview}>
@@ -73,7 +75,18 @@ export default function BarcodeCameraCheck() {
           </> : <PrimaryButton label={code ? 'Scan Another Barcode' : 'Start Camera Scan'} onPress={start} />}
           {permission && !permission.granted && !permission.canAskAgain && <PrimaryButton label="Open Device Settings" variant="ghost" onPress={() => { stop(); void Linking.openSettings().catch(() => setMessage('Open device Settings manually to allow camera access.')); }} />}
         </>}
-        {code && <View style={styles.result}><Text style={styles.title}>Barcode captured</Text><Text selectable style={styles.body}>{code}</Text><Text style={styles.body}>This number does not tell us the product name, price or expiry. Enter those yourself using manual entry.</Text><PrimaryButton label="Clear Barcode" variant="ghost" onPress={() => { setCode(null); setMessage(''); }} /></View>}
+        {code && <View style={styles.result}><Text style={styles.title}>Barcode captured</Text><Text selectable style={styles.body}>{code}</Text><Text style={styles.body}>This number does not tell us the product name, price or expiry. Review catalog details and supply your purchase information.</Text>
+          {lookupMode && <PrimaryButton label="Review Barcode Product" onPress={() => { stop(); router.push({ pathname: '/pantry/add', params: { barcode: code } }); }} />}
+          <PrimaryButton label="Clear Barcode" variant="ghost" onPress={() => { setCode(null); setMessage(''); }} /></View>}
+        {lookupMode && <>
+          <FormInput label="Enter a barcode number instead" accessibilityLabel="Barcode number" value={typedCode} maxLength={14} keyboardType="number-pad" onChangeText={setTypedCode} />
+          <PrimaryButton label="Review Entered Barcode" variant="secondary" onPress={() => {
+            const entered = packageBarcode(typedCode);
+            if (!entered) { setMessage('Enter a valid 8, 12, 13 or 14-digit retail barcode, including its check digit.'); return; }
+            stop(); router.push({ pathname: '/pantry/add', params: { barcode: entered } });
+          }} />
+          <PrimaryButton label="Resume Barcode Save" variant="ghost" onPress={() => { stop(); router.push({ pathname: '/pantry/add', params: { barcodeRetry: '1' } }); }} />
+        </>}
         <PrimaryButton label="Enter Item Manually" variant="secondary" onPress={() => { stop(); setCode(null); router.push('/pantry/add'); }} />
       </>}
       {!!message && <Text accessibilityLiveRegion="polite" style={styles.body}>{message}</Text>}

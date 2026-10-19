@@ -108,6 +108,8 @@ function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: P
     <View style={styles.card}>
       <Text style={styles.emoji}>{pantryCardItem(item).imageEmoji}</Text>
       <Text style={styles.title}>{item.name}</Text><Text style={styles.body}>{rupeeValue(item.totalCostMinor)} · INR · Asia/Kolkata</Text>
+      {item.source === 'BARCODE' && <><Text selectable style={styles.body}>Barcode purchase · {item.barcode ?? 'Identifier unavailable in this saved copy'}</Text>
+        <Text style={styles.body}>Product lookup: Open Food Facts · ODbL · Community data; purchase details reviewed by you.</Text></>}
       {real.readOnly && <Text style={styles.body}>Cached item · read-only. Refresh Pantry online before editing or confirming an outcome.</Text>}
       {pendingNotification && <Text style={styles.body}>A notification outcome is pending. Sync or review that action before changing this item.</Text>}
       <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} />

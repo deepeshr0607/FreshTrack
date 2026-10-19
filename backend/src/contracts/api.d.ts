@@ -87,6 +87,8 @@ export interface PantryCreateInput {
   /** Explicit choices; precedence is package > user > estimate. Omitted by legacy clients. */
   expirySelection?: ExpirySelection;
   duplicateConfirmation?: PantryDuplicateConfirmation;
+  /** Present only for a user-reviewed barcode purchase; normalized to GTIN-14 by the API. */
+  barcode?: string;
 }
 export interface PantryItemDto extends PantryCreateInput {
   id: string; currencyCode: 'INR'; status: PantryStatus; source: 'MANUAL' | 'BARCODE' | 'RECEIPT';
@@ -106,7 +108,7 @@ export interface ReceiptDuplicateRow {
 export type ReceiptReviewResponse = ApiSuccess<{ rows: ReceiptDuplicateRow[] }>;
 export interface ReceiptImportData { receiptScanId: string; items: PantryItemDto[]; replayed: boolean }
 export type ReceiptImportResponse = ApiSuccess<ReceiptImportData>;
-export interface PantryEditInput extends Omit<PantryCreateInput, 'duplicateConfirmation'> { expectedUpdatedAt: string }
+export interface PantryEditInput extends Omit<PantryCreateInput, 'duplicateConfirmation' | 'barcode'> { expectedUpdatedAt: string }
 export interface PantryOutcomeInput { confirmed: true; expectedUpdatedAt: string }
 export interface PantryBatchInput {
   confirmed: true;

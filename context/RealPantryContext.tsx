@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { BarcodeLookup } from '@/types/api';
 import { receiptImportResult } from '@/lib/receiptImport';
 import { createNotificationOutbox } from '@/lib/notificationOutbox';
 import { notificationOutboxStorage } from '@/features/notifications/nativeOutbox';
@@ -22,6 +23,7 @@ type Value = { overdueReview: ReturnType<typeof createOverdueReview> | null; pen
   reminderItems: () => Promise<PantryItemDto[]>;
   syncReminders: () => Promise<void>;
   duplicates: (input: PantryCreateInput) => Promise<{ matches: PantryItemDto[]; total: number }>;
+  lookupBarcode: (code: string) => Promise<BarcodeLookup>;
   reviewReceipt: (input: ReceiptReviewInput) => Promise<ReceiptReviewResponse['data']>;
   importReceipt: (input: ReceiptImportInput, key: string) => Promise<ReceiptImportData>;
   add: (input: PantryCreateInput, key: string) => Promise<PantryItemDto>;
@@ -236,6 +238,12 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
     requireLive();
     return (await api.duplicates(input)).data;
   };
+  const lookupBarcode = async (code: string) => {
+    requireLive();
+    const row = await api.barcodeLookup(code);
+    requireLive();
+    return row;
+  };
   const add = async (input: PantryCreateInput, key: string) => {
     requireLive();
     await api.setup();
@@ -316,7 +324,7 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       await hydrateDisk(); showCached(filtersRef.current);
     }, readOnly, cachedAt, cachePreview,
     previewCache: () => { if (__DEV__ && enabled) { automatic?.invalidate(); overdueReview?.invalidate(); previewRef.current = true; setCachePreview(true); void reload(); } },
-    endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, reviewReceipt, importReceipt, add, edit, outcome, undo,
+    endCachePreview: () => { previewRef.current = false; setCachePreview(false); void reload(); }, filters, inventory, setFilters, reload, loadMore, duplicates, lookupBarcode, reviewReceipt, importReceipt, add, edit, outcome, undo,
     reminderItems: async () => { requireLive(); await api.setup(); requireLive(); const rows = await api.reminderItems(); requireLive(); return rows; },
     syncReminders: async () => { await automatic?.flush(); },
     batchOutcome, batchUndo, lastOutcome, dismissUndo: () => setLastOutcome([]),

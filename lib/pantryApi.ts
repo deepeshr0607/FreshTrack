@@ -7,6 +7,8 @@ import type { PantryDraft } from './pantry.ts';
 // @ts-expect-error Node strip-types tests require explicit extensions; Metro accepts them.
 import { PANTRY_CATEGORIES } from './pantry.ts';
 import type { PantryItem } from './mock';
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { barcodeLookupResult } from './barcodeLookup.ts';
 
 /** Stable criteria identity for debounce, paging and stale-response protection. */
 export function pantryFilterKey(filters: PantryListFilters): string {
@@ -67,6 +69,15 @@ export function createPantryApi(baseUrl: string | undefined, getToken: () => Pro
     } finally { clearTimeout(timeout); }
   }
   return {
+    barcodeLookup: async (code: string) => {
+      try { return barcodeLookupResult((await request<{ data: unknown }>(`/api/v1/scanner/barcodes/${encodeURIComponent(code)}`)).data, code); }
+      catch (error) {
+        if (error instanceof NeonAuthError) throw new NeonAuthError(error.code, error.code === 'PANTRY_HTTP_429'
+          ? 'Please wait before looking up another barcode. You can enter the grocery manually.'
+          : 'Product lookup is unavailable. Retry or enter the grocery manually.');
+        throw new NeonAuthError('BARCODE_RESPONSE', 'The catalog response could not be verified. Use manual entry or retry.');
+      }
+    },
     reminderItems: async () => {
       const items: PantryItemDto[] = [];
       let total: number | undefined;

@@ -5,6 +5,15 @@ const { createApp } = require('../dist/app.js');
 const { pantryInput, pantryEditInput, pantryOutcomeInput, pantryBatchInput, PantryFailure } = require('../dist/services/pantry.js');
 const { AuthFailure } = require('../dist/services/auth.js');
 const valid = { name: '  Milk  ', category: 'DAIRY', quantity: '0.500', unit: ' l ', expiresOn: '2026-10-20', totalCostMinor: 6050 };
+test('barcode purchase identity is canonical, immutable on edit and forbidden in receipt rows', () => {
+  const input = pantryInput({ ...valid, barcode: '3017620422003' });
+  assert.equal(input.barcode, '03017620422003');
+  assert.throws(() => pantryInput({ ...valid, barcode: '3017620422004' }));
+  assert.throws(() => pantryInput({ ...valid, source: 'BARCODE' }));
+  assert.throws(() => pantryEditInput({ ...input, expectedUpdatedAt: '2026-10-19T00:00:00.000Z' }));
+  const { receiptInput } = require('../dist/services/pantry.js');
+  assert.throws(() => receiptInput({ items: [{ rowId: 'one', item: input }] }));
+});
 test('manual input keeps paise and exact quantities; rejects identity overrides and invalid domain fields', () => {
   assert.deepEqual(pantryInput(valid), { ...valid, name: 'Milk', quantity: '0.5', unit: 'l' });
   for (const fields of [{ userId: 'victim' }, { householdId: 'victim' }, { name: '' }, { name: 'secret\u0000' },

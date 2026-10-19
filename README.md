@@ -190,7 +190,7 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 3 | Prisma schema, migrations, API foundation | ✅ Development acceptance complete; production checks deferred |
 | 4 | Pantry CRUD end-to-end | ✅ Core development acceptance complete; remaining native/release QA recorded |
 | 5 | Local expiry notifications + reconciliation | ✅ Development review complete; full native acceptance pending |
-| 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; receipt estimates checked on iPhone; package/manual expiry checked on iPhone; barcode and broader QA remain |
+| 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; receipt estimates checked on iPhone; package/manual expiry checked on iPhone; barcode review/save connected; phone and broader QA remain |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
 | 9 | Settings, privacy, release preparation | ⬜ Not started |
@@ -198,6 +198,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 6 real barcode review/save connected and deployed (19 October); iPhone acceptance pending.** Normal Scanner opens a single-code camera/typed entry, verified catalog review and the existing Pantry form. Explicit category/purchase/expiry review, household barcode duplicates, BARCODE source and protected frozen confirmation/retry across restart are connected; Demo preserved. Both TypeScript/build, root242/242, backend143/143, live database3/3 with fixture cleanup, health1/1 and all-platform/39-route exports pass. Preview Ready, health200/tokenless lookup and duplicate-check401; actual iOS manifest/bundle200. Doctor20/21 and missing backend ESLint remain. See [mobile barcode report](docs/Phase_6_Mobile_Barcode_Entry.md). Next: numbered iPhone checks, then sign-out/error/native QA and remaining Phase6 review; no Phase9.
 
 **Phase 6 barcode lookup verified against live staging (19 October).** Added protected bounded Open Food Facts v3 product reads, shared GTIN validation, explicit unknown/incomplete/error results and community-source attribution. No purchase/expiry inference, database writes, mobile connection or deployment. Prior implementation checks passed: both TypeScript/build, root234/234, backend142/142, health1/1 and all-platform/38-route exports; Doctor20/21 and missing backend ESLint remain. Public developer contact is configured only in ignored backend environment. See [lookup backend report](docs/Phase_6_Barcode_Lookup_Backend.md). User reported the provider usage form submitted. Two live read-only staging probes passed: known product FOUND with name/brand and unknown package size, and reserved zero code NOT_FOUND without a product. No household data was sent. Next: editable camera-to-catalog review and barcode import; hosted deployment/phone lookup remain pending. Phase6 remains incomplete; no Phase9.
 

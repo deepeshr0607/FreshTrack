@@ -11,6 +11,12 @@ function harness() {
   const storage = { get: async key => values.get(key) ?? null, set: async (key, value) => { if (fail && /\.\d+$/.test(key)) throw Error('private-storage-error'); values.set(key, value); }, remove: async key => { values.delete(key); } };
   return { values, storage, fail: () => { fail = true; } };
 }
+test('barcode purchases retain their validated identifier in the read-only saved copy', async () => {
+  const h = harness(), disk = createPantryDiskCache(h.storage, () => at);
+  await disk.save(owner, { savedAt: at, items: [item(1, { source: 'BARCODE', barcode: '03017620422003' })] });
+  assert.equal((await disk.load(owner)).items[0].barcode, '03017620422003');
+  assert.throws(() => disk.save(owner, { savedAt: at, items: [item(1, { source: 'BARCODE', barcode: 'private-invalid-identifier' })] }));
+});
 test('snapshot round-trip is bounded, exact, Unicode safe and strips response extras', async () => {
   const h = harness(), disk = createPantryDiskCache(h.storage, () => at);
   await disk.save(owner, { savedAt: at, items: Array.from({ length: 25 }, (_, n) => item(n, { name: '🥬'.repeat(50), token: 'never-store-token', cookie: 'never-store-cookie' })) });

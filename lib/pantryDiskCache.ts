@@ -1,6 +1,8 @@
 import type { PantryItemDto } from '../types/api';
 // @ts-expect-error Explicit extension supports Node strip-types tests and Metro.
 import { resolveExpiry } from './pantryExpiry.ts';
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { packageBarcode } from './packageBarcode.ts';
 
 export interface CacheStorage { get(key: string): Promise<string | null>; set(key: string, value: string): Promise<void>; remove(key: string): Promise<void> }
 export interface PantryDiskSnapshot { version: 1; scope: string; savedAt: number; items: PantryItemDto[] }
@@ -34,7 +36,8 @@ function cleanItem(value: unknown): PantryItemDto {
   const days = row.freshnessPresetDays ?? null;
   if (days !== null && (!Number.isInteger(days) || Number(days) < 1 || Number(days) > 365)) throw Error('INVALID_CACHE');
   // Whitelist fields: response extras, tokens, cookies and credentials cannot enter this snapshot.
-  return { id, name: text('name', 120), unit: text('unit', 32), quantity,
+  if (row.barcode !== undefined && (typeof row.barcode !== 'string' || !packageBarcode(row.barcode))) throw Error('INVALID_CACHE');
+  return { id, name: text('name', 120), unit: text('unit', 32), quantity, ...(row.barcode ? { barcode: row.barcode as string } : {}),
     category: category as PantryItemDto['category'], source: source as PantryItemDto['source'],
     expirySource: expirySource as PantryItemDto['expirySource'], expiresOn: date(row.expiresOn),
     purchaseDate: row.purchaseDate == null ? null : date(row.purchaseDate), freshnessPresetDays: days as number | null,
