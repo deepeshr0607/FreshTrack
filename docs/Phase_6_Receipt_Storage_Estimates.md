@@ -1,6 +1,6 @@
 # Phase 6 — confirmed storage estimates
 
-19 October 2026. Implementation verified automatically; new phone acceptance pending.
+19 October 2026. Implementation verified automatically; all eight synthetic iPhone checks passed by user report.
 
 ## Change
 
@@ -38,7 +38,9 @@ These are storage guidelines, not measured remaining life or guarantees. Product
 - Existing local server iOS manifest/bundle: HTTP 200, new controls/fixture present; LAN 192.168.1.10:8087. This is bundle delivery, not direct observation of phone UI.
 - `git diff --check`: pass. No live SQL/native rebuild or actual persisted phone import performed for this mobile-only slice.
 
-## Phone checklist (pending)
+## Phone checklist (passed by user report)
+
+The user answered “All checks passed” to the eight-step checklist below. This records local synthetic UI acceptance, not direct agent observation, real-receipt or food shelf-life accuracy, or a new persisted-import acceptance. No runtime changes or test reruns were needed for this documentation-only update; `git diff --check` passed.
 
 Use FreshTrack Dev on the same Wi-Fi as the laptop; open http://192.168.1.10:8087 if its launcher needs a server. Sign into a real development account. Do not use an actual food as evidence for the synthetic conditions below.
 
@@ -55,4 +57,4 @@ If the household day is earlier than 2026-10-19, report that before using these 
 
 ## Remaining
 
-Phone acceptance of this slice; broader supported-food/condition rules (especially milk, dry versus cooked rice and remaining produce), convenient receipt-wide confirmed purchase date and reviewed bulk application, packaged/unchecked-date handling, real-receipt accuracy and failure/native/Android/accessibility/performance QA, final Phase 6 review. Barcode follow-up stays deferred. No Phase 9 or store submission work.
+Broader supported-food/condition rules (especially milk, dry versus cooked rice and remaining produce), convenient receipt-wide confirmed purchase date and reviewed bulk application, packaged/unchecked-date handling, real-receipt accuracy and failure/native/Android/accessibility/performance QA, final Phase 6 review. Barcode follow-up stays deferred. No Phase 9 or store submission work.
