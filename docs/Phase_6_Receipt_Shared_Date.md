@@ -1,6 +1,6 @@
 # Phase 6 — one receipt purchase date and reviewed estimate prefills
 
-19 October 2026. Automated checks pass; new receipt-date phone acceptance pending. The separate twenty-food coverage item remains closed with its phone testing explicitly waived.
+19 October 2026. Automated checks pass; all eight shared-date iPhone checks passed by user report. The separate twenty-food coverage item remains closed with its phone testing explicitly waived.
 
 ## Behavior
 
@@ -40,7 +40,9 @@ Unconfirmed shared date/plans stay in the current local receipt review and are d
 
 No actual DB import/new native build or live receipt accuracy benchmark was performed for this mobile-only slice.
 
-## Phone checklist (pending — shared-date flow only)
+## Phone checklist (passed by user report — shared-date flow only)
+
+The user answered “All checks passed” to the eight-step synthetic checklist below. This is user-reported local UI acceptance, not direct agent observation, real-receipt accuracy or new persisted-import acceptance. No runtime changes or test reruns were needed for this documentation-only update; `git diff --check` passed.
 
 Use FreshTrack Dev, laptop awake, same Wi-Fi. If needed use `http://192.168.1.14:8087` in its development launcher. This is a synthetic local exercise, not an instruction to assume these conditions for real food.
 
@@ -55,4 +57,4 @@ Use FreshTrack Dev, laptop awake, same Wi-Fi. If needed use `http://192.168.1.14
 
 ## Remaining / next
 
-Record shared-date phone acceptance, then packaged/unchecked-date handling and remaining real-receipt/failure/native/accessibility/performance review. Food coverage stays limited to twenty named foods/types. Barcode follow-up deferred; no Phase 9 or store publishing.
+Packaged/unchecked-date handling and remaining real-receipt/failure/native/accessibility/performance review. Food coverage stays limited to twenty named foods/types. Barcode follow-up deferred; no Phase 9 or store publishing.
