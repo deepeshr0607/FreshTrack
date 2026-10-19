@@ -44,6 +44,8 @@ export function createApp(options: { accountDeletionService?: AccountDeletionSer
   app.use((req: Request, res: Response, next: NextFunction) => {
     req.headers['x-request-id'] = randomUUID();
     res.setHeader('X-Request-ID', req.headers['x-request-id']);
+    // Also covers parser/rate-limit failures before authentication runs.
+    res.setHeader('Cache-Control', 'no-store');
     next();
   });
 
@@ -62,13 +64,6 @@ export function createApp(options: { accountDeletionService?: AccountDeletionSer
     }),
   );
 
-  // ── Body parsing ──────────────────────────────────────────────────────────
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-  // ── Request ID ────────────────────────────────────────────────────────────
-  // Assigned above, before any middleware can reject the request.
-
   // ── Global rate limit ─────────────────────────────────────────────────────
   app.use(
     rateLimit({
@@ -79,6 +74,11 @@ export function createApp(options: { accountDeletionService?: AccountDeletionSer
       handler: (req, res) => sendFailure(req, res, 429, 'RATE_LIMITED', 'Too many requests — please slow down.'),
     }),
   );
+
+  // Rate-limit before parsing, including malformed/oversized requests. Receipt
+  // images stay on-device; 128 KiB accommodates the reviewed 50-item JSON haul.
+  app.use(express.json({ limit: '128kb', inflate: false }));
+  app.use(express.urlencoded({ extended: false, limit: '128kb', parameterLimit: 100, inflate: false }));
 
   // ── Routes ────────────────────────────────────────────────────────────────
   app.use('/api/v1', healthRouter);
