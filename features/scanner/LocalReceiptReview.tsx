@@ -1,3 +1,4 @@
+import { receiptUnassignedPage } from '@/lib/receiptUnassignedPage';
 import type { ReceiptColumnMode } from '@/lib/receiptColumnReview';
 import ReceiptColumnMatches from './ReceiptColumnMatches';
 import type { ReceiptTextBox } from '@/lib/receiptTextBoxes';
@@ -17,7 +18,7 @@ import { Colors } from '@/constants/Theme';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import type { ReceiptReviewInput } from '@/types/api';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
-import { manualReceiptCandidate, parseReceiptCandidates, suggestReceiptNameOnlyItems, pairReceiptLines, usedReceiptLineIds, receiptReviewSummary, receiptExpiryDraft, saveReceiptCandidate, receiptExpiryLabel, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
+import { manualReceiptCandidate, parseReceiptCandidates, suggestReceiptNameOnlyItems, pairReceiptLines, receiptReviewSummary, receiptExpiryDraft, saveReceiptCandidate, receiptExpiryLabel, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
 import { receiptQuantityHint, applyReceiptQuantityHint } from '@/lib/receiptQuantity';
 import { receiptNameSuggestion, applyReceiptNameSuggestion } from '@/lib/receiptNameAliases';
 
@@ -40,15 +41,16 @@ export default function LocalReceiptReview({ lines, layout = null, onPrepare, lo
   const page = Math.min(reviewPage, pageCount - 1);
   const visibleRows = rows.slice(page * 10, (page + 1) * 10);
   const [showRemaining, setShowRemaining] = useState(false);
+  const [unassignedPage, setUnassignedPage] = useState(0);
   const [nameLine, setNameLine] = useState<string | null>(null);
   const [amountLine, setAmountLine] = useState<string | null>(null);
   const next = useRef(0);
   const plan = receiptReviewSummary(rows);
-  const usedLines = usedReceiptLineIds(rows);
   const quantityHint = editor ? receiptQuantityHint(editor.draft.name) : null;
   const nameSuggestion = editor ? receiptNameSuggestion(editor.draft.name) : null;
   const foodSuggestion = editor ? recognizeReceiptFood(editor.draft.name) : null;
-  const remaining = parsed.remaining.filter(line => !usedLines.has(line.id));
+  const unassigned = receiptUnassignedPage(parsed, rows, unassignedPage);
+  const remaining = unassigned.remaining;
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     if (key === 'name') setPackageReview({ kind: 'unchecked' });
     setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null); setError('');
@@ -165,12 +167,19 @@ export default function LocalReceiptReview({ lines, layout = null, onPrepare, lo
           }} />
           <PrimaryButton label="Cancel Match" variant="ghost" onPress={() => { setNameLine(null); setAmountLine(null); setError(''); }} />
         </View>}
-        {remaining.map(line => <View key={line.id} style={ui.card}><Text selectable style={ui.text}>{line.original}</Text><Text style={ui.text}>{line.reason}</Text>
-          {line.kind === 'name' && <PrimaryButton label={nameLine === line.id ? 'Selected Item Name' : 'Use as Item Name'} variant={nameLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= RECEIPT_MAX_ITEMS}
+        {unassigned.pages > 1 && <View style={ui.card}>
+          <Text accessibilityLiveRegion="polite" style={ui.text}>Unassigned lines {unassigned.start}–{unassigned.end} of {remaining.length} · Page {unassigned.page + 1} of {unassigned.pages}. Matching choices stay selected across pages.</Text>
+          <PrimaryButton label="First Lines" variant="ghost" disabled={unassigned.page === 0} onPress={() => setUnassignedPage(0)} />
+          <PrimaryButton label="Previous Lines" variant="ghost" disabled={unassigned.page === 0} onPress={() => setUnassignedPage(unassigned.page - 1)} />
+          <PrimaryButton label="Next Lines" variant="ghost" disabled={unassigned.page === unassigned.pages - 1} onPress={() => setUnassignedPage(unassigned.page + 1)} />
+          <PrimaryButton label="Last Lines" variant="ghost" disabled={unassigned.page === unassigned.pages - 1} onPress={() => setUnassignedPage(unassigned.pages - 1)} />
+        </View>}
+        {unassigned.visible.map(line => <View key={line.id} style={ui.card}><Text selectable style={ui.text}>{line.original}</Text><Text style={ui.text}>{line.reason}</Text>
+          {line.kind === 'name' && <PrimaryButton label={nameLine === line.id ? 'Selected Item Name' : 'Use as Item Name'} accessibilityLabel={`${nameLine === line.id ? 'Selected item name' : 'Use as item name'}: ${line.original}`} variant={nameLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= RECEIPT_MAX_ITEMS}
             onPress={() => { setNameLine(previous => previous === line.id ? null : line.id); setError(''); }} />}
-          {line.kind === 'amount' && <PrimaryButton label={amountLine === line.id ? 'Selected Amount' : 'Use as Amount'} variant={amountLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= RECEIPT_MAX_ITEMS}
+          {line.kind === 'amount' && <PrimaryButton label={amountLine === line.id ? 'Selected Amount' : 'Use as Amount'} accessibilityLabel={`${amountLine === line.id ? 'Selected amount' : 'Use as amount'}: ${line.original}`} variant={amountLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= RECEIPT_MAX_ITEMS}
             onPress={() => { setAmountLine(previous => previous === line.id ? null : line.id); setError(''); }} />}
-          <PrimaryButton label="Review as Grocery" variant="ghost" disabled={rows.length >= RECEIPT_MAX_ITEMS} onPress={() => add(line.original, line.id)} />
+          <PrimaryButton label="Review as Grocery" accessibilityLabel={`Review as grocery: ${line.original.slice(0, 120)}`} variant="ghost" disabled={rows.length >= RECEIPT_MAX_ITEMS} onPress={() => add(line.original, line.id)} />
         </View>)}
       </>}
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}

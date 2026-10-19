@@ -61,7 +61,7 @@ function ReceiptSession({ subject, diagnostics }: { subject: string; diagnostics
     </View>}
     {state.busy && <Text accessibilityRole="progressbar" style={ui.text}>Preparing or reading your photo…</Text>}
     {!!state.error && <View style={ui.card}><Text accessibilityRole="alert" style={ui.text}>{state.error}</Text>
-      <PrimaryButton label="Open Device Settings" variant="ghost" onPress={() => void Linking.openSettings().catch(() => {})} /></View>}
+      {state.errorCode === 'PERMISSION' && <PrimaryButton label="Open Device Settings" variant="ghost" onPress={() => void Linking.openSettings().catch(() => {})} />}</View>}
     {state.read && <View style={ui.card}><Text style={ui.heading}>{state.lines.length ? `${state.lines.length} text lines detected` : 'No text detected'}</Text>
       <Text style={ui.text}>{state.lines.length ? 'Review the grocery candidates below. Recognition can contain mistakes.' : 'Use a well-lit, upright receipt and retry or choose another photo.'}</Text>
       {diagnostics && <Text style={ui.text}>{state.layout ? 'Position-aware OCR available' : 'Text-only OCR · manual matching available'}</Text>}

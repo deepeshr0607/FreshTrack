@@ -21,7 +21,8 @@ export default function ReceiptLayoutCheck() {
     {!__DEV__ || !state.user || state.demo ? <Text style={ui.text}>Use Receipt OCR from Scanner. This local exercise requires a development account.</Text> : <>
       <Text style={ui.text}>Synthetic text fixture · No camera recognition, household request or Pantry saving. This checks the same review controls used by real receipts.</Text>
       {RECEIPT_LAYOUT_FIXTURES.map((item, index) => <PrimaryButton key={item.name} label={item.name} variant={fixture === index ? 'primary' : 'ghost'} onPress={() => reset(index)} />)}
-      <View style={ui.card}><Text style={ui.heading}>Fixture text</Text><Text selectable style={ui.text}>{selected.lines.join('\n')}</Text></View>
+      <View style={ui.card}><Text style={ui.heading}>Fixture text</Text>
+        {selected.lines.length > 10 && <Text style={ui.text}>Showing the first 10 of {selected.lines.length} fixture lines. All source lines remain available in the review below.</Text>}<Text selectable style={ui.text}>{selected.lines.slice(0, 10).join('\n')}</Text></View>
       <LocalReceiptReview key={`${fixture}-${revision}`} localOnly lines={selected.lines} layout={selected.layout} onPrepare={setPrepared} />
       {prepared && <View style={ui.card}><Text style={ui.heading}>Confirmed Fields · Local Only</Text>
         {prepared.items.map(row => <Text key={row.rowId} style={ui.text}>{row.item.name} · {row.item.quantity} {row.item.unit} · {rupeeValue(row.item.totalCostMinor)} · {row.item.expiresOn}</Text>)}

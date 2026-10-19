@@ -20,4 +20,5 @@ export const RECEIPT_LAYOUT_FIXTURES: { name: string; lines: string[]; layout?: 
   ].map(name => `${name} Rs. 100.00`), 'TOTAL 2000.00'] },
   { name: 'Package date review', lines: ['ITEM DESCRIPTION', 'Chocolate biscuits Rs. 30.00', 'Milk Rs. 60.00', 'Rice Rs. 100.00', 'Apples Rs. 40.00', 'TOTAL 230.00'] },
   RECEIPT_COLUMN_FIXTURE,
+  { name: 'Unassigned lines (500)', lines: ['ITEM DESCRIPTION', 'Unclear grocery Alpha', ...Array.from({ length: 497 }, (_, i) => `Unclear source ${i + 1}`), '₹40.00'] },
 ];

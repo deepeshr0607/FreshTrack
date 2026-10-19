@@ -2,7 +2,7 @@
 import { receiptTextBoxes } from './receiptTextBoxes.ts';
 import type { ReceiptTextBox } from './receiptTextBoxes';
 export type OcrPhotoSource = 'camera' | 'library';
-type OcrErrorCode = 'PERMISSION' | 'IMAGE' | 'UNAVAILABLE' | 'READ';
+export type OcrErrorCode = 'PERMISSION' | 'IMAGE' | 'UNAVAILABLE' | 'READ';
 export class ReceiptOcrError extends Error {
   readonly code: OcrErrorCode;
   constructor(code: OcrErrorCode) {
@@ -35,32 +35,32 @@ export function createReceiptOcrProbe(deps: {
   recognize(uri: string): Promise<unknown>;
   dispose(uri: string): void;
 }, active: () => boolean) {
-  let state = { image: null as string | null, lines: [] as string[], layout: null as ReceiptTextBox[] | null, busy: false, read: false, error: '' };
+  let state = { image: null as string | null, lines: [] as string[], layout: null as ReceiptTextBox[] | null, busy: false, read: false, error: '', errorCode: null as OcrErrorCode | null };
   let generation = 0;
   const listeners = new Set<() => void>();
   const publish = (patch: Partial<typeof state>) => { state = { ...state, ...patch }; listeners.forEach(fn => fn()); };
-  const clear = () => { generation++; if (state.image) deps.dispose(state.image); publish({ image: null, lines: [], layout: null, busy: false, read: false, error: '' }); };
+  const clear = () => { generation++; if (state.image) deps.dispose(state.image); publish({ image: null, lines: [], layout: null, busy: false, read: false, error: '', errorCode: null }); };
   return {
     getSnapshot: () => state,
     subscribe(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },
     clear,
     async choose(source: OcrPhotoSource) {
       if (!active() || state.busy) return;
-      const revision = ++generation; publish({ busy: true, error: '' });
+      const revision = ++generation; publish({ busy: true, error: '', errorCode: null });
       try {
         const image = await deps.choose(source);
         if (revision !== generation || !active()) { if (image) deps.dispose(image); return; }
         if (image) { if (state.image) deps.dispose(state.image); publish({ image, lines: [], layout: null, read: false }); }
-      } catch (error) { if (revision === generation && active()) publish({ error: error instanceof ReceiptOcrError ? error.message : new ReceiptOcrError('IMAGE').message }); }
+      } catch (error) { if (revision === generation && active()) publish({ error: error instanceof ReceiptOcrError ? error.message : new ReceiptOcrError('IMAGE').message, errorCode: error instanceof ReceiptOcrError ? error.code : 'IMAGE' }); }
       finally { if (revision === generation) publish({ busy: false }); }
     },
     async read() {
       if (!active() || state.busy || !state.image) return;
-      const revision = ++generation, image = state.image; publish({ busy: true, error: '', lines: [], layout: null, read: false });
+      const revision = ++generation, image = state.image; publish({ busy: true, error: '', errorCode: null, lines: [], layout: null, read: false });
       try {
         const { lines, layout } = ocrRecognition(await deps.recognize(image));
         if (revision === generation && active()) publish({ lines, layout, read: true });
-      } catch (error) { if (revision === generation && active()) publish({ error: error instanceof ReceiptOcrError ? error.message : new ReceiptOcrError('READ').message }); }
+      } catch (error) { if (revision === generation && active()) publish({ error: error instanceof ReceiptOcrError ? error.message : new ReceiptOcrError('READ').message, errorCode: error instanceof ReceiptOcrError ? error.code : 'READ' }); }
       finally { if (revision === generation) publish({ busy: false }); }
     },
   };

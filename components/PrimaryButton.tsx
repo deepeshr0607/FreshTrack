@@ -16,6 +16,7 @@ import { Colors, FontSize, FontWeight, Radius, Spacing } from '../constants/Them
 
 interface Props {
   label: string;
+  accessibilityLabel?: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -26,6 +27,7 @@ interface Props {
 
 export default function PrimaryButton({
   label,
+  accessibilityLabel,
   onPress,
   loading = false,
   disabled = false,
@@ -49,7 +51,7 @@ export default function PrimaryButton({
         style,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: isDisabled }}
     >
       {loading ? (
