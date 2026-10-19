@@ -1,0 +1,47 @@
+{
+  "method": "Replay of pinned public macOS geometry; below-code layout; phone integration pending",
+  "results": [
+    {
+      "sample": "014",
+      "groceryRows": 9,
+      "observations": 110,
+      "proposedBlockPairs": 4,
+      "verifiedPurchaseAssociations": 4,
+      "exactNamesOneToOne": 3,
+      "exactLineAmounts": 4,
+      "exactNameAndAmount": 3,
+      "requiresNameCorrection": 1,
+      "falsePurchaseAssociations": 0,
+      "allObservationsUnchanged": true,
+      "unknownInrValues": 4
+    },
+    {
+      "sample": "031",
+      "groceryRows": 1,
+      "observations": 39,
+      "proposedBlockPairs": 0,
+      "verifiedPurchaseAssociations": 0,
+      "exactNamesOneToOne": 0,
+      "exactLineAmounts": 0,
+      "exactNameAndAmount": 0,
+      "requiresNameCorrection": 0,
+      "falsePurchaseAssociations": 0,
+      "allObservationsUnchanged": true,
+      "unknownInrValues": 0
+    },
+    {
+      "sample": "000",
+      "groceryRows": 0,
+      "observations": 43,
+      "proposedBlockPairs": 0,
+      "verifiedPurchaseAssociations": 0,
+      "exactNamesOneToOne": 0,
+      "exactLineAmounts": 0,
+      "exactNameAndAmount": 0,
+      "requiresNameCorrection": 0,
+      "falsePurchaseAssociations": 0,
+      "allObservationsUnchanged": true,
+      "unknownInrValues": 0
+    }
+  ]
+}
