@@ -9,6 +9,7 @@ export async function checkDatabaseReadiness(): Promise<boolean> {
     await prisma.pantryItemEvent.findFirst({ select: { id: true } });
     await prisma.receiptScan.findFirst({ select: { id: true } });
     await prisma.userPreference.findFirst({ select: { id: true } });
+    await prisma.accountDeletion.findFirst({ select: { subjectHash: true } });
     return true;
   } catch {
     // Driver exceptions may contain hosts/query details; do not log or serialize them.

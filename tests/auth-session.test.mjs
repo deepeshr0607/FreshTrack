@@ -92,3 +92,23 @@ test('demo is explicit, cannot be activated during restoration or production nat
   assert.equal(production.enterDemo(), false);
   assert.equal(canAccessKitchen(production.getSnapshot()), false);
 });
+
+test('account deletion locks kitchen interactions and failed completion preserves identity for retry', async () => {
+  const session = createAuthSession({ getSession: async () => user, signOut: async () => {} }, false);
+  await session.refresh();
+  const pending = deferred(); const operation = session.deleteAccount(user.id, () => pending.promise);
+  assert.equal(session.getSnapshot().checking, true);
+  await assert.rejects(session.deleteAccount(user.id, async () => {}));
+  pending.reject(Error('private-deletion-detail')); await assert.rejects(operation);
+  assert.equal(session.getSnapshot().user.id, user.id); assert.equal(session.getSnapshot().checking, false);
+  assert.equal(session.getSnapshot().error.includes('private-deletion'), false);
+  await session.deleteAccount(user.id, async () => {});
+  assert.equal(canAccessKitchen(session.getSnapshot()), false);
+});
+
+test('stale deletion confirmation cannot act on another signed-in subject', async () => {
+  const session = createAuthSession({ getSession: async () => user, signOut: async () => {} }, false);
+  await session.refresh(); let calls = 0;
+  await assert.rejects(session.deleteAccount('previous-account', async () => { calls++; }));
+  assert.equal(calls, 0); assert.equal(session.getSnapshot().user.id, user.id);
+});

@@ -196,3 +196,23 @@ test('only allowlisted provider codes reach the user; prototype/object keys cann
     await assert.rejects(probe.auth.verifyOtp(user.email, '654321', user.name), (error) => error.code === 'HTTP_400' && !error.message.includes('private'));
   }
 });
+
+test('account deletion verifies password and requires explicit User deleted acknowledgement before clearing a cookie', async () => {
+  const probe = setup([{ body: { status: true } }, { body: { success: true, message: 'Verification email sent' } },
+    { body: { success: true, message: 'User deleted' } }]);
+  await probe.storage.set(cookie);
+  await probe.auth.verifyPassword('fixture-password');
+  assert.equal(probe.calls[0].url, `${base}/verify-password`);
+  await assert.rejects(probe.auth.deleteUser('fixture-password'), { code: 'DELETION_PENDING' });
+  assert.equal(probe.getToken(), cookie);
+  await probe.auth.deleteUser('fixture-password');
+  assert.equal(probe.getToken(), null);
+  assert.equal(probe.calls[2].url, `${base}/delete-user`);
+});
+test('failed password verification and deletion never clear provider material or report success', async () => {
+  const probe = setup([{ body: { status: false } }, { status: 403, body: { code: 'USER_DELETION_DISABLED', message: 'private-provider-message' } }]);
+  await probe.storage.set(cookie);
+  await assert.rejects(probe.auth.verifyPassword('fixture-password'), { code: 'INVALID_PASSWORD' });
+  await assert.rejects(probe.auth.deleteUser('fixture-password'), error => error.code === 'USER_DELETION_DISABLED' && !error.message.includes('private-provider'));
+  assert.equal(probe.getToken(), cookie);
+});

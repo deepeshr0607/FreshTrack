@@ -178,3 +178,8 @@ export interface ChefRecipeMetadata {
   id: number; readyInMinutes: number | null;
   vegetarian: boolean | null; vegan: boolean | null;
 }
+
+export interface AccountDeletionReview {
+  state: 'READY' | 'SHARED_HOUSEHOLD' | 'DATA_DELETED';
+  counts: { groceries: number; events: number; receipts: number };
+}

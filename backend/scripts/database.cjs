@@ -39,7 +39,7 @@ async function main() {
       if (action === 'migrate') {
         const tables = await direct.$queryRaw`SELECT table_name FROM information_schema.tables
           WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`;
-        const allowed = new Set(['_prisma_migrations', 'Household', 'HouseholdMember', 'PantryItem', 'PantryItemEvent', 'ReceiptScan', 'UserPreference']);
+        const allowed = new Set(['_prisma_migrations', 'Household', 'HouseholdMember', 'PantryItem', 'PantryItemEvent', 'ReceiptScan', 'UserPreference', 'AccountDeletion']);
         if (tables.some(table => !allowed.has(table.table_name))) throw new Error('UNEXPECTED_APPLICATION_TABLES');
       }
       const run = spawnSync(process.execPath, [require.resolve('prisma/build/index.js'), 'migrate', action === 'migrate' ? 'deploy' : 'status'],

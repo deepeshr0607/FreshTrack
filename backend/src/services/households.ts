@@ -1,3 +1,4 @@
+import { deletionSubjectHash, AccountDeletionFailure } from './accountDeletion';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import type { HouseholdDto } from '../contracts/api';
@@ -47,6 +48,10 @@ export function createHouseholdService(db: PrismaClient = prisma): HouseholdServ
       for (let attempt = 0; attempt < 4; attempt++) {
         try {
           return await db.$transaction(async tx => {
+            // Recheck inside setup's transaction: a request authorized before deletion cannot recreate data.
+            if (await tx.accountDeletion.findUnique({ where: { subjectHash: deletionSubjectHash(authSubject) } })) {
+              throw new AccountDeletionFailure('ACCOUNT_DATA_DELETED');
+            }
             const existing = await tx.householdMember.findUnique({ where: { authSubject }, select: { householdId: true } });
             let householdId = existing?.householdId;
             if (!householdId) {
@@ -62,6 +67,7 @@ export function createHouseholdService(db: PrismaClient = prisma): HouseholdServ
             return result;
           }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 2000, timeout: 5000 });
         } catch (error) {
+          if (error instanceof AccountDeletionFailure) throw error;
           const code = (error as { code?: string })?.code;
           const target = (error as { meta?: { target?: unknown } })?.meta?.target;
           const subjectConflict = code === 'P2002' && Array.isArray(target) && target.includes('authSubject');

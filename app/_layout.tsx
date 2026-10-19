@@ -106,6 +106,7 @@ function SessionNavigation() {
           </Stack.Protected>
           <Stack.Screen name="settings/index" />
           <Stack.Screen name="settings/profile" />
+          <Stack.Screen name="settings/delete-account" />
           <Stack.Screen name="modal" />
         </Stack.Protected>
         <Stack.Screen name="settings/privacy" />

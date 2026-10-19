@@ -1,3 +1,5 @@
+import { createAccountRouter } from './routes/account';
+import { createAccountDeletionService, guardDeletedAccounts, type AccountDeletionService } from './services/accountDeletion';
 /**
  * app.ts — Express application factory.
  *
@@ -31,7 +33,7 @@ import { createIdentityVerifier, type VerifyIdentity } from './services/auth';
 
 // ── App factory ──────────────────────────────────────────────────────────────
 
-export function createApp(options: { verifyIdentity?: VerifyIdentity; householdService?: HouseholdService; pantryService?: PantryService; chefService?: ChefService; chefSuggestionsService?: ChefSuggestionsService; analyticsService?: AnalyticsService; barcodeProvider?: BarcodeProvider } = {}): express.Application {
+export function createApp(options: { accountDeletionService?: AccountDeletionService; verifyIdentity?: VerifyIdentity; householdService?: HouseholdService; pantryService?: PantryService; chefService?: ChefService; chefSuggestionsService?: ChefSuggestionsService; analyticsService?: AnalyticsService; barcodeProvider?: BarcodeProvider } = {}): express.Application {
   const app = express();
   const allowedOrigins = (process.env['ALLOWED_ORIGINS'] ?? '').split(',').map((o) => o.trim()).filter(Boolean);
 
@@ -80,7 +82,12 @@ export function createApp(options: { verifyIdentity?: VerifyIdentity; householdS
 
   // ── Routes ────────────────────────────────────────────────────────────────
   app.use('/api/v1', healthRouter);
-  const verifyIdentity = options.verifyIdentity ?? createIdentityVerifier(process.env['NEON_AUTH_URL']);
+  const baseVerifier = options.verifyIdentity ?? createIdentityVerifier(process.env['NEON_AUTH_URL']);
+  const accountDeletion = options.accountDeletionService ?? createAccountDeletionService();
+  // An explicitly injected verifier replaces the auth stack in isolated tests only.
+  const verifyIdentity = !options.verifyIdentity || options.accountDeletionService
+    ? guardDeletedAccounts(baseVerifier, accountDeletion) : baseVerifier;
+  app.use('/api/v1', createAccountRouter(baseVerifier, accountDeletion));
   app.use('/api/v1', createAuthRouter(verifyIdentity));
   app.use('/api/v1', createHouseholdRouter(verifyIdentity, options.householdService));
   app.use('/api/v1', createPantryRouter(verifyIdentity, options.pantryService));

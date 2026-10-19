@@ -35,7 +35,7 @@ function client(failPreferences = false) {
       const userPreference = { upsert: failPreferences
         ? async () => { throw new Error('fixture-sensitive-failure'); }
         : tx.userPreference.upsert };
-      return run({ household, householdMember: tx.householdMember, userPreference });
+      return run({ accountDeletion: tx.accountDeletion, household, householdMember: tx.householdMember, userPreference });
     }, options),
   };
 }

@@ -11,6 +11,8 @@ export class NeonAuthError extends Error {
 }
 const messages: Record<string, string> = {
   INVALID_OTP: 'That code is incorrect or expired. Check your email or request another code.',
+  USER_DELETION_DISABLED: 'Account deletion is disabled by the Auth provider. Your FreshTrack data stays locked; finish deletion when the provider is available.',
+  INVALID_PASSWORD: 'The password is incorrect. Try again.',
   OTP_EXPIRED: 'That code has expired. Request another code.',
   TOO_MANY_ATTEMPTS: 'Too many attempts. Wait before requesting another code.',
   ACCOUNT_UNAVAILABLE: 'This account is unavailable. Contact support before signing in again.',
@@ -184,6 +186,23 @@ export function createNeonAuth(baseUrl: string, storage: AuthStorage, fetcher: t
         }
         throw error; // Retain secure material on temporary network failure so restoration can retry.
       }
+    },
+    async verifyPassword(password: string) {
+      validatePassword(password);
+      const cookie = await storage.get();
+      if (!cookie) throw new NeonAuthError('UNAUTHORIZED', 'Sign in before deleting your account.');
+      const { data } = await request('verify-password', { password }, cookie);
+      if (data?.status !== true) throw new NeonAuthError('INVALID_PASSWORD', messages.INVALID_PASSWORD);
+    },
+    async deleteUser(password: string) {
+      validatePassword(password);
+      const cookie = await storage.get();
+      if (!cookie) throw new NeonAuthError('UNAUTHORIZED', 'Sign in to finish account deletion.');
+      const { data } = await request('delete-user', { password }, cookie);
+      if ((data as { success?: unknown })?.success !== true || (data as { message?: unknown })?.message !== 'User deleted') {
+        throw new NeonAuthError('DELETION_PENDING', 'Neon has not confirmed account deletion. Check for a verification email, then return to finish.');
+      }
+      await storage.clear();
     },
     async signOut() {
       const cookie = await storage.get();

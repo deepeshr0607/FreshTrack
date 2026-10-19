@@ -73,6 +73,20 @@ export function createAuthSession(client: SessionClient | null, allowDemo: boole
         }
       });
     },
+    async deleteAccount(expectedSubject: string, action: () => Promise<void>) {
+      if (state.status !== 'authenticated' || state.checking || state.demo || state.user?.id !== expectedSubject) throw new Error('Account verification is required.');
+      const previous = state, id = ++revision;
+      publish({ ...state, checking: true, error: '' });
+      return enqueue(async () => {
+        try {
+          await action();
+          if (id === revision) publish({ ...anonymousSession });
+        } catch (error) {
+          if (id === revision) publish({ ...previous, checking: false, error: 'Account deletion could not finish. Open Account Details to retry.' });
+          throw error;
+        }
+      });
+    },
     enterDemo() {
       if (!allowDemo || state.checking || state.status === 'authenticated') return false;
       revision++;

@@ -6,6 +6,12 @@ import { readReminderChoice } from '@/lib/reminderPreferences';
 import { nativeExpiryScheduler } from './nativeScheduler';
 
 const key = 'freshtrack.reminder.preference.v1';
+let preferenceStorageQueue: Promise<unknown> = Promise.resolve();
+function serializePreferenceStorage<T>(task: () => Promise<T>): Promise<T> {
+  const result = preferenceStorageQueue.then(task);
+  preferenceStorageQueue = result.catch(() => undefined);
+  return result;
+}
 const savedListeners = new Set<() => void>();
 export function onReminderPreferenceSaved(listener: () => void) {
   savedListeners.add(listener); return () => { savedListeners.delete(listener); };
@@ -24,7 +30,10 @@ export function nativeReminderPreferences(scope: string, active: () => boolean) 
   return createReminderPreferences(scope, {
     read: () => SecureStore.getItemAsync(key),
     write: async value => {
-      await SecureStore.setItemAsync(key, value, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
+      await serializePreferenceStorage(async () => {
+        if (!active()) throw Error('SESSION_CHANGED');
+        await SecureStore.setItemAsync(key, value, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
+      });
       await nativeExpiryScheduler?.cancel();
       savedListeners.forEach(listener => listener());
     },
@@ -39,4 +48,15 @@ export function nativeReminderPreferences(scope: string, active: () => boolean) 
       return interpret(await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowSound: true, allowBadge: false } }));
     },
   }, active);
+}
+
+/** Delete only this account's preference; another account's saved choice is preserved. */
+export async function clearNativeReminderChoice(scope: string) {
+  await serializePreferenceStorage(async () => {
+    const raw = await SecureStore.getItemAsync(key);
+    if (!raw) return;
+    let saved: { scope?: unknown };
+    try { saved = JSON.parse(raw); } catch { return; }
+    if (saved?.scope === scope) await SecureStore.deleteItemAsync(key);
+  });
 }

@@ -87,6 +87,14 @@ export function createNotificationOutbox(scope: string, io: {
   return {
     getSnapshot: () => snapshot,
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    async clear() {
+      // The caller must lock the session first, preventing new confirmations/sends.
+      if (io.active()) throw new NeonAuthError('OUTBOX_ACTIVE', 'Lock the account before clearing saved actions.');
+      await flush();
+      await run(async () => {
+        await commit({ version: 1, scope, paused: false, entries: [] });
+      });
+    },
     async restore() { try { await run(load); } catch { storageFailure(); } },
     async confirm(row: Omit<PendingOutcome, 'blocked'>) {
       if (!io.active()) throw new NeonAuthError('UNAUTHORIZED', 'Verify the same account before confirming this action.');

@@ -25,7 +25,7 @@ export default function Privacy() {
       <Text style={ui.heading}>Expiry reminders</Text>
       <Text style={ui.text}>Reminders use your device notification permission and local scheduling. Disable Reminders cancels FreshTrack alerts; it does not revoke the device permission. Reminder preferences are saved on this device for your account.</Text>
       <Text style={ui.heading}>Account and data deletion</Text>
-      <Text style={ui.text}>In-app account and server-data deletion are not available yet. Account name and email changes are also not available. This page describes the current development app; it is not a published legal policy.</Text>
+      <Text style={ui.text}>Settings → Account Details → Delete Account & Data removes a sole-owner household and then requests Neon account deletion. It requires your email, DELETE and current password. A failed Neon step can be retried after FreshTrack data is deleted and locked. A one-way account fingerprint and deletion time are retained to block old-token access. Shared-household deletion is unavailable. Provider backups and other devices are not remotely erased. Account name/email changes are unavailable. This page describes the development app, not a published legal policy.</Text>
       {state.demo && <><Text style={ui.heading}>Demo Kitchen</Text>
         <Text style={ui.text}>Demo groceries and profile edits stay in memory. Reloading restores sample data. The demo does not create an account or save purchases online.</Text></>}
       <PrimaryButton label="Done" onPress={back} />

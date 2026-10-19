@@ -219,3 +219,10 @@ model UserPreference {
 }
 
 // RecipeCache is intentionally deferred until the Phase 7 provider contract is known.
+
+// Minimal deny marker: no email, name, credentials, receipt or grocery contents.
+// Prevents an unexpired API token from recreating data after confirmed deletion.
+model AccountDeletion {
+  subjectHash String   @id @db.Char(64)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+}

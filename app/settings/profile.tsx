@@ -21,6 +21,7 @@ export default function Profile() {
     <View style={ui.card}>
       <Text style={ui.heading}>{state.user.name}</Text><Text style={ui.text}>{state.user.email}</Text>
       <Text style={ui.text}>Your signed-in account details. Name and email changes are not available yet.</Text>
+      <PrimaryButton label="Delete Account & Data" variant="ghost" onPress={() => router.push('/settings/delete-account')} />
       <PrimaryButton label="Back to Settings" variant="ghost" onPress={back} />
     </View>
   </PrototypeScreen>;

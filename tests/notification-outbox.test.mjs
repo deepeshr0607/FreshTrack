@@ -138,3 +138,12 @@ test('malformed input and excessive encoded storage bytes never overwrite a save
   await assert.rejects(wide.confirm(row()), error => error.code === 'OUTBOX_FULL');
   assert.equal(JSON.parse(h.storage.raw).scope, scope); assert.equal(h.sent.length, 0);
 });
+
+test('account deletion clears pending actions only while session locked and cannot resend them', async () => {
+  const h = harness(); await h.queue.pause(true); await h.queue.confirm(row());
+  await assert.rejects(h.queue.clear(), { code: 'OUTBOX_ACTIVE' });
+  h.active(false); await h.queue.clear();
+  assert.equal(h.queue.getSnapshot().entries.length, 0);
+  h.active(true); await h.queue.flush(); assert.equal(h.sent.length, 0);
+  assert.equal(JSON.parse(h.storage.raw).entries.length, 0);
+});

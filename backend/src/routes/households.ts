@@ -1,3 +1,4 @@
+import { AccountDeletionFailure } from '../services/accountDeletion';
 import { Router, type Request, type Response } from 'express';
 import { sendFailure, success } from '../lib/api';
 import type { HouseholdResponse } from '../contracts/api';
@@ -39,7 +40,9 @@ export function createHouseholdRouter(verify: VerifyIdentity, service: Household
     } catch (error) { next(error); }
   });
   router.use((error: Error, req: Request, res: Response, next: (error: Error) => void) => {
-    if (error instanceof HouseholdUnavailable) {
+    if (error instanceof AccountDeletionFailure) {
+      sendFailure(req, res, 403, 'ACCOUNT_DATA_DELETED', 'Account data was deleted. Open Settings to finish account deletion.');
+    } else if (error instanceof HouseholdUnavailable) {
       sendFailure(req, res, 503, 'HOUSEHOLD_UNAVAILABLE', 'Household services are temporarily unavailable. Please retry.');
     } else if (error instanceof AuthFailure) {
       res.setHeader('WWW-Authenticate', 'Bearer');
