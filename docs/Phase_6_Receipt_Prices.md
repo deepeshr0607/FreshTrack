@@ -1,6 +1,6 @@
 # Phase 6 — grouped receipt prices and currency context
 
-19 October 2026. Bounded receipt-price slice; local iPhone acceptance pending. Barcode follow-up stays deferred.
+19 October 2026. Bounded receipt-price slice; local synthetic iPhone acceptance passed by user report. Barcode follow-up stays deferred.
 
 ## Behavior
 
@@ -32,7 +32,7 @@ No backend/schema, native, dependency, deployment or environment change. No user
 
 Logs under `/private/tmp/freshtrack-receipt-price-tests.log`, `freshtrack-receipt-price-export.log`, `freshtrack-receipt-price-doctor.log`. No public-image recognition benchmark was rerun for this parser slice; earlier limited public results remain historical.
 
-## Local phone exercise — pending
+## Local phone exercise — passed by user report
 
 Scanner→Test Receipt Layout Review→Grouped INR prices:three candidates, no adjustment/summary rows. Rice should review1200.00 and retain its grouped original through Cancel. Save explicit1bag/manual2026-11-30, keep1200.00. Oil should review123456.78 (Cancel without saving); Milk should retain0.00 after explicit1bottle/manual2026-11-30 review. Local confirmed-field preview should show exactly Rice1200.00 and Milk0.00.
 
@@ -43,3 +43,9 @@ This is synthetic UI acceptance, not real-photo recognition or a new persisted-i
 ## Remaining Phase6 work
 
 Longer receipts beyond the shared20-row client/server cap and remaining layout/failure checks; food/category recognition; researched storage-dependent shelf lives; confirmed purchase dates/automatic editable suggestions; package-date/unchecked-date handling; native/accessibility QA and final review. Unsupported currencies/formats and discount allocation remain explicit manual-review limitations. Barcode follow-up deferred; no Phase9.
+
+## Acceptance update
+
+The user answered “All checks passed” to the ten-step synthetic exercise: three grouped-price candidates with discounts/totals excluded; Rice1200.00 retaining original grouping through Cancel/reopen and explicit1bag/manual2026-11-30 review; Oil123456.78 reviewed then cancelled; Milk explicitly saved as free0.00 and local preview distinguishing it from Rice1200.00. On the foreign receipt, Milk9.00 and BreadRM4.50 left INR values blank with warnings; Milk’s explicit review kept unknown value. Removing Bananas allowed explicit2.50 matching that retained foreign context and blank INR before Cancel. Final local preview contained only Milk/unknown; Reset restored three unreviewed rows; Pantry unchanged.
+
+This is user-reported local UI evidence, not direct agent observation, real-photo recognition accuracy or new persisted-import acceptance. No runtime/backend/environment/deployment or grocery changes in this documentation-only update. Prior automated results were not rerun; `git diff --check` passes. Longer receipts, classification and automatic storage-dependent expiry suggestions remain incomplete. Barcode follow-up stays deferred.
