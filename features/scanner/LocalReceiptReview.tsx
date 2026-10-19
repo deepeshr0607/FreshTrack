@@ -11,6 +11,7 @@ import type { ReceiptReviewInput } from '@/types/api';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
 import { manualReceiptCandidate, parseReceiptCandidates, suggestReceiptNameOnlyItems, pairReceiptLines, usedReceiptLineIds, receiptReviewSummary, receiptExpiryDraft, saveReceiptCandidate, receiptExpiryLabel, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
 import { receiptQuantityHint, applyReceiptQuantityHint } from '@/lib/receiptQuantity';
+import { receiptNameSuggestion, applyReceiptNameSuggestion } from '@/lib/receiptNameAliases';
 
 /** OCR stays local; only an explicit reviewed-fields handoff can prepare a server import. */
 export default function LocalReceiptReview({ lines, onPrepare, localOnly = false }: { lines: string[]; onPrepare(input: ReceiptReviewInput): void; localOnly?: boolean }) {
@@ -27,6 +28,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
   const plan = receiptReviewSummary(rows);
   const usedLines = usedReceiptLineIds(rows);
   const quantityHint = editor ? receiptQuantityHint(editor.draft.name) : null;
+  const nameSuggestion = editor ? receiptNameSuggestion(editor.draft.name) : null;
   const remaining = parsed.remaining.filter(line => !usedLines.has(line.id));
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
     setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null); setError('');
@@ -39,6 +41,12 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
     {editor.sourceLineIds?.length === 2 && <Text style={ui.text}>You matched two separate OCR lines. Check the name and amount against your receipt photo; text order does not establish a match.</Text>}
     <Text style={ui.text}>Verify every field. Clear quantity text can be offered as a suggestion; apply it only after checking the receipt. Expiry is not read from the receipt. Category starts as Other. Value applies to the whole entry in INR; blank means unknown, zero means free.</Text>
     {editor.detectedPrice && <Text style={ui.text}>Detected amount: {editor.detectedPrice} ({editor.currency === 'INR' ? 'INR marker detected' : editor.currency === 'unsupported' ? 'foreign currency — not converted or copied' : 'currency not detected — confirm INR before keeping this value'}). This may be a unit price rather than the entry total.</Text>}
+    {nameSuggestion && <View style={ui.card}>
+      <Text style={ui.text}>Suggested name: {nameSuggestion.name}. This is an abbreviation match, not a verified product identity. Compare it with your receipt before using it.</Text>
+      <PrimaryButton label="Use Suggested Name" variant="ghost" onPress={() => {
+        setEditor(previous => previous ? { ...previous, draft: applyReceiptNameSuggestion(previous.draft) } : null); setError('');
+      }} />
+    </View>}
     <FormInput label="Item name" accessibilityLabel="Reviewed item name" value={editor.draft.name} maxLength={120} onChangeText={v => change('name', v)} />
     <Text style={ui.heading}>Category</Text>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{PANTRY_CATEGORIES.map(category => <Pressable key={category.name}
