@@ -1,6 +1,6 @@
 # Phase 6 — milk and dry-rice estimate choices
 
-19 October 2026. Automated verification complete; iPhone checklist pending.
+19 October 2026. Automated verification complete; all eight synthetic iPhone checks passed by user report.
 
 ## Change
 
@@ -39,7 +39,9 @@ Sources are general guidance, not evidence of India-specific retail freshness, v
 
 No backend source/schema/dependencies/native build/environment/deployment changes, live database tests or user-grocery reads/writes. Existing receipt design/theme/components reused. Broader real-receipt accuracy is not established by this synthetic exercise.
 
-## iPhone checklist (pending)
+## iPhone checklist (passed by user report)
+
+The user answered “All checks passed” to the eight-step exercise below. This is user-reported local UI acceptance, not direct agent observation, real-food shelf-life accuracy or new persisted-import acceptance. No runtime changes or test reruns were needed for this documentation-only update; `git diff --check` passed.
 
 Keep the laptop awake. Use FreshTrack Dev on the laptop's Wi-Fi; if needed enter `http://192.168.1.14:8087` in its development launcher. These are synthetic UI checks, not instructions to apply the conditions to actual groceries.
 
@@ -54,4 +56,4 @@ Keep the laptop awake. Use FreshTrack Dev on the laptop's Wi-Fi; if needed enter
 
 ## Remaining
 
-Phone acceptance; remaining supported produce/storage conditions; convenient receipt-wide confirmed purchase-date/bulk estimate review; explicit packaged/unchecked-date decisions; real-receipt coverage and failure/native/Android/accessibility/performance QA; final Phase 6 review. Opened/UHT/raw milk and hour-sensitive cooked rice are not completed supported estimate cases. Barcode follow-up deferred. No Phase 9 or store publishing.
+Remaining supported produce/storage conditions; convenient receipt-wide confirmed purchase-date/bulk estimate review; explicit packaged/unchecked-date decisions; real-receipt coverage and failure/native/Android/accessibility/performance QA; final Phase 6 review. Opened/UHT/raw milk and hour-sensitive cooked rice are not completed supported estimate cases. Barcode follow-up deferred. No Phase 9 or store publishing.
