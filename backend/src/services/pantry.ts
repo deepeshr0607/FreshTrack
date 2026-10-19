@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { resolveExpiry } from '../contracts/expiry';
 import { packageBarcode } from '../contracts/barcode';
+import { RECEIPT_MAX_ITEMS } from '../contracts/receiptLimits';
 import { Prisma, type PrismaClient, type PantryItem } from '@prisma/client';
 import type { PantryCreateInput, PantryEditInput, PantryOutcomeInput, PantryBatchInput, PantryItemDto, Pagination, PantryListFilters, ReceiptReviewInput, ReceiptImportInput, ReceiptDuplicateRow } from '../contracts/api';
 import { InvalidApiInput, pageInfo, paginationOffset } from '../lib/api';
@@ -85,7 +86,7 @@ export function receiptInput(value: unknown, importing = false): ReceiptReviewIn
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new InvalidApiInput('Invalid receipt review.');
   const body = value as Record<string, unknown>;
   if (Object.keys(body).some(key => !(importing ? ['confirmed', 'items'] : ['items']).includes(key)) ||
-      (importing && body['confirmed'] !== true) || !Array.isArray(body['items']) || body['items'].length < 1 || body['items'].length > 20) throw new InvalidApiInput('Review between 1 and 20 groceries.');
+      (importing && body['confirmed'] !== true) || !Array.isArray(body['items']) || body['items'].length < 1 || body['items'].length > RECEIPT_MAX_ITEMS) throw new InvalidApiInput(`Review between 1 and ${RECEIPT_MAX_ITEMS} groceries.`);
   const items = body['items'].map(value => {
     if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !['rowId', 'item'].includes(key)) ||
         typeof value.rowId !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(value.rowId)) throw new InvalidApiInput('Invalid receipt row.');
@@ -210,10 +211,18 @@ export function createPantryService(db: PrismaClient = prisma) {
   });
   const receiptMatches = async (tx: Prisma.TransactionClient, identity: VerifiedIdentity, householdId: string, timezone: string, input: ReceiptReviewInput): Promise<ReceiptDuplicateRow[]> => {
     const rows: ReceiptDuplicateRow[] = [];
+    // Count all requested identities in one scoped read. New hauls should not require
+    // two database round trips per grocery before their transactional writes begin.
+    const grouped = await tx.pantryItem.groupBy({ by: ['normalizedName', 'category', 'expiresOn'],
+      where: { householdId, household: { members: { some: { authSubject: identity.id } } }, status: 'ACTIVE', archivedAt: null,
+        OR: input.items.map(row => ({ normalizedName: row.item.name.toLowerCase(), category: row.item.category,
+          expiresOn: new Date(`${row.item.expiresOn}T00:00:00Z`) })) }, _count: { _all: true } });
+    const matchKey = (name: string, category: string, expiresOn: string) => JSON.stringify([name, category, expiresOn]);
+    const totals = new Map(grouped.map(row => [matchKey(row.normalizedName, row.category, serializeCalendarDate(row.expiresOn)), row._count._all]));
     for (const row of input.items) {
       const where = duplicateWhere(identity, householdId, row.item);
-      const total = await tx.pantryItem.count({ where });
-      const matches = await tx.pantryItem.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: 5 });
+      const total = totals.get(matchKey(row.item.name.toLowerCase(), row.item.category, row.item.expiresOn)) ?? 0;
+      const matches = total ? await tx.pantryItem.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: 5 }) : [];
       rows.push({ rowId: row.rowId, total, matches: matches.map(item => view(item, timezone)),
         withinHaul: input.items.filter(other => other.rowId !== row.rowId && other.item.name.toLowerCase() === row.item.name.toLowerCase() &&
           other.item.category === row.item.category && other.item.expiresOn === row.item.expiresOn).map(other => other.rowId) });
@@ -235,7 +244,7 @@ export function createPantryService(db: PrismaClient = prisma) {
       const prefix = `receipt:${key}:`;
       const requestHash = createHash('sha256').update(JSON.stringify({ subject: identity.id, input })).digest('hex');
       // Cardinality and hashes protect changed-payload retries, including removed/added rows.
-      const prior = await tx.pantryItemEvent.findMany({ where: { householdId: membership.householdId, idempotencyKey: { in: Array.from({ length: 20 }, (_unused, index) => `${prefix}${index}`) } }, include: { pantryItem: true } });
+      const prior = await tx.pantryItemEvent.findMany({ where: { householdId: membership.householdId, idempotencyKey: { in: Array.from({ length: RECEIPT_MAX_ITEMS }, (_unused, index) => `${prefix}${index}`) } }, include: { pantryItem: true } });
       if (prior.length) {
         const receiptScanId = prior[0]!.pantryItem.receiptScanId;
         if (!receiptScanId || prior.length !== input.items.length || input.items.some((row, index) => !prior.some(event =>

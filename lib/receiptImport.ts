@@ -10,6 +10,9 @@ import { resolveExpiry } from './pantryExpiry.ts';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { NeonAuthError } from './neonAuth.ts';
 
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { RECEIPT_MAX_ITEMS, RECEIPT_RETRY_MAX_CHUNKS } from './receiptLimits.ts';
+
 export function reviewedReceiptInput(rows: LocalReceiptCandidate[]): ReceiptReviewInput {
   const plan = receiptReviewSummary(rows);
   if (plan.error) throw new NeonAuthError('RECEIPT_REVIEW', plan.error);
@@ -19,7 +22,7 @@ export function reviewedReceiptInput(rows: LocalReceiptCandidate[]): ReceiptRevi
 export function cleanReceiptInput(value: unknown): ReceiptReviewInput {
   if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).some(key => !['items', 'confirmed'].includes(key))) throw Error('INVALID_RECEIPT');
   const input = value as ReceiptReviewInput;
-  if (!Array.isArray(input.items) || !input.items.length || input.items.length > 20) throw Error('INVALID_RECEIPT');
+  if (!Array.isArray(input.items) || !input.items.length || input.items.length > RECEIPT_MAX_ITEMS) throw Error('INVALID_RECEIPT');
   const items = input.items.map(row => {
     if (!row || Object.keys(row).some(key => !['rowId', 'item'].includes(key)) || typeof row.rowId !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(row.rowId) ||
       !row.item || Object.keys(row.item).some(key => !['name', 'category', 'quantity', 'unit', 'expiresOn', 'totalCostMinor', 'duplicateConfirmation', 'expirySelection'].includes(key))) throw Error('INVALID_RECEIPT');
@@ -58,7 +61,7 @@ export function createReceiptImportStorage(storage: CacheStorage, scope: string)
   const read = async (): Promise<SavedReceiptImport | null> => {
     const raw = await storage.get(prefix); if (raw === null) return null;
     const meta = JSON.parse(raw);
-    if (meta.version !== 1 || !Number.isInteger(meta.count) || meta.count < 1 || meta.count > 64 || typeof meta.paused !== 'boolean') throw Error('INVALID_RETRY');
+    if (meta.version !== 1 || !Number.isInteger(meta.count) || meta.count < 1 || meta.count > RECEIPT_RETRY_MAX_CHUNKS || typeof meta.paused !== 'boolean') throw Error('INVALID_RETRY');
     let rawBody = '';
     for (let index = 0; index < meta.count; index++) {
       const part = await storage.get(`${prefix}.${index}`);
@@ -69,7 +72,7 @@ export function createReceiptImportStorage(storage: CacheStorage, scope: string)
       Object.keys(body).some(key => !['version', 'scope', 'key', 'input'].includes(key))) throw Error('INVALID_RETRY');
     return { version: 1, scope, key: body.key, input: { ...cleanReceiptInput(body.input), confirmed: true }, paused: meta.paused };
   };
-  const wipe = async () => { await storage.remove(prefix); for (let index = 0; index < 64; index++) await storage.remove(`${prefix}.${index}`); };
+  const wipe = async () => { await storage.remove(prefix); for (let index = 0; index < RECEIPT_RETRY_MAX_CHUNKS; index++) await storage.remove(`${prefix}.${index}`); };
   return {
     load: () => run(read),
     save(input: ReceiptImportInput, key: string, paused: boolean) {
@@ -78,7 +81,7 @@ export function createReceiptImportStorage(storage: CacheStorage, scope: string)
       const safe = { version: 1, scope, key, input: { ...cleanReceiptInput(input), confirmed: true } };
       const points = Array.from(JSON.stringify(safe)), chunks: string[] = [];
       for (let index = 0; index < points.length; index += 400) chunks.push(points.slice(index, index + 400).join(''));
-      if (chunks.length > 64) throw Error('RETRY_TOO_LARGE');
+      if (chunks.length > RECEIPT_RETRY_MAX_CHUNKS) throw Error('RETRY_TOO_LARGE');
       return run(async () => {
         if (version !== revision) throw Error('SESSION_CHANGED');
         if (await read()) throw Error('RETRY_EXISTS');

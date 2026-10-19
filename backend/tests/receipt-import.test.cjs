@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const { RECEIPT_MAX_ITEMS } = require('../dist/contracts/receiptLimits.js');
 const request = require('supertest');
 const { createApp } = require('../dist/app.js');
 const { receiptInput, PantryFailure } = require('../dist/services/pantry.js');
@@ -13,12 +14,19 @@ test('receipt input is bounded, canonical and accepts reviewed fields only', () 
   const result = receiptInput({ items: [{ rowId: 'z', item }, { rowId: 'a', item: { ...item, totalCostMinor: null } }] });
   assert.deepEqual(result.items.map(row => row.rowId), ['a', 'z']);
   assert.equal(result.items[1].item.name, 'Review Milk'); assert.equal(result.items[1].item.quantity, '0.5');
-  for (const body of [null, [], {}, { items: [] }, { items: Array(21).fill(review.items[0]) }, { ...review, userId: 'foreign' },
+  for (const body of [null, [], {}, { items: [] }, { items: Array(RECEIPT_MAX_ITEMS + 1).fill(review.items[0]) }, { ...review, userId: 'foreign' },
     { ...review, rawText: 'receipt' }, { ...review, image: 'file://private' }, { ...review, confirmed: true },
     { items: [review.items[0], review.items[0]] }, { items: [{ rowId: '../../x', item }] },
     { items: [{ ...review.items[0], householdId: 'foreign' }] }, { items: [{ rowId: 'x', item: { ...item, receiptScanId: 'foreign' } }] },
     { items: [{ rowId: 'x', item: { ...item, quantity: '0' } }] }, { items: [{ rowId: 'x', item: { ...item, totalCostMinor: 1.5 } }] },
     { items: [{ rowId: 'x', item: { ...item, expiresOn: '2026-02-30' } }] }]) assert.throws(() => receiptInput(body));
+});
+test('50-item receipt input is accepted while 51 items and late repeated row IDs are rejected', () => {
+  const items = Array.from({ length: RECEIPT_MAX_ITEMS }, (_, index) => ({ rowId: `row-${index}`, item: { ...item, name: `Rice ${index}` } }));
+  assert.equal(receiptInput({ items }).items.length, 50);
+  assert.equal(receiptInput({ items, confirmed: true }, true).items.length, 50);
+  assert.throws(() => receiptInput({ items: [...items, { rowId: 'overflow', item }] }));
+  assert.throws(() => receiptInput({ items: [...items.slice(0, -1), { ...items[0] }] }));
 });
 test('receipt import requires explicit confirmation and review cannot smuggle duplicate decisions', () => {
   const separate = { confirmed: true, action: 'add_separately' };

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { RECEIPT_MAX_ITEMS } from '../lib/receiptLimits.ts';
 import { parseReceiptCandidates, pairReceiptLines, usedReceiptLineIds, saveReceiptCandidate, receiptReviewSummary } from '../lib/receiptCandidates.ts';
 import { reviewedReceiptInput } from '../lib/receiptImport.ts';
 import { RECEIPT_LAYOUT_FIXTURES } from '../lib/receiptLayoutFixtures.ts';
@@ -41,7 +42,7 @@ test('missing, wrong-type, summary, consumed and over-capacity choices are rejec
   const first = pairReceiptLines(parsed.remaining, 'line-1', 'line-3', []);
   assert.throws(() => pairReceiptLines(parsed.remaining, 'line-2', 'line-3', [first]));
   assert.throws(() => pairReceiptLines(parsed.remaining, 'line-1', 'line-4', [first]));
-  assert.throws(() => pairReceiptLines(parsed.remaining, 'line-2', 'line-4', Array(20).fill(first)));
+  assert.throws(() => pairReceiptLines(parsed.remaining, 'line-2', 'line-4', Array(RECEIPT_MAX_ITEMS).fill(first)));
   const valid = pairReceiptLines(parsed.remaining, 'line-2', 'line-4', [first]); assert.equal(valid.draft.price, '60.50');
 });
 test('cancel is non-mutating; removing a matched row frees both source lines', () => {
@@ -83,10 +84,10 @@ test('paired reviews preserve edits and expiry, strip local provenance and use t
   assert.equal(input.items[0].rowId, rice.id); assert.equal(receiptReviewSummary([rice, milk]).error, null);
   assert.ok(receiptReviewSummary([rice, { ...milk, sourceLineIds: rice.sourceLineIds }]).error);
 });
-test('existing 20-row limit and 500-line bounds preserve split lines for manual recovery', () => {
-  const parsed = parseReceiptCandidates([...Array.from({ length: 20 }, (_, i) => `Item ${i} 10.00`), 'Milk', '60.50']);
-  assert.equal(parsed.candidates.length, 20); assert.equal(parsed.remaining.length, 2);
-  assert.throws(() => pairReceiptLines(parsed.remaining, 'line-20', 'line-21', parsed.candidates));
+test('shared receipt limit and 500-line bounds preserve split lines for manual recovery', () => {
+  const parsed = parseReceiptCandidates([...Array.from({ length: RECEIPT_MAX_ITEMS }, (_, i) => `Item ${i} 10.00`), 'Milk', '60.50']);
+  assert.equal(parsed.candidates.length, RECEIPT_MAX_ITEMS); assert.equal(parsed.remaining.length, 2);
+  assert.throws(() => pairReceiptLines(parsed.remaining, `line-${RECEIPT_MAX_ITEMS}`, `line-${RECEIPT_MAX_ITEMS + 1}`, parsed.candidates));
   assert.equal(parseReceiptCandidates(Array(500).fill('60.50')).remaining.length, 500);
   assert.throws(() => parseReceiptCandidates(Array(501).fill('60.50')));
 });

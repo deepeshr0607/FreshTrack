@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { PrismaClient } = require('@prisma/client');
 const { createPantryService, receiptInput } = require('../dist/services/pantry.js');
+const { RECEIPT_MAX_ITEMS } = require('../dist/contracts/receiptLimits.js');
 const { requireDevelopmentDatabase } = require('../scripts/development-database.cjs');
 requireDevelopmentDatabase();
 if (process.env.ALLOW_DEVELOPMENT_DATABASE_TESTS !== 'true') throw Error('DEVELOPMENT_TEST_OPT_IN_REQUIRED');
@@ -118,10 +119,31 @@ check('same request key in another household never returns the first household r
   await assert.rejects(service.find(b, one.items[0].id), error => error.code === 'ITEM_NOT_FOUND');
   assert.deepEqual(await counts(a), [1, 2, 2]); assert.deepEqual(await counts(b), [1, 2, 2]);
 });
-check('maximum twenty-row haul commits once and replays without exceeding the transaction budget', async () => {
+check('maximum receipt haul commits once and replays without exceeding the transaction budget', async () => {
   const user = await account(), service = createPantryService(db), key = randomUUID();
-  const input = haul(Array.from({ length: 20 }, (_, index) => ({ ...fields, name: `Maximum Haul Item ${index}`, totalCostMinor: index === 0 ? 0 : index === 1 ? null : index * 100 })));
+  const input = haul(Array.from({ length: RECEIPT_MAX_ITEMS }, (_, index) => ({ ...fields, name: `Maximum Haul Item ${index}`, totalCostMinor: index === 0 ? 0 : index === 1 ? null : index * 100 })));
   const result = await service.receiptImport(user, input, key);
-  assert.equal(result.items.length, 20); assert.deepEqual(await counts(user), [1, 20, 20]);
-  assert.equal((await service.receiptImport(user, input, key)).replayed, true); assert.deepEqual(await counts(user), [1, 20, 20]);
+  assert.equal(result.items.length, RECEIPT_MAX_ITEMS); assert.deepEqual(await counts(user), [1, RECEIPT_MAX_ITEMS, RECEIPT_MAX_ITEMS]);
+  assert.equal((await service.receiptImport(user, input, key)).replayed, true); assert.deepEqual(await counts(user), [1, RECEIPT_MAX_ITEMS, RECEIPT_MAX_ITEMS]);
+  await assert.rejects(service.receiptImport(user, { ...input, items: input.items.slice(0, 20) }, key), error => error.code === 'IDEMPOTENCY_CONFLICT');
+  const changed = { ...input, items: input.items.map((row, index) => index === 49 ? { ...row, item: { ...row.item, totalCostMinor: 999 } } : row) };
+  await assert.rejects(service.receiptImport(user, changed, key), error => error.code === 'IDEMPOTENCY_CONFLICT');
+  assert.deepEqual(await counts(user), [1, RECEIPT_MAX_ITEMS, RECEIPT_MAX_ITEMS]);
+  const duplicates = await service.receiptReview(user, { items: input.items });
+  assert.equal(duplicates.rows.length, 50); assert.ok(duplicates.rows.every(row => row.total === 1 && row.matches.length === 1));
+  await assert.rejects(service.receiptImport(user, input, randomUUID()), error => error.code === 'PANTRY_DUPLICATE');
+  const separate = { ...input, items: input.items.map(row => ({ ...row, item: { ...row.item, duplicateConfirmation: { confirmed: true, action: 'add_separately' } } })) };
+  const second = await service.receiptImport(user, separate, randomUUID());
+  assert.equal(second.items.length, 50); assert.deepEqual(await counts(user), [2, 100, 100]);
+});
+check('last event failure rolls back a full fifty-item receipt and all CREATED history', async () => {
+  const user = await account();
+  const failing = { $transaction: (run, options) => db.$transaction(async tx => {
+    let count = 0;
+    return run({ householdMember: tx.householdMember, pantryItem: tx.pantryItem, receiptScan: tx.receiptScan,
+      pantryItemEvent: { findMany: tx.pantryItemEvent.findMany, create: args => ++count === RECEIPT_MAX_ITEMS ? Promise.reject(Error('fixture failure')) : tx.pantryItemEvent.create(args) } });
+  }, options) };
+  const input = haul(Array.from({ length: RECEIPT_MAX_ITEMS }, (_, index) => ({ ...fields, name: `Rollback Haul Item ${index}` })));
+  await assert.rejects(createPantryService(failing).receiptImport(user, input, randomUUID()), error => error.code === 'PANTRY_UNAVAILABLE');
+  assert.deepEqual(await counts(user), [0, 0, 0]);
 });

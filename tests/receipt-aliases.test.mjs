@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { RECEIPT_MAX_ITEMS } from '../lib/receiptLimits.ts';
 import { receiptNameSuggestion, applyReceiptNameSuggestion } from '../lib/receiptNameAliases.ts';
 import { receiptQuantityHint, applyReceiptQuantityHint } from '../lib/receiptQuantity.ts';
 import { parseReceiptCandidates, suggestReceiptNameOnlyItems, saveReceiptCandidate, usedReceiptLineIds, pairReceiptLines } from '../lib/receiptCandidates.ts';
@@ -62,9 +63,9 @@ test('name-only alias removal frees source matching and does not invent a price 
   rows.shift(); const paired = pairReceiptLines(parsed.remaining, 'line-0', 'line-2', rows);
   assert.equal(applyReceiptNameSuggestion(paired.draft).name, 'Bananas'); assert.equal(paired.draft.price, '20.00');
 });
-test('foreign/unknown values and 20-row source limits are unaffected by alias recognition', () => {
+test('foreign/unknown values and receipt source limits are unaffected by alias recognition', () => {
   const foreign = parseReceiptCandidates(['WW BRD $4.29']).candidates[0];
   assert.equal(applyReceiptNameSuggestion(foreign.draft).price, ''); assert.equal(foreign.currency, 'unsupported');
-  const parsed = parseReceiptCandidates([...Array.from({ length: 20 }, (_, i) => `Product ${i} 10.00`), 'BNNA']);
-  assert.equal(suggestReceiptNameOnlyItems(parsed).length, 20); assert.equal(parsed.remaining[0].original, 'BNNA');
+  const parsed = parseReceiptCandidates([...Array.from({ length: RECEIPT_MAX_ITEMS }, (_, i) => `Product ${i} 10.00`), 'BNNA']);
+  assert.equal(suggestReceiptNameOnlyItems(parsed).length, RECEIPT_MAX_ITEMS); assert.equal(parsed.remaining[0].original, 'BNNA');
 });

@@ -26,6 +26,25 @@ after(async () => {
 function check(name, fn) { test(name, { timeout: 60000 }, async () => { try { await fn(); } catch (error) { if (error.name === 'AssertionError') throw error; throw Error('RECEIPT_CLIENT_DATABASE_CHECK_FAILED'); } }); }
 const input = { items: [{ rowId: 'milk', item: { name: 'Receipt Client Milk', category: 'DAIRY', quantity: '0.5', unit: 'l', expiresOn: '2026-10-20', totalCostMinor: 6050 } },
   { rowId: 'bread', item: { name: 'Receipt Client Bread', category: 'BAKERY', quantity: '1', unit: 'loaf', expiresOn: '2026-10-21', totalCostMinor: null } }] };
+check('fifty-item real commit and lost-response restart keep one receipt and exactly fifty events', async () => {
+  const { createReceiptImportStorage, createReceiptImportController, NeonAuthError } = await modules();
+  const user = await account(), service = createPantryService(db), values = new Map(); let lose = true; const calls = [];
+  const large = { items: Array.from({ length: 50 }, (_, index) => ({ rowId: `large-${String(index).padStart(2, '0')}`, item: { ...input.items[0].item, name: `Long Retry Rice ${index}` } })) };
+  const storage = createReceiptImportStorage({ get: async key => values.get(key) ?? null, set: async (key, value) => { values.set(key, value); }, remove: async key => { values.delete(key); } }, user.id);
+  const controller = () => createReceiptImportController({ storage, active: () => true, review: body => service.receiptReview(user, body), send: async (body, key) => {
+    calls.push(JSON.stringify({ body, key })); const result = await service.receiptImport(user, body, key);
+    if (lose) throw new NeonAuthError('PANTRY_NETWORK', 'Lost fixture response.'); return result;
+  } }, randomUUID);
+  const first = controller(); await first.restore(); await first.review(large); await first.confirm();
+  assert.equal(first.getSnapshot().stage, 'pending'); assert.ok(await storage.load());
+  const { householdId } = await db.householdMember.findUniqueOrThrow({ where: { authSubject: user.id } });
+  const counts = () => Promise.all([db.receiptScan.count({ where: { householdId } }), db.pantryItem.count({ where: { householdId } }), db.pantryItemEvent.count({ where: { householdId } })]);
+  assert.deepEqual(await counts(), [1, 50, 50]); lose = false;
+  const restored = controller(); await restored.restore(); assert.equal(calls.length, 1); await restored.retry();
+  assert.equal(restored.getSnapshot().stage, 'saved'); assert.equal(restored.getSnapshot().result.replayed, true);
+  assert.equal(calls.length, 2); assert.equal(calls[0], calls[1]); assert.equal(values.size, 0);
+  assert.deepEqual(await counts(), [1, 50, 50]);
+});
 async function modules() { return { ...await import('../../lib/receiptImport.ts'), ...await import('../../lib/neonAuth.ts') }; }
 check('real server commit then lost response/restarted mobile controller preserves one receipt and exact CREATED events', async () => {
   const { createReceiptImportStorage, createReceiptImportController, NeonAuthError } = await modules();

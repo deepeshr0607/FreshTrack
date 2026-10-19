@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { RECEIPT_MAX_ITEMS } from '../lib/receiptLimits.ts';
 import { parseReceiptCandidates, pairReceiptLines, saveReceiptCandidate, receiptCandidateIssue } from '../lib/receiptCandidates.ts';
 import { reviewedReceiptInput } from '../lib/receiptImport.ts';
 
@@ -58,7 +59,7 @@ test('review keeps exact paise, zero/unknown distinction and explicit user corre
   assert.equal(JSON.stringify(reviewedReceiptInput(rows)).includes('currencyContext'), false);
 });
 test('grouped prices do not bypass existing value bounds or row caps', () => {
-  const parsed = parseReceiptCandidates(['Rice ₹2,14,74,836.48', ...Array.from({ length: 21 }, (_, i) => `Item ${i} 10.00`)]);
-  assert.equal(parsed.candidates.length, 20); assert.equal(parsed.remaining.length, 2);
+  const parsed = parseReceiptCandidates(['Rice ₹2,14,74,836.48', ...Array.from({ length: RECEIPT_MAX_ITEMS + 1 }, (_, i) => `Item ${i} 10.00`)]);
+  assert.equal(parsed.candidates.length, RECEIPT_MAX_ITEMS); assert.equal(parsed.remaining.length, 2);
   assert.ok(receiptCandidateIssue({ ...parsed.candidates[0].draft, quantity: '1', unit: 'bag', expiresOn: '2026-11-30' }));
 });

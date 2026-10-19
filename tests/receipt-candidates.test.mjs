@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { RECEIPT_MAX_ITEMS } from '../lib/receiptLimits.ts';
 import { parseReceiptCandidates, manualReceiptCandidate, receiptCandidateIssue, receiptReviewSummary } from '../lib/receiptCandidates.ts';
 
 test('receipt parsing keeps same-line items separate, excludes summaries and preserves original OCR', () => {
@@ -17,8 +18,8 @@ test('receipt parsing keeps same-line items separate, excludes summaries and pre
   assert.equal(receiptReviewSummary(result.candidates).error, 'Review and select at least one grocery.');
 });
 test('foreign currencies, ambiguous price formats and layout overflow never silently convert or disappear', () => {
-  const result = parseReceiptCandidates(['Yogurt $4.29', 'Bread 3.99 EUR', 'Rice 1,200.00', 'Milk 6O.5O', '2026-10-16', ...Array.from({ length: 25 }, (_, i) => `Item ${i} 10.00`)]);
-  assert.equal(result.candidates.length, 20);
+  const result = parseReceiptCandidates(['Yogurt $4.29', 'Bread 3.99 EUR', 'Rice 1,200.00', 'Milk 6O.5O', '2026-10-16', ...Array.from({ length: RECEIPT_MAX_ITEMS + 5 }, (_, i) => `Item ${i} 10.00`)]);
+  assert.equal(result.candidates.length, RECEIPT_MAX_ITEMS);
   assert.equal(result.remaining.length, 10);
   assert.equal(result.candidates[0].draft.price, ''); assert.equal(result.candidates[0].detectedPrice, '4.29');
   assert.equal(result.candidates[1].currency, 'unsupported');

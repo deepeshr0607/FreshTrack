@@ -12,6 +12,9 @@ import { isPossibleReceiptFoodName } from './receiptItemNames.ts';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { receiptQuantityHint } from './receiptQuantity.ts';
 
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { RECEIPT_MAX_ITEMS } from './receiptLimits.ts';
+
 export interface LocalReceiptCandidate {
   id: string;
   original: string;
@@ -60,9 +63,9 @@ export function parseReceiptCandidates(value: unknown): ReceiptParseResult {
     if (nonItem.test(line) || currencyHeader.test(line) || columnHeading.test(line) || (match && columnHeading.test(name)) || /\b(?:discount|coupon|refund|savings?)\b|[-−+]\s*$/i.test(name)) { remaining.push({ id, original, kind: 'other', reason: 'Likely header, payment, adjustment or summary — not selected' }); continue; }
     const standalone = amountOnly.exec(line);
     if (standalone) { remaining.push({ id, original, kind: 'amount', currency: priceInfo(standalone[2]!, `${standalone[1] ?? ''}${standalone[3] ?? ''}`, context).currency, reason: 'Separate amount — choose its matching item name against the photo' }); continue; }
-    if (!match || !validName(name) || candidates.length >= 20) {
+    if (!match || !validName(name) || candidates.length >= RECEIPT_MAX_ITEMS) {
       const nameOnly = !match && validName(line) && !/\d[.,]\d|[@₹$€£]|\b(?:INR|USD|EUR|GBP|Rs\.?)\b/i.test(line);
-      remaining.push({ id, original, kind: nameOnly ? 'name' : 'other', reason: candidates.length >= 20 ? 'Review limit reached (20 rows)' : nameOnly ? 'Separate name — choose its matching amount against the photo' : 'Uncertain layout or missing same-line price' }); continue;
+      remaining.push({ id, original, kind: nameOnly ? 'name' : 'other', reason: candidates.length >= RECEIPT_MAX_ITEMS ? `Review limit reached (${RECEIPT_MAX_ITEMS} rows)` : nameOnly ? 'Separate name — choose its matching amount against the photo' : 'Uncertain layout or missing same-line price' }); continue;
     }
     const marker = `${match[2] ?? ''}${match[4] ?? ''}`;
     const { currency, detectedPrice } = priceInfo(match[3]!, marker, context);
@@ -76,13 +79,13 @@ export function usedReceiptLineIds(rows: LocalReceiptCandidate[]): Set<string> {
 }
 /** Propose known food names without borrowing a price from another OCR line.
  * Keep the base parse intact so removing a suggestion frees its original line for matching.
- * Existing same-line candidates take priority within the shared 20-row review limit.
+ * Existing same-line candidates take priority within the shared receipt review limit.
  */
 export function suggestReceiptNameOnlyItems(parsed: ReceiptParseResult): LocalReceiptCandidate[] {
   const rows = [...parsed.candidates];
   const used = usedReceiptLineIds(rows);
   for (const line of parsed.remaining) {
-    if (rows.length >= 20) break;
+    if (rows.length >= RECEIPT_MAX_ITEMS) break;
     const name = normalizedLine(line.original);
     const quantity = receiptQuantityHint(name);
     // A clear leading weight may contain a decimal; keep its quantity unfilled until review.
@@ -96,7 +99,7 @@ export function suggestReceiptNameOnlyItems(parsed: ReceiptParseResult): LocalRe
 }
 /** Strings lack coordinates. User-selected name/amount IDs are required, even for equal-size columns. */
 export function pairReceiptLines(lines: UnassignedReceiptLine[], nameId: string, amountId: string, rows: LocalReceiptCandidate[]): LocalReceiptCandidate {
-  if (rows.length >= 20) throw Error('Use at most 20 review rows. Remove a grocery before matching another.');
+  if (rows.length >= RECEIPT_MAX_ITEMS) throw Error(`Use at most ${RECEIPT_MAX_ITEMS} review rows. Remove a grocery before matching another.`);
   const name = lines.find(line => line.id === nameId), amount = lines.find(line => line.id === amountId), used = usedReceiptLineIds(rows);
   if (!name || !amount || name.kind !== 'name' || amount.kind !== 'amount' || name.id === amount.id || used.has(name.id) || used.has(amount.id)) throw Error('Choose one unused item-name line and one unused amount line.');
   const itemName = normalizedLine(name.original), match = amountOnly.exec(normalizedLine(amount.original));
@@ -150,7 +153,7 @@ export function receiptCandidateIssue(draft: PantryDraft): string | null {
 export function receiptReviewSummary(rows: LocalReceiptCandidate[]) {
   const selected = rows.filter(row => row.selected);
   if (!selected.length) return { error: 'Review and select at least one grocery.', rows: [] as LocalReceiptCandidate[], repeated: [] as string[] };
-  if (selected.length > 20 || new Set(rows.map(row => row.id)).size !== rows.length) return { error: 'Use at most 20 distinct review rows.', rows: [], repeated: [] };
+  if (selected.length > RECEIPT_MAX_ITEMS || new Set(rows.map(row => row.id)).size !== rows.length) return { error: `Use at most ${RECEIPT_MAX_ITEMS} distinct review rows.`, rows: [], repeated: [] };
   const used = new Set<string>();
   for (const row of selected) {
     for (const id of row.sourceLineIds ?? []) {

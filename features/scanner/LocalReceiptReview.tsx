@@ -13,6 +13,8 @@ import { manualReceiptCandidate, parseReceiptCandidates, suggestReceiptNameOnlyI
 import { receiptQuantityHint, applyReceiptQuantityHint } from '@/lib/receiptQuantity';
 import { receiptNameSuggestion, applyReceiptNameSuggestion } from '@/lib/receiptNameAliases';
 
+import { RECEIPT_MAX_ITEMS } from '@/lib/receiptLimits';
+
 /** OCR stays local; only an explicit reviewed-fields handoff can prepare a server import. */
 export default function LocalReceiptReview({ lines, onPrepare, localOnly = false }: { lines: string[]; onPrepare(input: ReceiptReviewInput): void; localOnly?: boolean }) {
   const [parsed] = useState(() => parseReceiptCandidates(lines));
@@ -21,6 +23,10 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
   const [expiry, setExpiry] = useState(expiryDraft());
   const [error, setError] = useState('');
   const [summary, setSummary] = useState(false);
+  const [reviewPage, setReviewPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(rows.length / 10));
+  const page = Math.min(reviewPage, pageCount - 1);
+  const visibleRows = rows.slice(page * 10, (page + 1) * 10);
   const [showRemaining, setShowRemaining] = useState(false);
   const [nameLine, setNameLine] = useState<string | null>(null);
   const [amountLine, setAmountLine] = useState<string | null>(null);
@@ -34,7 +40,7 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
     setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null); setError('');
   };
   const edit = (row: LocalReceiptCandidate) => { setEditor({ ...row, draft: { ...row.draft } }); setExpiry(receiptExpiryDraft(row)); setError(''); };
-  const add = (original = '', lineId?: string) => { if (rows.length >= 20) return; edit({ ...manualReceiptCandidate(`manual-${++next.current}`, original), ...(lineId ? { sourceLineIds: [lineId] } : {}) }); };
+  const add = (original = '', lineId?: string) => { if (rows.length >= RECEIPT_MAX_ITEMS) return; edit({ ...manualReceiptCandidate(`manual-${++next.current}`, original), ...(lineId ? { sourceLineIds: [lineId] } : {}) }); };
   if (editor) return <View style={ui.card}>
     <Text accessibilityRole="header" style={ui.heading}>Review Grocery</Text>
     {!!editor.original && <Text selectable style={ui.text}>Original OCR: {editor.original}</Text>}
@@ -92,7 +98,12 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
       <Text style={ui.text}>{rows.length} candidates · {rows.filter(row => row.selected).length} reviewed and selected · no accuracy score inferred</Text>
       {!rows.length && <Text style={ui.text}>No grocery candidates found. Match separate name/amount lines below or add a missing grocery.</Text>}
       <Text style={ui.text}>Common food names can be suggested without a price. Their value stays unknown until you enter it. Check every suggestion; unfamiliar names remain in unassigned lines.</Text>
-      {rows.map(row => <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
+      {rows.length > 10 && <View style={ui.card}>
+        <Text accessibilityLiveRegion="polite" style={ui.text}>Items {page * 10 + 1}–{Math.min((page + 1) * 10, rows.length)} of {rows.length} · Page {page + 1} of {pageCount}. Reviews and selections are kept across pages.</Text>
+        <PrimaryButton label="Previous Items" variant="ghost" disabled={page === 0} onPress={() => setReviewPage(page - 1)} />
+        <PrimaryButton label="Next Items" variant="ghost" disabled={page === pageCount - 1} onPress={() => setReviewPage(page + 1)} />
+      </View>}
+      {visibleRows.map(row => <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
         <Text style={ui.heading}>{row.draft.name || 'Unnamed grocery'}</Text>
         {!row.reviewed && row.detectedPrice === null && <Text style={ui.text}>Name detected without a price · value unknown. Review it, or remove this suggestion to match its name with a separate amount below.</Text>}
         <Text style={ui.text}>{row.reviewed ? `${row.draft.quantity} ${row.draft.unit} · ${row.draft.price.trim() ? `₹${row.draft.price}` : 'Unknown value'} · ${receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection })}` : 'Needs review · quantity, unit, category, value and expiry unverified'}</Text>
@@ -103,8 +114,8 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
           <Text style={ui.label}>{row.selected ? '☑ Included' : '☐ Excluded'}</Text></Pressable>}
         <PrimaryButton label="Remove Grocery" variant="ghost" onPress={() => { setRows(previous => previous.filter(item => item.id !== row.id)); setError(''); }} />
       </View>)}
-      <PrimaryButton label="＋ Add Missing" variant="ghost" disabled={rows.length >= 20} onPress={() => add()} />
-      <Text style={ui.text}>Up to 20 review rows. Unassigned lines remain available below, including likely totals and unsupported layouts. No lines are silently imported.</Text>
+      <PrimaryButton label="＋ Add Missing" variant="ghost" disabled={rows.length >= RECEIPT_MAX_ITEMS} onPress={() => add()} />
+      <Text style={ui.text}>Up to {RECEIPT_MAX_ITEMS} review rows. Unassigned lines remain available below, including likely totals and unsupported layouts. No lines are silently imported.</Text>
       <Text style={ui.text}>Separate name and price columns? Show unassigned lines, choose one item name and its amount using the photo, then review the match. Remove a matched grocery to make its lines available again. Totals, unclear lines and unsupported formats stay available for manual entry.</Text>
       <PrimaryButton label={`${showRemaining ? 'Hide' : 'Show'} Unassigned Lines (${remaining.length})`} variant="ghost" onPress={() => setShowRemaining(previous => !previous)} />
       {showRemaining && <>
@@ -112,18 +123,18 @@ export default function LocalReceiptReview({ lines, onPrepare, localOnly = false
           <Text style={ui.heading}>Match Separate Lines</Text>
           <Text selectable style={ui.text}>Name: {remaining.find(line => line.id === nameLine)?.original ?? 'Choose an item-name line below'}</Text>
           <Text selectable style={ui.text}>Amount: {remaining.find(line => line.id === amountLine)?.original ?? 'Choose an amount line below'}</Text>
-          <PrimaryButton label="Review Matched Lines" disabled={!nameLine || !amountLine || rows.length >= 20} onPress={() => {
+          <PrimaryButton label="Review Matched Lines" disabled={!nameLine || !amountLine || rows.length >= RECEIPT_MAX_ITEMS} onPress={() => {
             try { edit(pairReceiptLines(parsed.remaining, nameLine!, amountLine!, rows)); }
             catch (error) { setError((error as Error).message); }
           }} />
           <PrimaryButton label="Cancel Match" variant="ghost" onPress={() => { setNameLine(null); setAmountLine(null); setError(''); }} />
         </View>}
         {remaining.map(line => <View key={line.id} style={ui.card}><Text selectable style={ui.text}>{line.original}</Text><Text style={ui.text}>{line.reason}</Text>
-          {line.kind === 'name' && <PrimaryButton label={nameLine === line.id ? 'Selected Item Name' : 'Use as Item Name'} variant={nameLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= 20}
+          {line.kind === 'name' && <PrimaryButton label={nameLine === line.id ? 'Selected Item Name' : 'Use as Item Name'} variant={nameLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= RECEIPT_MAX_ITEMS}
             onPress={() => { setNameLine(previous => previous === line.id ? null : line.id); setError(''); }} />}
-          {line.kind === 'amount' && <PrimaryButton label={amountLine === line.id ? 'Selected Amount' : 'Use as Amount'} variant={amountLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= 20}
+          {line.kind === 'amount' && <PrimaryButton label={amountLine === line.id ? 'Selected Amount' : 'Use as Amount'} variant={amountLine === line.id ? 'primary' : 'secondary'} disabled={rows.length >= RECEIPT_MAX_ITEMS}
             onPress={() => { setAmountLine(previous => previous === line.id ? null : line.id); setError(''); }} />}
-          <PrimaryButton label="Review as Grocery" variant="ghost" disabled={rows.length >= 20} onPress={() => add(line.original, line.id)} />
+          <PrimaryButton label="Review as Grocery" variant="ghost" disabled={rows.length >= RECEIPT_MAX_ITEMS} onPress={() => add(line.original, line.id)} />
         </View>)}
       </>}
       {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}

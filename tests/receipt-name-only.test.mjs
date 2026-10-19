@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { RECEIPT_MAX_ITEMS } from '../lib/receiptLimits.ts';
 import { parseReceiptCandidates, suggestReceiptNameOnlyItems, usedReceiptLineIds, pairReceiptLines, saveReceiptCandidate, receiptReviewSummary } from '../lib/receiptCandidates.ts';
 import { reviewedReceiptInput } from '../lib/receiptImport.ts';
 import { RECEIPT_LAYOUT_FIXTURES } from '../lib/receiptLayoutFixtures.ts';
@@ -30,10 +31,10 @@ test('store/address/payment food words and uncertain numeric text do not become 
   assert.equal(parsed.remaining.length, lines.length);
 });
 test('same-line candidates retain priority and the shared cap leaves overflow available', () => {
-  const parsed = parseReceiptCandidates(['Milk', 'Bread', ...Array.from({ length: 19 }, (_, i) => `Product ${i} 10.00`)]);
+  const parsed = parseReceiptCandidates(['Milk', 'Bread', ...Array.from({ length: RECEIPT_MAX_ITEMS - 1 }, (_, i) => `Product ${i} 10.00`)]);
   const rows = suggestReceiptNameOnlyItems(parsed);
-  assert.equal(rows.length, 20); assert.deepEqual(rows.slice(0, 19), parsed.candidates);
-  assert.equal(rows[19].draft.name, 'Milk');
+  assert.equal(rows.length, RECEIPT_MAX_ITEMS); assert.deepEqual(rows.slice(0, RECEIPT_MAX_ITEMS - 1), parsed.candidates);
+  assert.equal(rows[RECEIPT_MAX_ITEMS - 1].draft.name, 'Milk');
   const available = parsed.remaining.filter(line => !usedReceiptLineIds(rows).has(line.id));
   assert.deepEqual(available.map(line => line.original), ['Bread']);
 });
@@ -65,10 +66,10 @@ test('unknown and explicit zero values survive review; original OCR and provenan
   assert.equal(JSON.stringify(payload).includes('sourceLineIds'), false);
   assert.equal(JSON.stringify(payload).includes('original'), false);
 });
-test('500-line bound is retained without losing names beyond the 20-row review cap', () => {
+test('500-line bound is retained without losing names beyond the shared receipt review cap', () => {
   const parsed = parseReceiptCandidates(Array(500).fill('Bananas'));
   const rows = suggestReceiptNameOnlyItems(parsed);
-  assert.equal(rows.length, 20);
-  assert.equal(parsed.remaining.filter(line => !usedReceiptLineIds(rows).has(line.id)).length, 480);
+  assert.equal(rows.length, RECEIPT_MAX_ITEMS);
+  assert.equal(parsed.remaining.filter(line => !usedReceiptLineIds(rows).has(line.id)).length, 500 - RECEIPT_MAX_ITEMS);
   assert.throws(() => parseReceiptCandidates(Array(501).fill('Bananas')));
 });
