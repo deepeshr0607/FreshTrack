@@ -1,0 +1,29 @@
+{
+  "method": "Local macOS geometry proof; not connected to the phone scanner",
+  "results": [
+    {
+      "sample": "014",
+      "groceryRows": 9,
+      "observations": 110,
+      "sameBaselinePairs": 0,
+      "layoutSha256": "7af6f76f015f63dd8879c4bc2409725a394d8844d8553d1451dd576e1494e9d8",
+      "sourceStringsUnchanged": true
+    },
+    {
+      "sample": "031",
+      "groceryRows": 1,
+      "observations": 39,
+      "sameBaselinePairs": 0,
+      "layoutSha256": "0a32ec192f57bc00b5db5e70720853a1b800a036afa48b971f7f411f56a04a97",
+      "sourceStringsUnchanged": true
+    },
+    {
+      "sample": "000",
+      "groceryRows": 0,
+      "observations": 43,
+      "sameBaselinePairs": 0,
+      "layoutSha256": "db8747bceefb2877d922cd8e86a94ee089a728780b01d078fa5f7a14832c017a",
+      "sourceStringsUnchanged": true
+    }
+  ]
+}
