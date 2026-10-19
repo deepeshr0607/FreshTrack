@@ -1,6 +1,6 @@
 # Phase 6 — reviewed receipt abbreviation suggestions
 
-19 October 2026. Bounded receipt-name slice; local iPhone acceptance pending. Barcode follow-up remains deferred.
+19 October 2026. Bounded receipt-name slice; local synthetic iPhone acceptance passed by user report. Barcode follow-up remains deferred.
 
 ## Behavior
 
@@ -31,7 +31,7 @@ Actual commands/results:
 
 Existing design-system cards/text/buttons and keyboard-aware editor retained. No new route, dependency, native build, backend, Prisma schema, deployment or environment change. No user groceries read/written by the agent. No receipt images or private receipt text collected. Temporary logs live at `/private/tmp/freshtrack-receipt-alias-tests.log`, `freshtrack-receipt-alias-export.log` and `freshtrack-receipt-alias-doctor.log`.
 
-## Local phone checklist — pending
+## Local phone checklist — passed by user report
 
 Use Scanner→Test Receipt Layout Review→Abbreviation review, which cannot import groceries. Expect five raw-name candidates. Milk’s original abbreviation/package size should remain visible; Apply then Cancel leaves its draft unexpanded. Apply again, enter explicit1bottle/manual2026-11-30/Dairy, keep60.00 and save. Chicken’s name Apply should preserve Qty0.5kg; quantity Apply then explicit correction to0.4kg/manual2026-11-30 with150.00 must survive local preview. BNNA with unknown value can be explicitly renamed then manually corrected, reviewed and previewed. MKL UNKNOWN remains unassigned without a suggestion. Reset restores five unreviewed raw names. Pantry remains unchanged.
 
@@ -40,3 +40,9 @@ This synthetic exercise checks review controls and deterministic matching, not r
 ## Remaining work
 
 Broader real retailer names/aliases and receipt layouts, discounts/currencies/grouped prices and long receipts; food/category recognition; sourced storage-dependent shelf-life rules; confirmed purchase dates and editable automatic estimates; packaged date/unchecked date decisions; failure/native/accessibility QA and final Phase6 review. Existing manual date logic is unchanged. No Phase9 work.
+
+## Acceptance update
+
+The user answered “All checks passed” to the nine-step synthetic exercise: five raw abbreviated candidates; Milk name Apply/Cancel preserving original OCR and unexpanded saved draft, then explicit Low-Fat Milk1L review with1bottle/60.00/manual2026-11-30; Chicken name/quantity application preserving0.5kg before manual correction to Chicken Breast/0.4kg/150.00; BNNA expansion followed by explicit Reviewed Bananas/1bunch/unknown value; MKL UNKNOWN remaining unassigned; exact three-row local preview; Reset and no Pantry additions.
+
+This is user-reported local UI evidence, not direct agent observation, real-photo OCR accuracy or new persisted-import acceptance. No runtime/backend/environment/deployment or grocery changes in this documentation-only update. Prior automated results were not rerun; `git diff --check` passes. Broader receipt detection, categories and automatic storage-dependent expiry suggestions remain incomplete; barcode follow-up remains deferred.
