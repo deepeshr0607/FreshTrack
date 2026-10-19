@@ -65,7 +65,7 @@ test('foreign, unmarked and zero amounts retain the same explicit currency/unkno
   assert.equal(unmarked.currency, 'unspecified'); assert.equal(unmarked.draft.price, '40.00');
 });
 test('ambiguous formats, column headings and financial summaries remain recoverable without automatic rows', () => {
-  const input = ['PRICE', 'Rate 10.00', 'Subtotal 60.50', 'Discount -5.00', 'Rice 1,200.00', 'TOTAL', '60.50', 'Milk', 'Bread', '40.00'];
+  const input = ['PRICE', 'Rate 10.00', 'Subtotal 60.50', 'Discount -5.00', 'Rice 1,20.00', 'TOTAL', '60.50', 'Milk', 'Bread', '40.00'];
   const parsed = parseReceiptCandidates(input);
   assert.equal(parsed.candidates.length, 0); assert.equal(parsed.remaining.length, input.length);
   assert.ok(parsed.remaining.slice(0, 6).every(row => row.kind === 'other'));

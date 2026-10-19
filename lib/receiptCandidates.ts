@@ -24,37 +24,48 @@ export interface LocalReceiptCandidate {
   /** Local provenance only; never part of the reviewed API payload. */
   sourceLineIds?: string[];
 }
-export interface UnassignedReceiptLine { id: string; original: string; reason: string; kind: 'name' | 'amount' | 'other' }
+export interface UnassignedReceiptLine { id: string; original: string; reason: string; kind: 'name' | 'amount' | 'other'; currency?: LocalReceiptCandidate['currency'] }
 export interface ReceiptParseResult {
   candidates: LocalReceiptCandidate[];
   remaining: UnassignedReceiptLine[];
 }
 const nonItem = /^(?:grand\s+total|sub\s*total|total|tax|cgst|sgst|igst|gst|vat|cess|discount|saving[s]?|round\s*off|cash|change|balance|amount\s+(?:due|paid)|paid|payment|card|credit|debit|upi|visa|mastercard|receipt|invoice|bill\s*(?:no|number|#)|date|time|tel|phone|address|thank\s*you|welcome|www\.|https?:|gstin|fssai|qty\b|quantity\b|item\s+description)(?:\b|\s|[.:#])/i;
-const money = /^(.*?)\s+(?:(₹|INR|Rs\.?|\$|USD|EUR|€|GBP|£)\s*)?((?:0|[1-9]\d{0,7})[.,]\d{2})(?:\s*(₹|INR|Rs\.?|\$|USD|EUR|€|GBP|£))?$/i;
-const amountOnly = /^(?:(₹|INR|Rs\.?|\$|USD|EUR|€|GBP|£)\s*)?((?:0|[1-9]\d{0,7})[.,]\d{2})(?:\s*(₹|INR|Rs\.?|\$|USD|EUR|€|GBP|£))?$/i;
+const MARKER = '(?:₹|INR|Rs\\.?|\\$|USD|EUR|€|GBP|£|MYR|RM)';
+// Plain decimal/comma decimals, Western groups, or Indian lakh/crore groups.
+const AMOUNT = '(?:(?:0|[1-9]\\d{0,7})[.,]\\d{2}|[1-9]\\d{0,2}(?:,\\d{3}){1,2}\\.\\d{2}|[1-9]\\d?(?:,\\d{2}){1,2},\\d{3}\\.\\d{2})';
+const money = new RegExp(`^(.*?)\\s+(?:(${MARKER})\\s*)?(${AMOUNT})(?:\\s*(${MARKER}))?$`, 'i');
+const amountOnly = new RegExp(`^(?:(${MARKER})\\s*)?(${AMOUNT})(?:\\s*(${MARKER}))?$`, 'i');
+const currencyHeader = new RegExp(`^(?:(?:currency|prices? in|amount|amt|price|rate)\\s*[:=]?\\s*)?\\(?(${MARKER})\\)?$`, 'i');
+const foreignMarker = /[$€£]|USD|EUR|GBP|MYR|RM/i;
 const columnHeading = /^(?:item(?:\s+name)?|description|particulars|rate|price|amount|mrp|s\.?\s*no\.?)(?:\s+(?:qty|quantity|rate|price|amount|mrp))*$/i;
 const normalizedLine = (value: string) => value.normalize('NFC').replace(/\s+/g, ' ').trim();
 const validName = (value: string) => value.length <= 120 && (value.match(/\p{L}/gu)?.length ?? 0) >= 2 && !/[\u0000-\u001f\u007f]/.test(value);
-const priceInfo = (price: string, marker: string) => ({ detectedPrice: price.replace(',', '.'),
-  currency: (/[$€£]|USD|EUR|GBP/i.test(marker) ? 'unsupported' : marker ? 'INR' : 'unspecified') as LocalReceiptCandidate['currency'] });
+const priceInfo = (price: string, marker: string, context: LocalReceiptCandidate['currency'] = 'unspecified') => ({
+  detectedPrice: price.includes('.') ? price.replace(/,/g, '') : price.replace(',', '.'),
+  currency: (marker ? foreignMarker.test(marker) ? 'unsupported' : 'INR' : context) as LocalReceiptCandidate['currency'],
+});
 const emptyDraft = (name = '', price = ''): PantryDraft => ({ name, category: 'Other', quantity: '', unit: '', price, expiresOn: '' });
 /** Keep same-line candidates; classify separate columns for explicit pairing, never inferred order. */
 export function parseReceiptCandidates(value: unknown): ReceiptParseResult {
   const lines = ocrLines(value);
   const candidates: LocalReceiptCandidate[] = [], remaining: ReceiptParseResult['remaining'] = [];
+  const headers = lines.flatMap(line => currencyHeader.exec(normalizedLine(line))?.[1] ?? []);
+  // Any foreign header makes unmarked values unsafe to copy into INR, including mixed headers.
+  const context: LocalReceiptCandidate['currency'] = headers.some(marker => foreignMarker.test(marker)) ? 'unsupported' : headers.length ? 'INR' : 'unspecified';
   for (const [index, original] of lines.entries()) {
     const line = normalizedLine(original);
     const id = `line-${index}`;
     const match = money.exec(line);
     const name = match?.[1]?.trim() ?? '';
-    if (nonItem.test(line) || columnHeading.test(line) || (match && columnHeading.test(name))) { remaining.push({ id, original, kind: 'other', reason: 'Likely header, payment or summary — not selected' }); continue; }
-    if (amountOnly.test(line)) { remaining.push({ id, original, kind: 'amount', reason: 'Separate amount — choose its matching item name against the photo' }); continue; }
+    if (nonItem.test(line) || currencyHeader.test(line) || columnHeading.test(line) || (match && columnHeading.test(name)) || /\b(?:discount|coupon|refund|savings?)\b|[-−+]\s*$/i.test(name)) { remaining.push({ id, original, kind: 'other', reason: 'Likely header, payment, adjustment or summary — not selected' }); continue; }
+    const standalone = amountOnly.exec(line);
+    if (standalone) { remaining.push({ id, original, kind: 'amount', currency: priceInfo(standalone[2]!, `${standalone[1] ?? ''}${standalone[3] ?? ''}`, context).currency, reason: 'Separate amount — choose its matching item name against the photo' }); continue; }
     if (!match || !validName(name) || candidates.length >= 20) {
       const nameOnly = !match && validName(line) && !/\d[.,]\d|[@₹$€£]|\b(?:INR|USD|EUR|GBP|Rs\.?)\b/i.test(line);
       remaining.push({ id, original, kind: nameOnly ? 'name' : 'other', reason: candidates.length >= 20 ? 'Review limit reached (20 rows)' : nameOnly ? 'Separate name — choose its matching amount against the photo' : 'Uncertain layout or missing same-line price' }); continue;
     }
     const marker = `${match[2] ?? ''}${match[4] ?? ''}`;
-    const { currency, detectedPrice } = priceInfo(match[3]!, marker);
+    const { currency, detectedPrice } = priceInfo(match[3]!, marker, context);
     candidates.push({ id, original, detectedPrice, currency,
       draft: emptyDraft(name, currency === 'unsupported' ? '' : detectedPrice), reviewed: false, selected: false, sourceLineIds: [id] });
   }
@@ -90,7 +101,7 @@ export function pairReceiptLines(lines: UnassignedReceiptLine[], nameId: string,
   if (!name || !amount || name.kind !== 'name' || amount.kind !== 'amount' || name.id === amount.id || used.has(name.id) || used.has(amount.id)) throw Error('Choose one unused item-name line and one unused amount line.');
   const itemName = normalizedLine(name.original), match = amountOnly.exec(normalizedLine(amount.original));
   if (!validName(itemName) || nonItem.test(itemName) || columnHeading.test(itemName) || !match) throw Error('These lines cannot be matched safely. Use Add Missing to enter the grocery.');
-  const { detectedPrice, currency } = priceInfo(match[2]!, `${match[1] ?? ''}${match[3] ?? ''}`);
+  const { detectedPrice, currency } = priceInfo(match[2]!, `${match[1] ?? ''}${match[3] ?? ''}`, amount.currency);
   return { id: `pair-${name.id}-${amount.id}`, original: `${name.original}\n${amount.original}`, sourceLineIds: [name.id, amount.id],
     detectedPrice, currency, draft: emptyDraft(itemName, currency === 'unsupported' ? '' : detectedPrice), reviewed: false, selected: false };
 }

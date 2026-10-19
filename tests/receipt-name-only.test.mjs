@@ -24,7 +24,7 @@ test('mixed receipt proposes supported names without requiring a price or assign
 });
 test('store/address/payment food words and uncertain numeric text do not become name-only groceries', () => {
   const lines = ['Milk Store', 'Rice Road', 'Salt Trading', 'Tea Market', 'Cashier: Milk', 'Chicken discount', 'Bread points',
-    'Milk 6O.5O', 'Rice 1,200.00', 'TOTAL 50.00', '₹50.00', 'Unknown XYZ', 'PAPER BAG', 'www.milk.example'];
+    'Milk 6O.5O', 'Rice 1,20.00', 'TOTAL 50.00', '₹50.00', 'Unknown XYZ', 'PAPER BAG', 'www.milk.example'];
   const parsed = parseReceiptCandidates(lines);
   assert.equal(suggestReceiptNameOnlyItems(parsed).length, 0);
   assert.equal(parsed.remaining.length, lines.length);

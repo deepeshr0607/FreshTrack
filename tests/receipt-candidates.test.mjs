@@ -22,7 +22,8 @@ test('foreign currencies, ambiguous price formats and layout overflow never sile
   assert.equal(result.remaining.length, 10);
   assert.equal(result.candidates[0].draft.price, ''); assert.equal(result.candidates[0].detectedPrice, '4.29');
   assert.equal(result.candidates[1].currency, 'unsupported');
-  assert.equal(result.remaining.filter(line => line.reason.includes('limit')).length, 7);
+  assert.equal(result.candidates[2].draft.price, '1200.00');
+  assert.equal(result.remaining.filter(line => line.reason.includes('limit')).length, 8);
   assert.throws(() => parseReceiptCandidates(Array(501).fill('Milk 10.00')));
 });
 test('review requires explicit fields, validates real-form bounds and retains unknown versus free prices', () => {
