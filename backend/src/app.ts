@@ -101,7 +101,6 @@ export function createApp(options: { accountDeletionService?: AccountDeletionSer
   });
 
   // ── Global error handler ──────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
     const requestId = req.headers['x-request-id'];
     const suppliedStatus = (err as { status?: number }).status;

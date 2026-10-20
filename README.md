@@ -87,7 +87,7 @@ npm install
 
 ```bash
 cd backend
-npm install
+npm ci
 cd ..
 ```
 
@@ -120,7 +120,7 @@ npm run android     # Open Android Emulator
 
 ```bash
 cd backend
-npm run dev         # Start API server with ts-node-dev (hot reload)
+npm run dev         # Start API server with tsx watch (hot reload)
 # Server starts on http://localhost:3001
 # Health check: http://localhost:3001/api/v1/health
 ```
@@ -145,11 +145,13 @@ npm run dev         # Start API server with ts-node-dev (hot reload)
 
 | Script | Command | Description |
 |---|---|---|
-| `npm run dev` | `ts-node-dev` | Start with hot reload |
+| `npm run dev` | `tsx watch src/server.ts` | Start with hot reload |
 | `npm run build` | `tsc` | Compile to `dist/` |
 | `npm start` | `node dist/server.js` | Run compiled build |
 | `npm run typecheck` | `tsc --noEmit` | TypeScript type check |
-| `npm test` | `jest` | Run all tests |
+| `npm test` | Build + native Node test runner | All backend non-integration tests (160); excludes guarded database suites |
+| `npm run lint` | `eslint src --max-warnings 0` | TypeScript lint with zero warnings |
+| `npm run test:watch` | Build + native Node watch | Watch tests/compiled imports; rerun build after TypeScript edits or use `npx tsc --watch` |
 | `npm run db:migrate` | Guarded Prisma deploy | Apply reviewed development migrations; requires explicit opt-in |
 | `npm run db:migrate:deploy` | `prisma migrate deploy` | Apply migrations (prod) |
 | `npm run db:generate` | `prisma generate` | Regenerate Prisma client |
@@ -193,11 +195,13 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; receipt estimates checked on iPhone; package/manual expiry checked on iPhone; barcode review/save connected; phone and broader QA remain |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
-| 9 | Settings, privacy, release preparation | 🔄 In progress; cleanup/deletion/receipt retention accepted; API hardening checked; tooling/reliability/build remain |
+| 9 | Settings, privacy, release preparation | 🔄 In progress; cleanup/deletion/receipt retention accepted; API/backend tooling checked; mobile compatibility/reliability/build remain |
 
 ---
 
 ## Project Status
+
+**Phase 9 backend tooling checkpoint complete (20 October); mobile compatibility/reliability remain open.** Removed the vulnerable Jest/ts-node-dev development chains, preserved the health assertions in Node tests, added supported TypeScript ESLint and verified tsx/test watcher restarts. Backend clean `npm ci`, lint0warnings, TypeScript/build and unified tests160/160 pass; full backend audit0 advisories (previously36). Root TypeScript/tests384/384 pass. Runtime package versions/mobile configuration unchanged; no deployment/database/native-build/environment changes. Expo Doctor still20/21 with five existing patch mismatches; root lint and intermittent live database failures remain. See [backend tooling report](docs/Phase_9_Backend_Tooling.md). Next: Expo patch compatibility/mobile lint, then database reliability and personal-use build. No phone checklist for development tooling; no store publishing.
 
 **Phase 9 API access review/request hardening complete for this slice (20 October); final security/reliability acceptance remains open.** Reviewed all25 protected method/path pairs and added eight signed-token/scoping regressions. Global throttling now runs before bounded128KiB parsing, compressed bodies are rejected and early errors are no-store. Root384/384, backend159/159, health1/1 and both TypeScript/build pass. Live development checks: combined42/43, isolated receipt9/10, targeted failed-review retry1/1; all cross-user cases passed and fixture cleanup completed, but intermittent database failures remain unresolved. Runtime audit0 advisories; development tree36 (31high/5moderate) requires tooling remediation. Development Preview deployed, anonymous401/oversized413 and served iOS bundle200 verified; only ignored public API URL/Metro changed, no production/schema/real-household changes. See [API review](docs/Phase_9_API_Security_Review.md). Next: development-tool advisories/lint/Expo compatibility, then database reliability and personal-use build. No new phone checklist for this server-only slice; no store publishing.
 
