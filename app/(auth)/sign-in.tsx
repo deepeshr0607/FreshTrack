@@ -22,7 +22,7 @@ import useAuthRequest from '@/features/auth/useAuthRequest';
 import { nativeAuthProbe as auth } from '@/features/auth/nativeProbe';
 import { NeonAuthError } from '@/lib/neonAuth';
 import { useAuth } from '@/context/AuthContext';
-import FormInput from '@/components/FormInput';
+import { AuthField as FormInput, AuthHeader, AuthNotice, authScreenStyles } from '@/features/auth/AuthPresentation';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
 
@@ -81,27 +81,10 @@ export default function SignInScreen() {
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header nav */}
-          <View style={styles.navRow}>
-            <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/(auth)')} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back to welcome">
-              <Text style={styles.backText}>←</Text>
-            </Pressable>
-            <Text style={styles.navTitle}>🌿  Log In</Text>
-            <View style={styles.avatarSmall}>
-              <Text style={styles.avatarSmallText}>M</Text>
-            </View>
-          </View>
-
-          {/* Tagline */}
-          <View style={styles.taglinePill}>
-            <Text style={styles.taglineText}>🌿 SMART KITCHEN SYNC</Text>
-          </View>
-          <Text style={styles.headline}>Welcome Back</Text>
-          <Text style={styles.subtext}>
-            Access your smart pantry, expiration alerts & kitchen savings.
-          </Text>
+          <AuthHeader signUp={false} onBack={() => router.canGoBack() ? router.back() : router.replace('/(auth)')} />
 
           {/* Tab switcher */}
           <View style={styles.tabSwitcher}>
@@ -122,13 +105,13 @@ export default function SignInScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.subtext}>{realAuth ? 'Sign in securely to your FreshTrack household.' : 'Demo only. Use sample details; no account is created.'}</Text>
+          {!realAuth && <AuthNotice>Demo only. Use sample details; no account is created.</AuthNotice>}
           {/* Form card */}
           <View style={styles.formCard}>
             <FormInput
               label="Email Address" accessibilityLabel="Email Address" editable={!loading}
               icon="✉️"
-              placeholder="maya.kitchen@freshtrack.io"
+              placeholder="you@example.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -140,7 +123,7 @@ export default function SignInScreen() {
             <FormInput
               label="Password" accessibilityLabel="Password" editable={!loading}
               icon="🔒"
-              placeholder="••••••••••••"
+              placeholder="Your password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -168,7 +151,14 @@ export default function SignInScreen() {
               </Pressable>
             </View>
 
-            {!!notice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{notice}</Text>}
+            {!!notice && <AuthNotice>{notice}</AuthNotice>}
+
+            <PrimaryButton
+              label="Log In →"
+              onPress={handleSubmit}
+              loading={loading}
+              style={{ marginTop: Spacing.sm }}
+            />
             {realAuth && <Pressable accessibilityRole="button" disabled={loading} onPress={() => {
               if (!validEmail(email)) { setNotice('Enter your email first.'); return; }
               setNotice('');
@@ -178,12 +168,6 @@ export default function SignInScreen() {
                 if (isMounted()) { setPassword(''); router.push({ pathname: '/(auth)/verify-otp', params: { mode: 'real', email: email.trim().toLowerCase() } }); }
               });
             }}><Text style={styles.forgotText}>Verify an unverified email</Text></Pressable>}
-            <PrimaryButton
-              label="Log In to Kitchen →"
-              onPress={handleSubmit}
-              loading={loading}
-              style={{ marginTop: Spacing.sm }}
-            />
 
             {DIAGNOSTICS_ENABLED && <>
             {/* Social auth */}
@@ -205,7 +189,7 @@ export default function SignInScreen() {
               <Text style={styles.socialText}>Sign in with Biometrics</Text>
             </Pressable>
             </>}
-            {!!providerNotice && <Text style={styles.subtext} accessibilityLiveRegion="polite">{providerNotice}</Text>}
+            {!!providerNotice && <AuthNotice>{providerNotice}</AuthNotice>}
           </View>
 
           {/* Footer */}
@@ -219,7 +203,7 @@ export default function SignInScreen() {
             </Text>
           </Text>
           <Text style={styles.legal}>
-            Learn how FreshTrack handles your data.{' '}
+            Your kitchen. Your data.{' '}
             <Text style={styles.legalLink} accessibilityRole="link" onPress={() => router.push('/settings/privacy')}>Privacy & Data</Text>.
           </Text>
         </ScrollView>
@@ -230,76 +214,6 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.surface },
-  scroll: {
-    paddingHorizontal: Spacing.screenGutter,
-    paddingVertical: Spacing.base,
-    gap: Spacing.md,
-  },
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
-  backBtn: { padding: Spacing.xs },
-  backText: { fontSize: FontSize.headlineMd, color: Colors.onSurface },
-  navTitle: {
-    fontSize: FontSize.headlineSm,
-    fontWeight: FontWeight.bold,
-    color: Colors.onSurface,
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  avatarSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarSmallText: { color: Colors.onPrimary, fontWeight: FontWeight.bold },
-  taglinePill: {
-    backgroundColor: Colors.freshGreenBg,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.xs,
-    alignSelf: 'center',
-  },
-  taglineText: {
-    fontSize: FontSize.labelSm,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-    letterSpacing: 1,
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  headline: {
-    fontSize: FontSize.displayLg,
-    fontWeight: FontWeight.extrabold,
-    color: Colors.onSurface,
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  subtext: {
-    fontSize: FontSize.bodyMd,
-    color: Colors.onSurfaceVariant,
-    textAlign: 'center',
-    lineHeight: 20,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  tabSwitcher: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: Radius.full,
-    padding: 4,
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    alignItems: 'center',
-    borderRadius: Radius.full,
-  },
-  tabBtnActive: { backgroundColor: Colors.surfaceContainerLowest },
   tabText: {
     fontSize: FontSize.bodyMd,
     fontWeight: FontWeight.semibold,
@@ -307,24 +221,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
   tabTextActive: { color: Colors.primary },
-  formCard: {
-    backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: Radius.xl,
-    padding: Spacing.base,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  rememberRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
   checkbox: {
     width: 22,
     height: 22,
@@ -343,12 +239,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.bodyMd,
     color: Colors.onSurface,
     fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  forgotText: {
-    fontSize: FontSize.bodyMd,
-    color: Colors.primary,
-    fontWeight: FontWeight.bold,
-    fontFamily: 'PlusJakartaSans_700Bold',
   },
   divider: {
     flexDirection: 'row',
@@ -393,12 +283,6 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     fontFamily: 'PlusJakartaSans_700Bold',
   },
-  legal: {
-    fontSize: FontSize.labelSm,
-    color: Colors.onSurfaceVariant,
-    textAlign: 'center',
-    lineHeight: 18,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
   legalLink: { color: Colors.primary, textDecorationLine: 'underline' },
+  ...authScreenStyles,
 });
