@@ -1,6 +1,6 @@
 # Phase 9 — SDK 57 patches and mobile lint
 
-21 October 2026. Implementation and automated verification checkpoint; iPhone acceptance pending. Phase 9 remains incomplete.
+21 October 2026. Implementation and automated verification checkpoint; all eight iPhone smoke checks passed by user report on21October. Phase 9 remains incomplete.
 
 ## Changes
 
@@ -64,13 +64,13 @@ The root audit after the Expo patches reports29 advisories, distinct from the pr
 
 The audit's automatic suggestions include Expo44/React Native0.72 and other incompatible major/downgrade substitutions. They were not applied. No `npm audit fix --force`, blanket overrides or exclusions were used to hide these reports. Advisory applicability/exploitability is not fully assessed; do not label every report as a remotely exploitable app vulnerability, or dismiss all of them as development-only. Final no-known-high-severity security acceptance remains open.
 
-## Requested iPhone acceptance (pending)
+## iPhone acceptance — user report,21October
 
-Check signed-in launch; Pantry search/details/back without refresh loops; read-only deletion review/Refresh/Cancel with all confirmation fields blank; saved reminder status/time without changes; camera Cancel and library-photo OCR/Clear; Privacy managed-copy count; Recipes/Insights navigation; sign-out and remembered sign-in/restart. No imports, Used/Wasted, cooking, deletion confirmation or reminder changes are requested. This does not test notification delivery/actions or barcode runtime. Report results before marking this acceptance passed.
+Check signed-in launch; Pantry search/details/back without refresh loops; read-only deletion review/Refresh/Cancel with all confirmation fields blank; saved reminder status/time without changes; camera Cancel and library-photo OCR/Clear; Privacy managed-copy count; Recipes/Insights navigation; sign-out and remembered sign-in/restart. No imports, Used/Wasted, cooking, deletion confirmation or reminder changes are requested. This does not test notification delivery/actions or barcode runtime. The user answered “All checks passed” to the eight numbered checks on21October. This is user-reported functional evidence, not agent observation; the exclusions above remain unverified. This documentation update makes no code/data/deployment changes. Automated results are historical from implementation checkpoint934600c and were not rerun; `git diff --check` was run.
 
 ## Next step
 
-Complete the patched iPhone smoke checklist after installation. Then review unresolved mobile advisories/compatible upstream options and investigate the previously recorded intermittent development database failures. Remaining Phase9 personal-use-build, Android/runtime and reliability limits remain; no store publishing. Existing unrelated `output/` files are preserved and excluded from this checkpoint.
+Review unresolved mobile advisories/compatible upstream options, then investigate the previously recorded intermittent development database failures. Remaining Phase9 personal-use-build, Android/runtime and reliability limits remain; no store publishing. Existing unrelated `output/` files are preserved and excluded from this checkpoint.
 
 ## References
 
