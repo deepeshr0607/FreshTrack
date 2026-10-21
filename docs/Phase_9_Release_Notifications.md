@@ -1,6 +1,6 @@
 # Phase 9 — Release notification acceptance
 
-21 October 2026. Readiness checks complete; actual iPhone delivery/actions remain pending. Uses the installed Personal Team Release artifact recorded in [personal-use build](Phase_9_Personal_Use_Build.md), with Metro stopped. No diagnostic controls, Expo Go, paid push service, native rebuild or app-store distribution.
+21 October 2026. Readiness checks complete; all12 Release iPhone checks passed by user report. Uses the installed Personal Team Release artifact recorded in [personal-use build](Phase_9_Personal_Use_Build.md), with Metro stopped. No diagnostic controls, Expo Go, paid push service, native rebuild or app-store distribution.
 
 ## Source review and automated checks
 
@@ -38,7 +38,9 @@ Report delivery, action-button visibility, both Cancel cases, both confirmed out
 
 ## Limits and next step
 
-User-reported phone result is pending. Actual delivery/actions cannot be marked passed from the automated suites. Android, clean-device install, poor-network/offline Release recovery, cross-account notification taps and other remaining Phase9 security/reliability limits are not accepted by this checklist. Next: record the result or fix the evidenced failure, then Release failure-recovery testing. No store publishing.
+The user answered “All checks passed” to the12 numbered in-chat checks on21October. Recorded as user-reported passes for actual closed-app delivery with Metro stopped, Consumed/Wasted visibility, both Cancel cases with groceries remaining active, confirmed Used/Wasted on only the two named samples, restart persistence/no unresolved queue, disable Off/zero after restart and restoration of the original reminder preferences. This is not direct agent observation, authoritative event-count verification, independent confirmation of every queue count or a new full-database reliability result.
+
+This acceptance update changes documentation only; no code, native build, deployment, settings or groceries were changed by the agent. Prior automated results at checkpoint05a14b0 were not rerun. `git diff --check` passed. Android, clean-device install, poor-network/offline Release recovery, cross-account notification taps and other remaining Phase9 security/reliability limits are not accepted by this checklist. Next: Release failure-recovery testing using the installed app, beginning with offline session blocking and online recovery without changing groceries. No store publishing.
 
 ## References
 
