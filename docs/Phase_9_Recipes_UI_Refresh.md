@@ -25,6 +25,10 @@ Original request/session/filter/selection/source safety behavior is preserved. S
 
 Existing primitives/routes only, no new SDK integration. Build/checks include the pre-existing paused decoder working tree; those dependency changes are not in this checkpoint. Doctor/security/platform/signing and other Phase9 gaps remain open, not rerun or waived. No store publishing.
 
-## Pending phone review
+## Phone review accepted
 
-Updated FreshTrack Dev is installed and launched. Requested checks cover appearance, one explicit suggestion request, search/save/Quick/diet recovery, detail/source/missing-selection controls, session shopping dedup/check/clear and unchanged Pantry. Any unavailable-provider or no-rescue path should be reported instead of claiming recipe-dependent steps passed. No Pantry outcomes need confirmation; the user should clear only newly added session test ingredients. Next: user feedback and focused fixes before another UI page.
+On21October2026 the user selected “Looks good — all checks passed” for the eight numbered Recipes/detail/shopping checks, rather than the unavailable-suggestions option. This records design approval and reported success for one explicit suggestion request, local title search/save/Saved/All, Quick and Vegetarian/Vegan controls with reset, recipe image/time/servings/ingredients/instructions/source disclosure, default staple exclusion and missing-name selection, repeated shopping add without duplicates, check/clear of the new session test ingredient, Pantry navigation without an outcome and the shared remaining list in Dashboard Shopping.
+
+Empty filtered results were permitted, so this does not independently establish a positive matching recipe for every Quick/diet combination or verify provider labels/diet/ingredient amounts. This is user-reported functional evidence, not direct observation, provider-outage/quantity-accuracy testing, Android runtime, full accessibility or a confirmed Pantry outcome. Existing session-only list limitations remain. Prior447/447 and166/166/check/build results remain those at implementation checkpoint `1487296`; not rerun for this documentation-only acceptance. `git diff --check` passes.
+
+The Recipes/detail/shopping UI review is complete. Next UI slice: Analytics / Insights, preserving the accepted recipe and grocery workflows. Other Phase9 gaps and paused decoder work remain unchanged.
