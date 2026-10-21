@@ -28,6 +28,10 @@ Existing [React Native RefreshControl](https://reactnative.dev/docs/0.86/refresh
 
 Tests/builds include the pre-existing paused dependency working tree; those changes are not part of this UI commit. Doctor/advisory/Android/signing and other Phase9 gaps are unchanged, not rerun or waived. No store publishing.
 
-## Pending review
+## Phone review accepted
 
-Updated FreshTrack Dev is installed and launched; iPhone appearance, native filters/pull-refresh, physical swipe and Cancel/batch navigation review is pending. User checklist requires no confirmed grocery changes. Next: record user feedback or fix focused issues before another page redesign. Phase9 remains open.
+On21October2026 the user selected “Looks good — all checks passed” for the eight-step Pantry checklist. This records design approval and reported success for item readability/quantity/expiry/value, search, freshness filters, category disclosure/reset and sorting, item/Add/receipt entry navigation without saving, physical right/left swipes with Used/Wasted Cancel, batch selection/Used Cancel, pull-to-refresh and date-help disclosure.
+
+The overdue-banner step was conditional; the broad response does not establish that an overdue banner was present or independently verify that path. This is user-reported functional evidence, not direct observation, confirmed grocery writes, Undo/cached-mode reacceptance, Android runtime or full accessibility acceptance. No grocery changes were required. Automated results above remain those of implementation checkpoint `70ec75e`; they were not rerun for this documentation-only acceptance. `git diff --check` passes.
+
+The Pantry redesign review is complete. Next UI slice: Scanner, retaining the accepted automatic receipt/review/expiry workflow and existing safeguards. Other Phase9 gaps and paused decoder work remain unchanged.
