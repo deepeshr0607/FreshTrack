@@ -26,6 +26,12 @@ No dependency, native module, backend/schema, environment, deployment or persist
 
 Build/checks include the pre-existing paused decoder working tree; those dependency changes are excluded from this UI checkpoint. Doctor/security/platform/signing/other Phase9 gaps remain open, not rerun or waived. No store publishing.
 
-## Phone review pending
+## Phone review accepted
 
-Prior Scanner entry design approval is recorded in chat. Its originally numbered functional checklist was not completed: the user requested this interior redesign instead; do not mark that check passed. Updated review/editor/final Add appearance and Cancel-only functional checks are pending. No grocery import is required; saved/retry presentation is verified synthetically here, not a new live-phone import/retry acceptance. Next: user review and focused corrections before another UI slice.
+On21October2026 the user selected “Looks good — all checks passed” after receiving the eight numbered receipt-review/Edit/Add steps. This records interior design approval and reported success for receipt upload/automatic reading, product cards and photo disclosure/capture controls, Edit quantity Cancel/Save locally, inclusion/count changes and fresh/package action distinction, final-review fields/count/value, Back to Review with local edits retained, Clear Photo & Text and unchanged Pantry.
+
+Duplicate choices were conditional on matches appearing, and Add Missing Product was a fallback if no ready rows existed. The broad response does not independently establish those branches. No final import was requested; saved/retry states remain synthetically verified for this UI slice, not newly phone-accepted. This is user-reported evidence, not agent observation, confirmed import persistence, new OCR accuracy measurements, Android runtime or full accessibility testing.
+
+The earlier Scanner entry checklist was superseded by the request for this interior redesign; do not retroactively mark its separate manual-entry/settings/camera/picker-cancellation steps passed. Its overlapping upload/automatic-reading/photo/clear paths are covered by the new report. Prior440/440 and166/166/check/build results remain those at implementation checkpoint `edd82ce`; not rerun for this documentation-only acceptance. `git diff --check` passes.
+
+Receipt interior review is complete. Next UI slice: Recipes / AI Chef, preserving the accepted scanner workflow and existing recipe/shopping behavior. Other Phase9 gaps and paused decoder work remain unchanged.
