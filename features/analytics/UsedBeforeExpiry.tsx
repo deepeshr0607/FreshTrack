@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { ui } from '@/components/PrototypeScreen';
+import { a, AnalyticsDisclosure } from './AnalyticsPresentation';
 import { Colors } from '@/constants/Theme';
 import type { AnalyticsSeries } from '@/types/api';
 import { ANALYTICS_CATEGORIES, analyticsCalendarDate, analyticsUsedPrice } from '@/lib/analyticsPresentation';
@@ -9,7 +10,7 @@ export default function UsedBeforeExpiry({ data }: { data: AnalyticsSeries }) {
   const [expanded, setExpanded] = useState(false);
   useEffect(() => { setExpanded(false); }, [data.month]);
   const { total, items } = data.usedBeforeExpiry;
-  return <View style={ui.card}>
+  return <View style={a.card}>
     <View style={ui.row}><View style={{ flex: 1 }}><Text style={ui.heading}>Used On or Before Expiry</Text><Text style={ui.text}>Individual confirmed entries · {data.month}</Text></View>
       {items.length > 3 && <Pressable accessibilityRole="button" accessibilityState={{ expanded }} style={ui.pill} onPress={() => setExpanded(!expanded)}><Text style={ui.label}>{expanded ? 'Show Latest 3' : `View Latest ${items.length}`}</Text></Pressable>}</View>
     <Text style={ui.text}>{total} confirmed entries · showing {expanded ? items.length : Math.min(3, items.length)} of the latest {items.length}. Monthly totals include all confirmed uses on/before expiry.</Text>
@@ -25,6 +26,6 @@ export default function UsedBeforeExpiry({ data }: { data: AnalyticsSeries }) {
           : <Text style={ui.text}>Archived entry · outcome retained in history</Text>}
       </View>;
     })}
-    <Text style={[ui.text, { fontSize: 11 }]}>Up to 20 latest confirmed uses. Names are current Pantry names; values, categories and expiry dates were captured at the outcome. Recorded value is not a savings estimate. After-expiry and unconfirmed uses are excluded.</Text>
+    <AnalyticsDisclosure title="About your grocery history"><Text style={a.caption}>Up to 20 latest confirmed uses. Names are current Pantry names; values, categories and expiry dates were captured at the outcome. Recorded value is not a savings estimate. After-expiry and unconfirmed uses are excluded.</Text></AnalyticsDisclosure>
   </View>;
 }
