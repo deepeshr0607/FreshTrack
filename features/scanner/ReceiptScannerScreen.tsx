@@ -13,6 +13,7 @@ import { nativeReceiptImportStorage } from '@/features/scanner/nativeReceiptImpo
 import { useRealPantry } from '@/context/RealPantryContext';
 import { useAuth } from '@/context/AuthContext';
 import { createReceiptOcrProbe } from '@/lib/receiptOcrProbe';
+import { ReceiptCapturePanel, ReceiptProgress, ScannerHeader } from './ScannerPresentation';
 import { chooseOcrImage, disposeOcrImage, ocrProbeSupported, recognizeOcrImage } from '@/features/scanner/ocrProbeDevice';
 
 /** Shared real receipt workflow. Diagnostics do not change the request/storage contract. */
@@ -49,10 +50,14 @@ function ReceiptSession({ subject, diagnostics }: { subject: string; diagnostics
     if (!auth.checking && focused.current && !importer.getSnapshot().ready) void importer.restore();
   }, [auth.checking, importer]);
   const supported = ocrProbeSupported();
-  return <PrototypeScreen back={() => router.back()}>
-    <Text accessibilityRole="header" style={ui.title}>{diagnostics ? 'Receipt OCR Check' : 'Scan Receipt'}</Text>
+  return <PrototypeScreen back={diagnostics ? () => router.back() : undefined}>
+    {diagnostics ? <Text accessibilityRole="header" style={ui.title}>Receipt OCR Check</Text> : <>
+      <ScannerHeader onBack={() => router.back()} />
+      <ReceiptProgress step={imported.stage !== 'idle' ? 3 : state.read ? 2 : 1} />
+    </>}
     <ReceiptImportView diagnostics={diagnostics} controller={importer} state={imported} readOnly={real.readOnly} onNewReceipt={() => { store.clear(); setShowText(false); importer.reset(); }} />
     <View style={{ display: imported.ready && imported.stage === 'idle' ? 'flex' : 'none', gap: 16 }}>
+    {diagnostics ? <>
     {(!state.read || diagnostics) && <View style={ui.card}><Text style={ui.heading}>{diagnostics ? 'Read a receipt on this phone' : 'Bring your groceries into view'}</Text>
       <Text style={ui.text}>{diagnostics ? 'Development check. Apple Vision on iPhone; ML Kit on Android. ' : 'Photograph a well-lit receipt or choose a photo, then review the detected groceries. '}Photos and recognized text stay on this device. Only reviewed grocery fields are sent after you confirm.</Text>
       <Text style={ui.text}>{diagnostics ? 'Leaving this screen clears the result and attempts to delete temporary image copies. Review detected groceries before confirming import.' : 'Text recognition can make mistakes. Check names, quantities, values and dates before adding anything. Leaving this screen discards unconfirmed edits.'}</Text>
@@ -64,6 +69,13 @@ function ReceiptSession({ subject, diagnostics }: { subject: string; diagnostics
       {(diagnostics || (!!state.error && state.errorCode === 'READ')) && <PrimaryButton label={diagnostics ? 'Read Text on Device' : 'Retry Receipt Recognition'} loading={state.busy} disabled={state.busy} onPress={() => { setShowText(false); void store.read(); }} />}
     </View>}
     {state.busy && <Text accessibilityRole="progressbar" style={ui.text}>Preparing or reading your photo…</Text>}
+    </> : <>
+      {!supported && <Text accessibilityRole="alert" style={ui.text}>Receipt reading is unavailable in this app build. You can enter groceries manually.</Text>}
+      <ReceiptCapturePanel image={state.image} read={state.read} busy={state.busy} supported={supported}
+        onCamera={() => { setShowText(false); void store.choose('camera', true); }}
+        onLibrary={() => { setShowText(false); void store.choose('library', true); }} />
+      {!!state.error && state.errorCode === 'READ' && <PrimaryButton label="Retry Receipt Recognition" loading={state.busy} disabled={state.busy} onPress={() => { setShowText(false); void store.read(); }} />}
+    </>}
     {!!state.error && <View style={ui.card}><Text accessibilityRole="alert" style={ui.text}>{state.error}</Text>
       {state.errorCode === 'PERMISSION' && <PrimaryButton label="Open Device Settings" variant="ghost" onPress={() => void Linking.openSettings().catch(() => {})} />}</View>}
     {state.read && (diagnostics || !state.lines.length || showText) && <View style={ui.card}><Text style={ui.heading}>{state.lines.length ? `${state.lines.length} text lines detected` : 'No text detected'}</Text>
@@ -75,7 +87,7 @@ function ReceiptSession({ subject, diagnostics }: { subject: string; diagnostics
       ? <LocalReceiptReview key={state.image} lines={state.lines} layout={state.layout} onPrepare={input => void importer.review(input)} />
       : <ReceiptProductReview key={state.image} lines={state.lines} layout={state.layout} readOnly={real.readOnly} onPrepare={input => void importer.review(input)} />)}
     {state.read && !!state.lines.length && !diagnostics && <PrimaryButton label={showText ? 'Hide Receipt Text' : 'View Receipt Text'} variant="ghost" onPress={() => setShowText(value => !value)} />}
-    <PrimaryButton label="Clear Photo & Text" variant="ghost" disabled={state.busy || !state.image} onPress={() => { store.clear(); setShowText(false); }} />
+    {(diagnostics || !!state.image) && <PrimaryButton label="Clear Photo & Text" variant="ghost" disabled={state.busy || !state.image} onPress={() => { store.clear(); setShowText(false); }} />}
     <PrimaryButton label="Enter Grocery Manually" variant="ghost" disabled={state.busy} onPress={() => router.push('/pantry/add')} />
     </View>
   </PrototypeScreen>;

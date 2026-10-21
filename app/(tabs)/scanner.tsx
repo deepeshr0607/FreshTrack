@@ -27,6 +27,7 @@ import CameraPermissionGate from '@/features/scanner/CameraPermissionGate';
 import { initialMockCameraPermission, type MockCameraPermission } from '@/lib/scannerPermission';
 import ReceiptReview from '@/features/scanner/ReceiptReview';
 import ScreenHeader from '@/components/ScreenHeader';
+import { ScannerHeader, ScannerLanding } from '@/features/scanner/ScannerPresentation';
 import BarcodeReview from '@/features/scanner/BarcodeReview';
 import PrimaryButton from '@/components/PrimaryButton';
 import { useAuth } from '@/context/AuthContext';
@@ -43,7 +44,8 @@ export default function ScannerScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="FreshTrack" subtitle="Scanner" />
+      {!realReceipt && <ScreenHeader title="FreshTrack" subtitle="Scanner" />}
+
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
@@ -52,6 +54,14 @@ export default function ScannerScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {realReceipt ? <><ScannerHeader onSettings={() => router.push('/settings')} /><ScannerLanding
+          onReceipt={() => router.push('/scanner/receipt')} onManual={() => router.push('/pantry/add')} onBarcode={() => router.push('/scanner/barcode')} />
+          {DIAGNOSTICS_ENABLED && <>
+            <PrimaryButton label="Test On-device Receipt OCR" onPress={() => router.push('/scanner/ocr-check')} />
+            <PrimaryButton label="Test Receipt Layout Review" variant="ghost" onPress={() => router.push('/scanner/receipt-layout-check')} />
+            <PrimaryButton label="Test Barcode Camera" onPress={() => router.push('/scanner/barcode-check')} />
+          </>}
+        </> : <>
         {/* Title */}
         <Text style={styles.screenTitle}>Smart Scanner</Text>
         <Text style={styles.screenSub}>
@@ -114,6 +124,7 @@ export default function ScannerScreen() {
           </View>
         )}
 
+        </>}
         {/* Receipt Scanner View */}
         {mode === 'receipt' && !realReceipt && (
           <View style={styles.scannerSection}>
@@ -157,7 +168,7 @@ export default function ScannerScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.surface },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.screenGutter, width: '100%', maxWidth: 600, alignSelf: 'center' },
+  content: { paddingHorizontal: 20, paddingTop: 12, width: '100%', maxWidth: 600, alignSelf: 'center' },
 
   screenTitle: {
     fontSize: FontSize.headlineLg,
