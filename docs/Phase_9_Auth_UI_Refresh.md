@@ -28,6 +28,10 @@ References consulted: [Expo57 safe areas](https://docs.expo.dev/versions/v57.0.0
 
 Checks/build include the existing paused decoder working tree; its dependency changes are not included in this checkpoint. Earlier Doctor/security/platform limitations remain open, not rerun or waived. Phase9 remains incomplete; no store publishing.
 
-## Phone review pending
+## Phone review accepted
 
-Updated FreshTrack Dev is installed. Requested user checks cover Welcome previews, Sign Up appearance/validation/password visibility, form switching/back/privacy navigation, Log In validation and successful existing-account login, remembered-session restart and unchanged Dashboard/Pantry. No new account is required for this UI check; signup/OTP live reacceptance is not claimed. Next: record user feedback and make any focused corrections before redesigning another page.
+User selected “Looks good — all checks passed” for the seven-step iPhone checklist on21October2026. This records design approval and reported success for Welcome Scan/Track/Cook previews, Sign Up empty-field validation/password visibility/keyboard scrolling, Sign Up/Log In switching and Back, Privacy navigation, Log In validation and existing-account authentication, remembered-session restart and Dashboard/Pantry availability.
+
+This is user-reported functional evidence, not direct agent observation, new-account/OTP reacceptance, Android runtime, full accessibility or confirmed grocery-write testing. No new account or grocery changes were required. Automated results above remain those of implementation checkpoint `90ddd71`; they were not rerun for this documentation-only acceptance. `git diff --check` passes.
+
+The requested Welcome/account-screen review is complete. Next UI slice: Pantry, preserving approved Dashboard/account styling and existing working behavior. Other Phase9 gaps and paused decoder work remain unchanged.
