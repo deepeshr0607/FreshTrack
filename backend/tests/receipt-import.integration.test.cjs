@@ -95,14 +95,19 @@ check('existing and within-haul duplicates block the whole import unless explici
   await service.receiptImport(user, { ...repeated, items: repeated.items.map(row => ({ ...row, item: { ...row.item, duplicateConfirmation: separate } })) }, randomUUID());
   assert.deepEqual(await counts(user), [2, 5, 5]);
 });
-check('second-event failure rolls back receipt and all item/history writes', async () => {
+check('second-event FK failure rolls back receipt and all bulk item/history writes', async () => {
   const user = await account();
+  let failureCode;
   const failing = { $transaction: (run, options) => db.$transaction(async tx => {
-    let count = 0;
     return run({ householdMember: tx.householdMember, pantryItem: tx.pantryItem, receiptScan: tx.receiptScan,
-      pantryItemEvent: { findMany: tx.pantryItemEvent.findMany, create: args => ++count === 2 ? Promise.reject(Error('fixture failure')) : tx.pantryItemEvent.create(args) } });
+      pantryItemEvent: { findMany: tx.pantryItemEvent.findMany, createMany: async args => {
+        assert.equal(await tx.pantryItem.count({ where: { householdId: (await tx.householdMember.findUniqueOrThrow({ where: { authSubject: user.id } })).householdId } }), 2);
+        try { return await tx.pantryItemEvent.createMany({ ...args, data: args.data.map((event, index) => index === 1 ? { ...event, pantryItemId: randomUUID() } : event) }); }
+        catch (error) { failureCode = error.code; throw error; }
+      } } });
   }, options) };
   await assert.rejects(createPantryService(failing).receiptImport(user, haul(), randomUUID()), error => error.code === 'PANTRY_UNAVAILABLE');
+  assert.equal(failureCode, 'P2003'); // Prove a real FK failure after bulk item writes, not a missing mock method.
   assert.deepEqual(await counts(user), [0, 0, 0]);
 });
 check('replay after an explicit outcome returns current status and does not reactivate or duplicate events', async () => {
@@ -136,14 +141,19 @@ check('maximum receipt haul commits once and replays without exceeding the trans
   const second = await service.receiptImport(user, separate, randomUUID());
   assert.equal(second.items.length, 50); assert.deepEqual(await counts(user), [2, 100, 100]);
 });
-check('last event failure rolls back a full fifty-item receipt and all CREATED history', async () => {
+check('last-event FK failure rolls back a full fifty-item receipt and all CREATED history', async () => {
   const user = await account();
+  let failureCode;
   const failing = { $transaction: (run, options) => db.$transaction(async tx => {
-    let count = 0;
     return run({ householdMember: tx.householdMember, pantryItem: tx.pantryItem, receiptScan: tx.receiptScan,
-      pantryItemEvent: { findMany: tx.pantryItemEvent.findMany, create: args => ++count === RECEIPT_MAX_ITEMS ? Promise.reject(Error('fixture failure')) : tx.pantryItemEvent.create(args) } });
+      pantryItemEvent: { findMany: tx.pantryItemEvent.findMany, createMany: async args => {
+        assert.equal(await tx.pantryItem.count({ where: { householdId: (await tx.householdMember.findUniqueOrThrow({ where: { authSubject: user.id } })).householdId } }), RECEIPT_MAX_ITEMS);
+        try { return await tx.pantryItemEvent.createMany({ ...args, data: args.data.map((event, index) => index === RECEIPT_MAX_ITEMS - 1 ? { ...event, pantryItemId: randomUUID() } : event) }); }
+        catch (error) { failureCode = error.code; throw error; }
+      } } });
   }, options) };
   const input = haul(Array.from({ length: RECEIPT_MAX_ITEMS }, (_, index) => ({ ...fields, name: `Rollback Haul Item ${index}` })));
   await assert.rejects(createPantryService(failing).receiptImport(user, input, randomUUID()), error => error.code === 'PANTRY_UNAVAILABLE');
+  assert.equal(failureCode, 'P2003'); // Prove a real FK failure after bulk item writes, not a missing mock method.
   assert.deepEqual(await counts(user), [0, 0, 0]);
 });

@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { resolveExpiry } from '../contracts/expiry';
 import { packageBarcode } from '../contracts/barcode';
 import { RECEIPT_MAX_ITEMS } from '../contracts/receiptLimits';
@@ -209,7 +209,7 @@ export function createPantryService(db: PrismaClient = prisma) {
       expiresOn: new Date(`${input.expiresOn}T00:00:00Z`) }] } : { normalizedName: input.name.toLowerCase(), category: input.category,
       expiresOn: new Date(`${input.expiresOn}T00:00:00Z`) }),
   });
-  const receiptMatches = async (tx: Prisma.TransactionClient, identity: VerifiedIdentity, householdId: string, timezone: string, input: ReceiptReviewInput): Promise<ReceiptDuplicateRow[]> => {
+  const receiptMatches = async (tx: Prisma.TransactionClient, identity: VerifiedIdentity, householdId: string, timezone: string, input: ReceiptReviewInput, includeMatches = true): Promise<ReceiptDuplicateRow[]> => {
     const rows: ReceiptDuplicateRow[] = [];
     // Count all requested identities in one scoped read. New hauls should not require
     // two database round trips per grocery before their transactional writes begin.
@@ -222,7 +222,7 @@ export function createPantryService(db: PrismaClient = prisma) {
     for (const row of input.items) {
       const where = duplicateWhere(identity, householdId, row.item);
       const total = totals.get(matchKey(row.item.name.toLowerCase(), row.item.category, row.item.expiresOn)) ?? 0;
-      const matches = total ? await tx.pantryItem.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: 5 }) : [];
+      const matches = total && includeMatches ? await tx.pantryItem.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: 5 }) : [];
       rows.push({ rowId: row.rowId, total, matches: matches.map(item => view(item, timezone)),
         withinHaul: input.items.filter(other => other.rowId !== row.rowId && other.item.name.toLowerCase() === row.item.name.toLowerCase() &&
           other.item.category === row.item.category && other.item.expiresOn === row.item.expiresOn).map(other => other.rowId) });
@@ -253,25 +253,34 @@ export function createPantryService(db: PrismaClient = prisma) {
           (event.metadata as { rowId?: string } | null)?.rowId === row.rowId))) throw new PantryFailure('IDEMPOTENCY_CONFLICT');
         return { receiptScanId, replayed: true, items: input.items.map((_row, index) => view(prior.find(event => event.idempotencyKey === `${prefix}${index}`)!.pantryItem, membership.household.timezone)) };
       }
-      const duplicates = await receiptMatches(tx, identity, membership.householdId, membership.household.timezone, input);
+      const duplicates = await receiptMatches(tx, identity, membership.householdId, membership.household.timezone, input, false);
       if (duplicates.some(row => (row.total > 0 || row.withinHaul.length > 0) && !input.items.find(item => item.rowId === row.rowId)!.item.duplicateConfirmation)) throw new PantryFailure('PANTRY_DUPLICATE');
       const receipt = await tx.receiptScan.create({ data: { householdId: membership.householdId, createdByAuthSubject: identity.id, status: 'IMPORTED', importedAt: new Date() } });
-      const result: PantryItemDto[] = [];
-      for (const [index, row] of input.items.entries()) {
-        const { expirySelection, duplicateConfirmation, ...fields } = row.item;
+      // Preassigned IDs keep canonical row/event associations independent of database
+      // return order. Bulk writes avoid two network round trips per receipt grocery.
+      const entries = input.items.map((row, index) => ({ row, index, id: randomUUID() }));
+      const created = await tx.pantryItem.createManyAndReturn({ data: entries.map(({ row, id }) => {
+        const { expirySelection, duplicateConfirmation: _confirmation, ...fields } = row.item;
         const expiry = expirySelection ? resolveExpiry(expirySelection) : null;
-        const item = await tx.pantryItem.create({ data: { ...fields, householdId: membership.householdId, normalizedName: fields.name.toLowerCase(),
+        return { ...fields, id, householdId: membership.householdId, normalizedName: fields.name.toLowerCase(),
           expiresOn: new Date(`${fields.expiresOn}T00:00:00Z`), expirySource: expiry?.expirySource ?? 'USER_ENTERED',
           purchaseDate: expiry?.purchaseDate ? new Date(`${expiry.purchaseDate}T00:00:00Z`) : null, freshnessPresetDays: expiry?.freshnessPresetDays ?? null,
-          costSource: fields.totalCostMinor === null ? 'UNKNOWN' : 'PURCHASE', currencyCode: 'INR', source: 'RECEIPT', receiptScanId: receipt.id } });
-        await tx.pantryItemEvent.create({ data: { householdId: membership.householdId, pantryItemId: item.id,
-          eventType: 'CREATED', previousStatus: null, newStatus: 'ACTIVE', quantity: item.quantity, totalCostMinor: item.totalCostMinor,
-          costSource: item.costSource, currencyCode: item.currencyCode, category: item.category, expiresOn: item.expiresOn, timezone: membership.household.timezone,
-          source: 'APP', idempotencyKey: `${prefix}${index}`, metadata: { requestHash, rowId: row.rowId, duplicateConfirmed: !!duplicateConfirmation,
-            expirySource: item.expirySource, receiptScanId: receipt.id } } });
-        result.push(view(item, membership.household.timezone));
-      }
-      return { receiptScanId: receipt.id, items: result, replayed: false };
+          costSource: fields.totalCostMinor === null ? 'UNKNOWN' : 'PURCHASE', currencyCode: 'INR', source: 'RECEIPT', receiptScanId: receipt.id };
+      }) });
+      const byId = new Map(created.map(item => [item.id, item]));
+      const ordered = entries.map(entry => {
+        const item = byId.get(entry.id);
+        if (!item) throw new PantryFailure('PANTRY_UNAVAILABLE');
+        return { ...entry, item };
+      });
+      await tx.pantryItemEvent.createMany({ data: ordered.map(({ row, index, item }) => ({
+        householdId: membership.householdId, pantryItemId: item.id,
+        eventType: 'CREATED', previousStatus: null, newStatus: 'ACTIVE', quantity: item.quantity, totalCostMinor: item.totalCostMinor,
+        costSource: item.costSource, currencyCode: item.currencyCode, category: item.category, expiresOn: item.expiresOn, timezone: membership.household.timezone,
+        source: 'APP', idempotencyKey: `${prefix}${index}`, metadata: { requestHash, rowId: row.rowId, duplicateConfirmed: !!row.item.duplicateConfirmation,
+          expirySource: item.expirySource, receiptScanId: receipt.id },
+      })) });
+      return { receiptScanId: receipt.id, items: ordered.map(({ item }) => view(item, membership.household.timezone)), replayed: false };
     }, true);
   };
   return {
