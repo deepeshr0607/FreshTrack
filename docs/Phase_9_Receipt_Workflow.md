@@ -35,10 +35,11 @@ No backend, Prisma, provider configuration, new dependency, cloud OCR or existin
 - Expo Doctor: 21/21 pass. `CI=1 npx expo install --check`: local SDK map reports dependencies up to date; it explicitly warns that online version validation is unavailable in the restricted shell.
 - Existing Xcode Release scheme: BUILD SUCCEEDED. Toolchain/third-party Hermes warnings remain; this is not a zero-warning build. Strict/deep codesign verification passes. Embedded Hermes bundle contains the updated workflow and the unchanged hosted development API destination. The first string-inspection assertion only checked UTF-8 and missed a UTF-16 Hermes string; corrected encoding-aware verification passes.
 - Same-identifier iPhone update and direct process launch: pass using devicectl, without uninstalling. No Metro listener on 8081–8087 was found. The current Personal Team profile expires 23 October 2026 at 10:08:49 IST.
-- Updated iPhone functional/accuracy acceptance: pending. Installation/export/unit-test passes do not establish native OCR accuracy, camera UX or Pantry persistence on the updated phone build.
+- Updated iPhone functional acceptance: all eight checks passed by user report. The user answered “All checks passed” to camera auto-recognition, independent product edits/fresh estimates, packaged-label extraction/confirmation, completing or excluding pending rows, duplicate-review Cancel/back and final import, Pantry persistence after restart, and automatic upload recognition without importing twice. This is user-reported end-to-end evidence, not direct agent observation, measured OCR accuracy across receipts or Android acceptance. It does not independently establish label-photo disk cleanup or every error path.
+- This acceptance update changes documentation only. Prior automated/build results at `1ac276e` were not rerun; `git diff --check` was run.
 
 Build artifact: `/private/tmp/freshtrack-phase9-personal-build/Build/Products/Release-iphoneos/FreshTrackDev.app`; bundle SHA-256 `f6a61422acd915993bd5869bf5a32dc0c8ab3025690eb74b0afb4f6ee933c613`. Local build/install/launch and verification records are under `/private/tmp/freshtrack-receipt-products-*`. No native signing artifacts are committed.
 
-Next: numbered iPhone checks for automatic camera/upload recognition, product review, fresh estimates, packaged-label confirmation and final import/restart.
+Next: await any further requested app corrections. The earlier decoder task remains paused; it has not been resumed by this phone-test result.
 
 Existing Phase 9 security/reliability/platform/signing limitations remain open. This does not mark the phase complete or publish to an app store.
