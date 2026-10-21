@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import useAuthRequest from '@/features/auth/useAuthRequest';
 import { nativeAuthProbe } from '@/features/auth/nativeProbe';
 import { checkBackendHousehold, checkBackendIdentity } from '@/lib/backendIdentity';
+import { s, SettingsHeader, SettingsLink, SettingsSection } from '@/features/settings/SettingsPresentation';
 import ReminderPreferencesCard from '@/components/ReminderPreferencesCard';
 
 /** Account and reminder settings; no separate Settings reference was supplied. */
@@ -28,18 +29,18 @@ export default function Settings() {
   const backendRequest = useAuthRequest(setNotice);
   const householdRequest = useAuthRequest(setNotice);
   const [confirmExit, setConfirmExit] = useState(false);
-  return <PrototypeScreen back={() => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/insights')}>
-    <Text style={ui.title}>Kitchen Preferences</Text>
-    <View style={ui.card}>
-      <Text style={ui.heading}>{state.user ? 'Household currency: INR (₹)' : `Demo currency: ${MOCK_CURRENCY.code} (${MOCK_CURRENCY.symbol})`}</Text>
-      <Text style={ui.text}>{state.user ? 'Grocery values use rupees. Household dates use Asia/Kolkata. Currency and timezone are fixed for this household.' : 'Values use US dollars to match the supplied designs. Purchase values cover the whole entry. Currency is fixed for this prototype.'}</Text>
+  const back = () => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/insights');
+  const name = state.user?.name || preferences.profile.name;
+  const initials = name.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0] || '').join('').toUpperCase();
+  return <PrototypeScreen header={<SettingsHeader title="Settings" onBack={back} />}>
+    <View style={{ gap: 4 }}><Text style={s.title}>Make it your kitchen.</Text><Text style={s.body}>Your account, reminders and privacy in one place.</Text></View>
+    <View style={s.hero}><View style={s.row}><View style={s.avatar}><Text style={s.initials}>{initials || 'FT'}</Text></View><View style={{ flex: 1 }}><Text style={s.heroName}>{name}</Text><Text style={s.heroText}>{state.user?.email || preferences.profile.email}</Text></View></View>
+      <View style={s.heroBadge}><Text style={s.heroText}>{state.user ? 'Signed-in household' : 'Demo session'}</Text></View>
     </View>
-    <View style={ui.card}>
-      <Text style={ui.heading}>{state.user?.name || preferences.profile.name}</Text><Text style={ui.text}>{state.user?.email || preferences.profile.email}</Text>
-      <Text style={ui.text}>{state.user ? 'Your groceries and their history are connected to your signed-in household.' : 'Demo session. No authenticated account.'}</Text>
-      <PrimaryButton label={state.user ? "Account Details" : "Edit Profile"} variant="ghost" onPress={() => router.push('/settings/profile')} />
-      <PrimaryButton label="Privacy & Data" variant="ghost" onPress={() => router.push('/settings/privacy')} />
-    </View>
+    <SettingsSection title="Account & privacy" icon="account-outline">
+      <SettingsLink title={state.user ? 'Account Details' : 'Edit Profile'} caption={state.user ? 'View your signed-in account' : 'Update your demo profile'} icon="account-circle-outline" onPress={() => router.push('/settings/profile')} />
+      <SettingsLink title="Privacy & Data" caption="Photos, saved copies and data controls" icon="shield-lock-outline" onPress={() => router.push('/settings/privacy')} />
+    </SettingsSection>
     {state.user && Platform.OS !== 'web' && <ReminderPreferencesCard key={state.user.id} userId={state.user.id} />}
     {state.demo && <View style={ui.card}>
       <View style={ui.row}><Text style={[ui.heading, { flex: 1 }]}>Daily Kitchen Digest</Text><Switch value={digest} onValueChange={setDigest}
@@ -51,10 +52,13 @@ export default function Settings() {
       }} />
       <Text style={ui.text}>Prototype preferences only. Demo preferences do not schedule notifications.</Text>
     </View>}
-    {!!notice && <Text style={ui.label} accessibilityLiveRegion="polite">{notice}</Text>}
-    <View style={ui.card}>
+    <SettingsSection title="Household preferences" icon="home-outline">
+      <View style={[s.row, { flexWrap: 'wrap' }]}><View style={s.badge}><Text style={s.label}>{state.user ? '₹ INR' : `${MOCK_CURRENCY.symbol} ${MOCK_CURRENCY.code}`}</Text></View><View style={s.badge}><Text style={s.label}>{state.user ? 'Asia/Kolkata' : 'Demo Kitchen'}</Text></View></View>
+      <Text style={s.caption}>{state.user ? 'Currency and timezone are fixed for this household. Grocery values cover the whole entry.' : 'US dollar values match the supplied demo designs. Currency is fixed for the prototype.'}</Text>
+    </SettingsSection>
+    {!!notice && <View style={s.notice}><Text style={s.label} accessibilityLiveRegion="polite">{notice}</Text></View>}
+    <SettingsSection title="Session" icon="login-variant">
       {state.user ? <>
-        <Text style={ui.heading}>Account Session</Text>
         {DIAGNOSTICS_ENABLED && nativeAuthProbe && <PrimaryButton label="Check Backend Identity" variant="ghost" loading={backendRequest.loading}
           onPress={() => { setNotice(''); void backendRequest.run(async (isMounted) => {
             await checkBackendIdentity(process.env.EXPO_PUBLIC_API_URL, () => nativeAuthProbe!.getApiToken(), state.user!, __DEV__);
@@ -87,6 +91,6 @@ export default function Settings() {
           <PrimaryButton label="Stay Here" variant="ghost" onPress={() => setConfirmExit(false)} />
         </> : <PrimaryButton label="Sign Out of Demo" variant="ghost" onPress={() => setConfirmExit(true)} />}
       </>}
-    </View>
+    </SettingsSection>
   </PrototypeScreen>;
 }
