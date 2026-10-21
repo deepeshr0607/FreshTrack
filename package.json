@@ -48,5 +48,10 @@
     "web": "expo start --web",
     "lint": "eslint app components constants context features lib types --max-warnings 0"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "xcode@3.0.1": {
+      "uuid": "11.1.1"
+    }
+  }
 }
