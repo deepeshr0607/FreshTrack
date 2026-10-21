@@ -1,6 +1,6 @@
 # Phase 9 — Release offline session recovery
 
-21 October 2026. Readiness checks pass; the numbered Release iPhone result is pending. Uses the existing installed Release app with Metro stopped. No data changes are needed for this check.
+21 October 2026. Readiness checks pass; all nine numbered Release iPhone checks passed by user report. Uses the existing installed Release app with Metro stopped. No data changes are needed for this check.
 
 ## Reviewed behavior
 
@@ -40,4 +40,6 @@ Report offline resume blocking, offline Retry, offline cold-start blocking, onli
 
 ## Remaining acceptance
 
-The phone result is pending. This does not accept API-only failures, slow/intermittent networks, offline outcome delivery, cross-account notification taps, clean-device installation, Android runtime or open upstream advisories. The earlier unattributed read-only database failure remains open. Next: record this result or fix an evidenced failure, then remaining Release failure/installation review. Phase9 remains incomplete; no store publishing.
+The user answered “All checks passed” to the nine numbered in-chat checks on21October. Recorded as user-reported passes for offline resume blocking, offline Retry Session Check, genuine offline cold-start blocking with the embedded app, online recovery without another password/OTP, same-account/unchanged-grocery review and final online restart, with Metro stopped. This is functional evidence reported by the user, not direct agent observation, packet capture, secure-storage forensics or broad offline functionality.
+
+This acceptance update changes documentation only. The36/36 focused tests, mobile lint and both TypeScript results at checkpoint `aebeb75` were not rerun. `git diff --check` passed. No code, build, deployment, account settings or groceries were changed by the agent. This does not accept API-only failures, slow/intermittent networks, offline outcome delivery, cross-account notification taps, clean-device installation, Android runtime or open upstream advisories. The earlier unattributed read-only database failure remains open. Next: review remaining API-failure and installation/update coverage, prioritizing safe checks that preserve the existing app data. Phase9 remains incomplete; no store publishing.
