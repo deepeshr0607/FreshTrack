@@ -29,9 +29,10 @@ interface Props {
   valueLabel?: string;
   hideActions?: boolean;
   packageDateLabel?: string;
+  refreshed?: boolean;
 }
 
-export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSelect, selected = false, valueLabel, hideActions = false, packageDateLabel = '✓ Confirmed' }: Props) {
+export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSelect, selected = false, valueLabel, hideActions = false, packageDateLabel = '✓ Confirmed', refreshed = false }: Props) {
   const swipeable = useRef<SwipeableMethods>(null);
   const swiping = useRef(false);
   const requestAction = (direction: 'right' | 'left') => {
@@ -60,7 +61,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
   // Selection uses a regular press target outside the disabled swipe gesture tree.
   const CardPressable = onSelect ? NativePressable : Pressable;
   const card = (
-    <View style={[styles.card, selected && { borderColor: Colors.primary, borderWidth: 2 }]}>
+    <View style={[styles.card, refreshed && styles.refreshedCard, selected && { borderColor: Colors.primary, borderWidth: 2 }]}>
       <CardPressable
         onPressIn={() => { swiping.current = false; }}
         onPress={() => { if (!swiping.current) (onSelect ?? onPress)?.(); }}
@@ -72,7 +73,7 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
         accessibilityHint={onSelect ? 'Select this whole entry for a confirmed batch action.' : hideActions ? 'Open item details.' : 'Open item details. Swipe right for Used or left for Wasted; both require confirmation.'}
       >
         {/* Main content row */}
-        <View style={styles.row}>
+        <View style={[styles.row, refreshed && styles.refreshedRow]}>
           {onSelect && <MaterialCommunityIcons accessible={false} aria-hidden
             name={selected ? 'checkbox-marked-circle-outline' : 'checkbox-blank-circle-outline'} size={24} color={Colors.primary} />}
           {/* Emoji thumbnail */}
@@ -82,20 +83,20 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
 
           {/* Info block */}
           <View style={styles.info}>
-            <Text style={styles.name} numberOfLines={1}>
+            <Text style={[styles.name, refreshed && styles.refreshedName]} numberOfLines={refreshed ? 2 : 1}>
               {item.name}
             </Text>
+            {refreshed && <View style={styles.itemHeading}><Text style={styles.quantity}>{item.quantity} {item.unit} · {item.category}</Text><ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} compact /></View>}
             <View style={styles.metaRow}>
               <Text style={[styles.source, { color: sourceColor }]}>{sourceLabel}</Text>
               <Text style={styles.dot}> · </Text>
               <Text style={styles.meta}>{valueLabel ?? `$${item.price.toFixed(2)}`}</Text>
-              <Text style={styles.dot}> · </Text>
-              <Text style={styles.meta}>{item.category}</Text>
+              {!refreshed && <><Text style={styles.dot}> · </Text><Text style={styles.meta}>{item.category}</Text></>}
             </View>
           </View>
 
           {/* Expiry badge */}
-          <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} compact />
+          {!refreshed && <ExpiryBadge daysLeft={item.daysLeft} expirySource={item.expirySource} compact />}
         </View>
 
         {/* Freshness bar */}
@@ -110,21 +111,21 @@ export default function PantryItemCard({ item, onPress, onConsume, onWaste, onSe
           onPressIn={() => { swiping.current = false; }}
           onPress={() => { if (!swiping.current) requestAction('right'); }}
           disabled={!onConsume || item.status !== 'ACTIVE'}
-          style={[styles.actionBtn, styles.consumeBtn]}
+          style={[styles.actionBtn, styles.consumeBtn, refreshed && styles.refreshedAction]}
           accessibilityRole="button"
           accessibilityLabel={`Mark ${item.name} as consumed`}
         >
-          <Text style={[styles.actionText, { color: Colors.freshGreen }]}>✓ Used</Text>
+          {refreshed && <MaterialCommunityIcons name="check-circle-outline" size={17} color={Colors.primary} accessible={false} />}<Text style={[styles.actionText, { color: Colors.primary }]}>{refreshed ? 'Used' : '✓ Used'}</Text>
         </Pressable>
         <Pressable
           onPressIn={() => { swiping.current = false; }}
           onPress={() => { if (!swiping.current) requestAction('left'); }}
           disabled={!onWaste || item.status !== 'ACTIVE'}
-          style={[styles.actionBtn, styles.wasteBtn]}
+          style={[styles.actionBtn, styles.wasteBtn, refreshed && styles.refreshedAction]}
           accessibilityRole="button"
           accessibilityLabel={`Mark ${item.name} as wasted`}
         >
-          <Text style={[styles.actionText, { color: Colors.criticalRose }]}>🗑 Wasted</Text>
+          {refreshed && <MaterialCommunityIcons name="trash-can-outline" size={17} color={Colors.criticalRose} accessible={false} />}<Text style={[styles.actionText, { color: Colors.criticalRose }]}>{refreshed ? 'Wasted' : '🗑 Wasted'}</Text>
         </Pressable>
       </View>}
     </View>
@@ -231,4 +232,11 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
+  refreshedCard: { borderRadius: 20, borderColor: Colors.surfaceContainer, borderWidth: 1 },
+  refreshedRow: { alignItems: 'flex-start', gap: 12, padding: 14 },
+  refreshedName: { fontSize: 15, lineHeight: 22, fontFamily: 'PlusJakartaSans_700Bold', marginBottom: 5 },
+  itemHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 6 },
+  quantity: { fontSize: 11, lineHeight: 18, color: Colors.onSurfaceVariant, fontFamily: 'PlusJakartaSans_400Regular' },
+  refreshedAction: { minHeight: 44, flexDirection: 'row', justifyContent: 'center', gap: 6 },
+
 });

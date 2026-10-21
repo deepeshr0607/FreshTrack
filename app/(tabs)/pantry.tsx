@@ -6,6 +6,7 @@ import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,7 +18,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMockPantry } from '@/context/MockPantryContext';
 import PantryConfirmation from '@/components/PantryConfirmation';
-import ScreenHeader from '@/components/ScreenHeader';
+import PantryOverview, { PantryIcon } from '@/features/pantry/PantryOverview';
 import PantryItemCard from '@/components/PantryItemCard';
 import PrimaryButton from '@/components/PrimaryButton';
 import NotificationQueuePanel from '@/components/NotificationQueuePanel';
@@ -36,9 +37,9 @@ type SortMode = 'expiry' | 'name' | 'category';
 
 const FILTER_CHIPS: { key: FilterChip; label: string; color: string }[] = [
   { key: 'All', label: 'All Items', color: Colors.primary },
-  { key: 'Critical', label: '🔴 Critical', color: Colors.criticalRose },
-  { key: 'Caution', label: '🟡 Caution', color: Colors.cautionAmber },
-  { key: 'Fresh', label: '🟢 Fresh', color: Colors.freshGreen },
+  { key: 'Critical', label: 'Use first', color: Colors.criticalRose },
+  { key: 'Caution', label: 'Use soon', color: Colors.cautionAmber },
+  { key: 'Fresh', label: 'Fresh', color: Colors.freshGreen },
 ];
 
 export default function PantryScreen() {
@@ -59,6 +60,8 @@ export default function PantryScreen() {
   const [undoError, setUndoError] = useState(''); const undoRequest = useAuthRequest(setUndoError);
   const [batchNotice, setBatchNotice] = useState('');
   const [search, setSearch] = useState('');
+  const [showCategories, setShowCategories] = useState(false);
+  const [showDateHelp, setShowDateHelp] = useState(false);
   const [filter, setFilter] = useState<FilterChip>('All');
   const [category, setCategory] = useState<ItemCategory | 'All'>('All');
   const [sort, setSort] = useState<SortMode>('expiry');
@@ -113,7 +116,6 @@ export default function PantryScreen() {
       setBatchConfirmation({ items: selectedItems, action, persisted, key: pantryRetryKey() });
     } else setBatchConfirmation({ items: selectedItems, action });
   };
-  const atRiskItems = filtered.filter((item) => item.daysLeft <= 1);
   const totalValue = filtered.reduce((sum, i) => sum + i.price, 0);
   const filtersActive = !!search.trim() || filter !== 'All' || category !== 'All';
   const resetFilters = () => { setSearch(''); setFilter('All'); setCategory('All'); };
@@ -183,20 +185,25 @@ export default function PantryScreen() {
             if (isMounted()) { setUndoConfirmation(null); setBatchNotice('Groceries restored to active Pantry.'); }
           });
         }} />}
-      <ScreenHeader title="FreshTrack" subtitle="Inventory" />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        refreshControl={real.enabled ? <RefreshControl refreshing={real.loading} onRefresh={() => { if (real.cachePreview) real.endCachePreview(); else void real.reload(); }} tintColor={Colors.primary} colors={[Colors.primary]} /> : undefined}
       >
+        <PantryOverview count={activeCount} value={`${real.enabled ? '₹' : '$'}${totalValue.toFixed(2)}`}
+          countLabel={real.enabled && real.readOnly ? 'CACHED ITEMS' : 'ACTIVE ITEMS'} valueLabel="LOADED KNOWN VALUE"
+          loading={real.enabled && (pendingCriteria || (real.loading && !items.length))} readOnly={real.enabled && real.readOnly}
+          onAdd={() => router.push('/pantry/add')} onScan={() => router.push('/(tabs)/scanner')} onSettings={() => router.push('/settings')} />
         {/* Search */}
         <View style={styles.searchBar}>
           <MaterialCommunityIcons name="magnify" size={24} color={Colors.outline} accessible={false} />
           <TextInput
             style={styles.searchInput}
-            placeholder={`Search ${activeCount} ${real.enabled && real.readOnly ? 'cached pantry items' : 'pantry & fridge items'}...`}
+            placeholder="Find something in your pantry…"
             placeholderTextColor={Colors.onSurfaceVariant}
             value={search}
             maxLength={120}
@@ -205,9 +212,9 @@ export default function PantryScreen() {
             clearButtonMode="while-editing"
             accessibilityLabel="Search pantry items"
           />
-          <Pressable style={styles.scanButton} onPress={() => router.push('/(tabs)/scanner')}
-            accessibilityRole="button" accessibilityLabel="Scan receipt or barcode to add items">
-            <MaterialCommunityIcons name="barcode-scan" size={22} color={Colors.primary} accessible={false} />
+          <Pressable style={styles.scanButton} onPress={() => setShowCategories(value => !value)}
+            accessibilityRole="button" accessibilityLabel="Show category filters" accessibilityState={{ expanded: showCategories }}>
+            <PantryIcon name="tune-variant" />
           </Pressable>
         </View>
 
@@ -221,7 +228,7 @@ export default function PantryScreen() {
           {FILTER_CHIPS.map((chip) => (
             <Pressable
               key={chip.key}
-              style={[styles.chip, filter === chip.key && { backgroundColor: chip.color }]}
+              style={[styles.chip, filter === chip.key && { backgroundColor: Colors.primary }]}
               onPress={() => setFilter(chip.key)}
               accessibilityRole="radio"
               accessibilityState={{ checked: filter === chip.key }}
@@ -238,31 +245,20 @@ export default function PantryScreen() {
             </Pressable>
           ))}
 
-          {/* Sort toggle */}
-          <Pressable
-            style={[styles.chip, styles.sortChip]}
-            onPress={() => {
-              const modes: SortMode[] = ['expiry', 'name', 'category'];
-              setSort((cur) => modes[(modes.indexOf(cur) + 1) % modes.length]!);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Toggle sort order"
-          >
-            <Text style={styles.chipText}>
-              ↕ {sort === 'expiry' ? 'Expiry' : sort === 'name' ? 'Name' : 'Category'}
-            </Text>
-          </Pressable>
+
         </ScrollView>
 
         {/* Category pills reuse the supplied inventory carousel styling. Counts refer to active inventory. */}
         <View style={styles.categoryHeader}>
-          <Text style={styles.categoryLabel}>Categories</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Toggle category filters" accessibilityState={{ expanded: showCategories }} onPress={() => setShowCategories(value => !value)} style={styles.filterToggle}>
+            <PantryIcon name="shape-outline" size={17} /><Text style={styles.categoryLabel}>{category === 'All' ? 'All categories' : category}</Text><PantryIcon name={showCategories ? 'chevron-up' : 'chevron-down'} size={17} />
+          </Pressable>
           {filtersActive && <Pressable onPress={resetFilters} style={styles.clearFilters}
             accessibilityRole="button" accessibilityLabel="Clear pantry filters">
             <Text style={styles.clearFiltersText}>Clear Filters</Text>
           </Pressable>}
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}
+        {showCategories && <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}
           contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
           <Pressable style={[styles.chip, category === 'All' && styles.categoryActive]}
             onPress={() => setCategory('All')} accessibilityRole="radio"
@@ -279,51 +275,32 @@ export default function PantryScreen() {
               <Text style={[styles.chipText, category === entry.name && styles.chipTextActive]}>{entry.name} ({count})</Text>
             </Pressable>;
           })}
-        </ScrollView>
-
-        {/* Dual-Tier Freshness Engine banner follows the reference search/filter hierarchy. */}
-        <View style={styles.freshnessEngineBanner}>
-          <View style={styles.bannerIcon}>
-            <MaterialCommunityIcons name="shield-check-outline" size={20} color={Colors.primary} accessible={false} />
-          </View>
-          <View style={styles.bannerLeft}>
-            <View style={styles.bannerHeading}>
-              <Text style={styles.bannerTitle}>Dual-Tier Freshness Engine</Text>
-              <Text style={styles.bannerStatus}>Active</Text>
-            </View>
-            <Text style={styles.bannerSub}><Text style={styles.confirmedLabel}>● {real.enabled ? 'User set' : 'Confirmed'}: </Text>{real.enabled ? 'Your entered expiry dates, tracked in Asia/Kolkata.' : 'Package date in demo fixture.'}</Text>
-            <Text style={styles.bannerSub}><Text style={styles.estimatedLabel}>● Estimated: </Text>{real.enabled ? 'Editable shelf-life assumptions; package dates take priority.' : 'Suggested shelf life for loose produce.'}</Text>
-            <Text style={styles.bannerNote}>{real.enabled ? real.readOnly ? 'Cached subset · INR · Filters search previously loaded entries only.' : `Your household · INR · ${filtered.length} of ${real.total} matching items loaded. Filters search your whole pantry.` : 'Demo sources; no AI or package verification.'}</Text>
-          </View>
-        </View>
-
-        {/* Value at stake */}
-        <View style={styles.valueRow}>
-          <Text style={styles.valueLabel}>📊 {real.enabled ? 'Loaded known value:' : 'Value tracked:'}</Text>
-          <Text style={styles.valueAmount}>{real.enabled ? '₹' : '$'}{totalValue.toFixed(2)}</Text>
-          {atRiskItems.length > 0 && (
-            <Text style={styles.atRisk}>
-              · <Text style={{ color: Colors.criticalRose }}>{real.enabled ? '₹' : '$'}{
-                atRiskItems
-                  .reduce((s, i) => s + i.price, 0)
-                  .toFixed(2)
-              } at risk</Text>
-            </Text>
-          )}
-        </View>
+        </ScrollView>}
 
         {/* Reference Batch Select pill; selecting is explicit and never resolves items directly. */}
-        <ReconciliationBanner />
-        <View style={styles.batchControls}>
-          <Pressable style={styles.chip} accessibilityRole="button" accessibilityLabel="Add Item Manually"
-            disabled={real.enabled && real.readOnly} onPress={() => router.push('/pantry/add')}>
-            <Text style={styles.chipText}>＋ Add Item Manually</Text>
+        <ReconciliationBanner compact />
+        <View style={styles.listHeader}><Text style={styles.listTitle}>{filtersActive ? 'Matching groceries' : 'Your groceries'}</Text>
+          {/* Sort toggle */}
+          <Pressable
+            style={[styles.chip, styles.sortChip]}
+            onPress={() => {
+              const modes: SortMode[] = ['expiry', 'name', 'category'];
+              setSort((cur) => modes[(modes.indexOf(cur) + 1) % modes.length]!);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Toggle sort order"
+          >
+            <Text style={styles.chipText}>
+              ↕ {sort === 'expiry' ? 'Expiry' : sort === 'name' ? 'Name' : 'Category'}
+            </Text>
           </Pressable>
+        </View>
+        <View style={styles.batchControls}>
           <Pressable style={[styles.chip, batchMode && styles.categoryActive]}
             onPress={() => batchMode ? leaveBatch() : setBatchMode(true)} disabled={!hasActiveItems || listBusy || (real.enabled && real.readOnly)}
             accessibilityRole="button" accessibilityLabel={batchMode ? 'Cancel batch selection' : 'Batch Select'}
             accessibilityState={{ expanded: batchMode }} aria-expanded={batchMode}>
-            <Text style={[styles.chipText, batchMode && styles.chipTextActive]}>{batchMode ? 'Cancel Selection' : '☑ Batch Select'} ({selectedItems.length})</Text>
+            <Text style={[styles.chipText, batchMode && styles.chipTextActive]}>{batchMode ? `Cancel · ${selectedItems.length} selected` : 'Select items'}</Text>
           </Pressable>
           {batchMode && <Pressable style={styles.chip} disabled={!filtered.length || listBusy || (real.enabled && real.readOnly)}
             onPress={() => {
@@ -349,19 +326,20 @@ export default function PantryScreen() {
           {real.readOnly && <Text style={[styles.swipeHint, { color: Colors.cautionAmber }]} accessibilityLiveRegion="polite">
             Cached Pantry · read-only · {real.cachedAt ? `Last updated ${new Date(real.cachedAt).toLocaleString()}. This subset may be incomplete.` : 'Nothing cached in this session.'} Refresh online to make changes.
           </Text>}
-          {!!real.diskStatus && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{real.diskStatus}</Text>}
+          {DIAGNOSTICS_ENABLED && !!real.diskStatus && <Text style={styles.swipeHint} accessibilityLiveRegion="polite">{real.diskStatus}</Text>}
           {real.cachePreview && <Text style={styles.swipeHint}>Development cached-view test: Pantry requests are paused; authentication remains active.</Text>}
           <NotificationQueuePanel />
           <OverdueReviewCheck />
-          <PrimaryButton label={real.cachePreview ? 'End Test & Refresh' : 'Refresh Pantry'} variant="ghost" loading={real.loading}
-            onPress={() => real.cachePreview ? real.endCachePreview() : void real.reload()} />
+          {(real.readOnly || !!real.error || DIAGNOSTICS_ENABLED) && <PrimaryButton label={real.cachePreview ? 'End Test & Refresh' : 'Refresh Pantry'} variant="ghost" loading={real.loading}
+            onPress={() => real.cachePreview ? real.endCachePreview() : void real.reload()} />}
           {DIAGNOSTICS_ENABLED && !real.readOnly && !!items.length && <PrimaryButton label="Test Cached Pantry View" variant="ghost" disabled={real.loading} onPress={real.previewCache} />}
           {!!real.error && <Text style={[styles.swipeHint, { color: Colors.error }]} accessibilityRole="alert">{real.error} {items.length && !real.readOnly ? 'Showing previously loaded items.' : ''}</Text>}
-          <Text style={styles.swipeHint}>Pantry changes and batch actions are saved after confirmation. Scanner imports and other tabs remain prototypes.</Text>
+
         </>}
+        {real.enabled && !pendingCriteria && <Text style={styles.resultCount}>{filtered.length} of {real.total} matching groceries loaded{real.readOnly ? ' · saved subset' : ''} · Known values exclude unpriced items</Text>}
         {/* Items list */}
         {!batchMode && !!filtered.length && !(real.enabled && real.readOnly) && <Text style={styles.swipeHint}>Swipe right for Used · left for Wasted</Text>}
-        {real.enabled && (pendingCriteria || (!items.length && (real.loading || real.error) && (!real.readOnly || !real.cachedAt))) ? <Text style={styles.swipeHint}>{listBusy ? 'Loading matching pantry items…' : 'Your pantry could not be loaded. Tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
+        {real.enabled && (pendingCriteria || (!items.length && (real.loading || real.error) && (!real.readOnly || !real.cachedAt))) ? <Text style={styles.swipeHint}>{listBusy ? 'Loading matching pantry items…' : 'Your pantry could not be loaded. Pull down to refresh or tap Refresh Pantry to retry.'}</Text> : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🥦</Text>
             <Text style={styles.emptyTitle}>
@@ -376,6 +354,7 @@ export default function PantryScreen() {
         ) : (
           filtered.map((item) => (
             <PantryItemCard
+              refreshed
               hideActions={listBusy || (real.enabled && (real.readOnly || !!real.error || real.pendingNotificationIds.includes(item.id)))}
               packageDateLabel={real.enabled ? 'Package date' : undefined}
               key={item.id}
@@ -391,15 +370,23 @@ export default function PantryScreen() {
         )}
         {real.enabled && !pendingCriteria && real.hasMore && <PrimaryButton label="Load More Items" variant="ghost" loading={real.loading} onPress={() => void real.loadMore()} />}
 
-        {/* Add item FAB hint */}
+        {/* Date-source help replaces the former always-expanded engine explanation. */}
+        <View style={styles.dateHelp}>
+          <Pressable onPress={() => setShowDateHelp(value => !value)} accessibilityRole="button" accessibilityLabel="About expiry dates" accessibilityState={{ expanded: showDateHelp }} style={styles.helpToggle}>
+            <PantryIcon name="shield-check-outline" size={18} /><Text style={styles.helpText}>Package date · User set · Estimated</Text><PantryIcon name={showDateHelp ? 'chevron-up' : 'chevron-down'} size={18} />
+          </Pressable>
+          {showDateHelp && <Text style={styles.helpBody}>Package dates take priority. Estimated dates are editable shelf-life assumptions, not freshness guarantees. Your household uses Asia/Kolkata dates.</Text>}
+        </View>
+
+        {/* Receipt entry remains available after longer lists. */}
         <Pressable
           style={styles.addHint}
           onPress={() => router.push('/(tabs)/scanner')}
           accessibilityRole="button"
-          accessibilityLabel="Scan receipt or barcode to add items"
+          accessibilityLabel="Scan a receipt to add groceries"
         >
           <Text style={styles.addHintText}>
-            📷 Scan receipt or barcode to add items →
+            📷 Scan a receipt to add groceries →
           </Text>
         </Pressable>
 
@@ -422,37 +409,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.bodySm, marginBottom: Spacing.sm },
   safe: { flex: 1, backgroundColor: Colors.surface },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: Spacing.screenGutter, paddingTop: Spacing.base },
-
-  freshnessEngineBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: Radius.lg,
-    padding: Spacing.base,
-    marginBottom: Spacing.base,
-  },
-  bannerIcon: { width: 32, height: 32, borderRadius: Radius.full, backgroundColor: Colors.white,
-    alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs2 },
-  bannerLeft: { flex: 1, minWidth: 0 },
-  bannerHeading: { flexDirection: 'row', alignItems: 'flex-start', flexWrap: 'wrap', gap: Spacing.sm },
-  bannerStatus: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: FontSize.labelSm, color: Colors.primary, lineHeight: 24 },
-  confirmedLabel: { fontFamily: 'PlusJakartaSans_600SemiBold', color: Colors.primary },
-  estimatedLabel: { fontFamily: 'PlusJakartaSans_600SemiBold', color: Colors.secondary },
-  bannerNote: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: FontSize.labelSm, lineHeight: 16,
-    color: Colors.onSurfaceVariant, marginTop: Spacing.xs },
-  bannerTitle: {
-    flex: 1,
-    minWidth: 120,
-    fontSize: FontSize.headlineSm,
-    lineHeight: 24,
-    fontWeight: FontWeight.semibold,
-    color: Colors.onSurface,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-  bannerSub: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: FontSize.bodySm,
-    lineHeight: 18, color: Colors.onSurfaceVariant, marginTop: Spacing.xs2 },
+  content: { width: '100%', maxWidth: 650, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12 },
 
   searchBar: {
     flexDirection: 'row',
@@ -465,7 +422,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.base,
     minHeight: 52,
   },
-  scanButton: { width: 44, height: 44, borderRadius: Radius.full, backgroundColor: Colors.inversePrimary,
+  scanButton: { width: 44, height: 44, borderRadius: Radius.full, backgroundColor: Colors.surfaceContainerLow,
     alignItems: 'center', justifyContent: 'center' },
   searchInput: {
     flex: 1,
@@ -483,17 +440,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenGutter,
   },
   chip: {
-    backgroundColor: Colors.surfaceContainerLow,
+    backgroundColor: Colors.white,
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     minHeight: 44,
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.outlineVariant,
+    borderColor: Colors.surfaceContainer,
   },
   sortChip: {
-    borderStyle: 'dashed',
+    borderWidth: 0,
   },
   chipText: {
     fontSize: FontSize.labelMd,
@@ -505,22 +462,6 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
-
-  valueRow: {
-    flexWrap: 'wrap',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: Spacing.sm,
-  },
-  valueLabel: { fontSize: FontSize.bodyMd, color: Colors.onSurfaceVariant },
-  valueAmount: {
-    fontSize: FontSize.bodyMd,
-    fontWeight: FontWeight.bold,
-    color: Colors.onSurface,
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  atRisk: { fontSize: FontSize.bodyMd, color: Colors.onSurfaceVariant },
 
   emptyState: {
     alignItems: 'center',
@@ -549,8 +490,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.outlineVariant,
-    borderStyle: 'dashed',
+    borderColor: Colors.surfaceContainer,
   },
   addHintText: {
     fontSize: FontSize.bodyMd,
@@ -558,4 +498,13 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
+  filterToggle: { flexDirection: 'row', gap: 6, alignItems: 'center', minHeight: 44 },
+  dateHelp: { backgroundColor: Colors.surfaceContainerLow, borderRadius: 14, marginBottom: 14 },
+  helpToggle: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 12, minHeight: 44 },
+  helpText: { flex: 1, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 11, lineHeight: 17, color: Colors.onSurfaceVariant },
+  helpBody: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12, lineHeight: 19, paddingHorizontal: 14, paddingBottom: 14, color: Colors.onSurfaceVariant },
+  listHeader: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
+  listTitle: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 19, color: Colors.onSurface },
+  resultCount: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 10, lineHeight: 17, color: Colors.onSurfaceVariant, marginBottom: 12 },
+
 });
