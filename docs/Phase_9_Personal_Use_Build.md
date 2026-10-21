@@ -58,9 +58,9 @@ A free Personal Team is appropriate for this local-device route, but its provisi
 
 Artifact summary: `/private/tmp/freshtrack-personal-artifact.json`; app path: `/private/tmp/freshtrack-phase9-personal-build/Build/Products/Release-iphoneos/FreshTrackDev.app`. Install/launch logs: `/private/tmp/freshtrack-personal-{install,launch}.log`. Signing material and generated native outputs stay outside Git.
 
-Numbered iPhone acceptance remains pending: direct-icon startup/restart with Metro stopped, existing Pantry data, normal Settings, receipt OCR/Clear, Recipes/Insights, sign-out and remembered-session restart. Release notification delivery/actions and clean-device installation are separate, unverified checks; no existing app was uninstalled to manufacture a clean-install result.
+All eight numbered iPhone checks passed by user report on21October: USB-disconnected direct-icon startup without an Expo launcher/Metro, existing Pantry search/details/back, normal Settings/email without diagnostics, library receipt OCR and Clear without import, Recipes/details/Insights navigation, sign-out with blocked Back, remembered login and force-close/reopen restoration. This is user-reported functional evidence, not direct agent observation or storage forensics. Release notification delivery/actions and clean-device installation are separate, unverified checks; no existing app was uninstalled to manufacture a clean-install result.
 
-Existing upstream advisories, Android runtime, network/update failure paths and the earlier unattributed read-only database failure remain open. Phase9 is not complete. Next: record the user-reported standalone iPhone results, then the remaining Release-native notification and personal-use acceptance review. No store publishing.
+Existing upstream advisories, Android runtime, network/update failure paths and the earlier unattributed read-only database failure remain open. Phase9 is not complete. This acceptance update changes documentation only; automated/native checks above were not rerun. `git diff --check` passed. Next: Release-native notification delivery/actions, then remaining personal-use acceptance review. No store publishing.
 
 ## References
 
