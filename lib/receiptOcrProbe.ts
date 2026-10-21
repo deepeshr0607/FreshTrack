@@ -45,14 +45,26 @@ export function createReceiptOcrProbe(deps: {
     getSnapshot: () => state,
     subscribe(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },
     clear,
-    async choose(source: OcrPhotoSource) {
+    async choose(source: OcrPhotoSource, autoRead = false) {
       if (!active() || state.busy) return;
+      let reading = false;
       const revision = ++generation; publish({ busy: true, error: '', errorCode: null });
       try {
         const image = await deps.choose(source);
         if (revision !== generation || !active()) { if (image) deps.dispose(image); return; }
-        if (image) { if (state.image) deps.dispose(state.image); publish({ image, lines: [], layout: null, read: false }); }
-      } catch (error) { if (revision === generation && active()) publish({ error: error instanceof ReceiptOcrError ? error.message : new ReceiptOcrError('IMAGE').message, errorCode: error instanceof ReceiptOcrError ? error.code : 'IMAGE' }); }
+        if (image) {
+          if (state.image) deps.dispose(state.image);
+          publish({ image, lines: [], layout: null, read: false });
+          if (autoRead) {
+            reading = true;
+            const { lines, layout } = ocrRecognition(await deps.recognize(image));
+            if (revision === generation && active()) publish({ lines, layout, read: true });
+          }
+        }
+      } catch (error) { if (revision === generation && active()) {
+        const code = error instanceof ReceiptOcrError ? error.code : reading ? 'READ' : 'IMAGE';
+        publish({ error: new ReceiptOcrError(code).message, errorCode: code });
+      } }
       finally { if (revision === generation) publish({ busy: false }); }
     },
     async read() {
