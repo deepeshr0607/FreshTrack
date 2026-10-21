@@ -27,7 +27,7 @@ Developer Program. Simulator builds are a separate option, but this Mac currentl
 simulator tooling and no simulator build was configured or tested. Android settings do not prove
 Android native behavior; test on an emulator, borrowed device or tester before Android publication.
 
-## Inputs required before a standalone build
+## Inputs required before EAS preview/production builds
 
 | Setting | Where / purpose |
 |---|---|
@@ -66,7 +66,7 @@ No production allowlist, Neon branch, SMTP settings or other account setting was
    public`. Set APP_VARIANT explicitly when validating a local release config; use EAS environments
    for a cloud build. The validator checks syntax/transport, not DNS ownership, service reachability,
    branch identity or store identifier availability.
-4. Obtain Apple membership/signing credentials when a standalone iPhone build is needed. Build with
+4. Obtain Apple membership/signing credentials when an EAS-distributed iPhone build is needed. Build with
    `npx eas-cli@latest build --platform ios --profile preview` after setup and authorization. This
    creates a device build, not an App Store submission. Repeat the native auth/failure checks on it.
    Later use production profile for TestFlight/store preparation. Do not auto-submit.
@@ -103,3 +103,7 @@ Sources: [Expo config](https://docs.expo.dev/workflow/configuration/),
 [EAS environments](https://docs.expo.dev/eas/environment-variables/),
 [Build versions](https://docs.expo.dev/build-reference/app-versions/),
 [Apple signing](https://docs.expo.dev/app-signing/apple-developer-program-roles-and-permissions/).
+
+## Phase 9 clarification — local personal-device builds
+
+The EAS preview/production setup above is separate from free local Xcode Personal Team signing. A local Release build can embed JavaScript and run without Metro using the existing development identity and hosted development services, without linking EAS or purchasing membership. Personal Team profiles expire after seven days. See [the current personal-use build report](Phase_9_Personal_Use_Build.md) for commands, actual verification and remaining limits. This does not change the EAS production guards or establish production configuration readiness.

@@ -150,7 +150,7 @@ npm run dev         # Start API server with tsx watch (hot reload)
 | `npm run build` | `tsc` | Compile to `dist/` |
 | `npm start` | `node dist/server.js` | Run compiled build |
 | `npm run typecheck` | `tsc --noEmit` | TypeScript type check |
-| `npm test` | Build + native Node test runner | All backend non-integration tests (160); excludes guarded database suites |
+| `npm test` | Build + native Node test runner | All backend non-integration tests (163); excludes guarded database suites |
 | `npm run lint` | `eslint src --max-warnings 0` | TypeScript lint with zero warnings |
 | `npm run test:watch` | Build + native Node watch | Watch tests/compiled imports; rerun build after TypeScript edits or use `npx tsc --watch` |
 | `npm run db:migrate` | Guarded Prisma deploy | Apply reviewed development migrations; requires explicit opt-in |
@@ -201,6 +201,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 9 local personal-use Release build installed (21 October); iPhone acceptance pending.** Existing Xcode project/Personal Team produced a signed Release app with embedded Hermes JavaScript, verified API URL/signature and the same development identifier. Updated the paired iPhone without uninstalling, stopped Metro (no8081–8087 listeners), and direct process launch passed; visible UI/data/session acceptance is not yet claimed. Mobile lint, both TypeScript checks and focused config/diagnostic tests10/10 pass. Full386/163/live43 suites remain the preceding source-checkpoint results, not rerun here. No code/dependency/schema/provider/backend deployment/environment-value changes; generated native/signing files remain untracked/ignored. Existing profile expires23October10:08AM IST; it requires Xcode renewal, not store publishing or paid EAS. See [personal-use build report](docs/Phase_9_Personal_Use_Build.md). Next: numbered standalone iPhone checks, then Release notification/remaining acceptance review. Upstream advisories, clean-device/Android/network gaps and earlier unattributed read-only failure remain open; Phase9 is incomplete.
 
 **Phase 9 receipt transaction reliability checkpoint complete (21 October); broader reliability remains open.** Reproduced the 50-item separate-import failure: Prisma P2028 after10,044ms/137 model calls under the existing10-second transaction budget. Batched item/history writes and skipped unused import preview reads; successful50-item imports now use6 model calls while preserving scoped serializable transactions, exact provenance, idempotency and duplicate confirmation. Added shuffled-return/provenance guards and real second/last-event FK rollback checks. Mobile386/386, backend163/163, both lint/TypeScript/build and live combined43/43 pass with fixture cleanup; isolated receipts10/10 pass. Development Preview deployed, health200/anonymous401/oversized413 and served iOS bundle200 verified; only ignored public API URL/Metro changed. No schema/provider/native/production/existing-household changes. See [receipt reliability report](docs/Phase_9_Database_Reliability.md). Earlier read-only failure remains unattributed; upstream advisories and broader native/network/build acceptance stay open. Next: personal-use build readiness review; no new phone checklist or store publishing. Phase9 remains incomplete.
 
