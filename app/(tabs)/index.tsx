@@ -24,10 +24,17 @@ import {
 } from '@/lib/mock';
 
 import { useMockPantry } from '@/context/MockPantryContext';
+import { useAuth } from '@/context/AuthContext';
+import LiveDashboardScreen from '@/features/dashboard/LiveDashboardScreen';
 
 type Mode = 'at-home' | 'shopping';
 
 export default function HomeScreen() {
+  const { state } = useAuth();
+  return state.demo ? <DemoHomeScreen /> : <LiveDashboardScreen />;
+}
+
+function DemoHomeScreen() {
   const { items, dispatch } = useMockPantry();
   const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED' } | null>(null);
   const requestStatus = (id: string, action: 'CONSUMED' | 'WASTED') => {
