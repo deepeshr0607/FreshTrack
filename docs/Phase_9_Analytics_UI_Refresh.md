@@ -25,6 +25,10 @@ No backend, schema, auth/session, provider integration, dependency, deployment o
 - Actual RN Web/TSX synthetic preview inspected overview at390px and financial view at320px with original fonts. Narrow chart scrolling is intentional. Final overview DOM showed390px with no document overflow. Temporary browser tab/server closed. This is not Android runtime, full accessibility or real-data acceptance.
 - Existing Node module-type/Expo color-environment and native toolchain warnings remain; no zero-warning native claim. Doctor was not rerun for this presentation-only slice.
 
-## Remaining review
+## iPhone acceptance — 21 October 2026
 
-Numbered iPhone verification is pending: appearance, month controls, chart/details, categories, financial navigation/history, report/share cancellation, reconciliation navigation and unchanged Pantry. No grocery outcome/import should be confirmed. Phase9 remains incomplete; paused advisories, Android/runtime and other documented acceptance gaps remain. No store publishing.
+User answered “Looks good — all checks passed” to the eight numbered checks covering overview/scrolling, month navigation/invalid-month recovery, chart selection, category/price/methodology disclosures, financial navigation, report preview/share cancellation, meal/reminder links and refresh/unchanged Pantry. Reviewable history and the overdue banner were conditional; their availability and execution were not separately reported. No new confirmed outcome/import acceptance is claimed.
+
+This records user-reported functional and design approval, not direct observation, Android/runtime, full accessibility or financial-data audit evidence. Documentation-only acceptance update: previous automated results above were not rerun. No runtime, native build, deployment, environment or household-data changes.
+
+Analytics UI review is complete. Next UI slice: Settings/preferences. Phase9 remains incomplete; paused advisories, Android/runtime and other documented acceptance gaps remain. No store publishing.
