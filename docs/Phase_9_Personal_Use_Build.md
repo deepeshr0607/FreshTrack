@@ -67,3 +67,7 @@ Existing upstream advisories, Android runtime, network/update failure paths and 
 - [Expo local Release configuration](https://docs.expo.dev/guides/local-app-development/)
 - [Expo CLI local build and embedded production bundles](https://docs.expo.dev/more/expo-cli/)
 - [Apple Personal Team limits and seven-day profiles](https://developer.apple.com/help/account/basics/about-your-developer-account)
+
+## Subsequent acceptance and coverage review
+
+Release notification and offline-session checks later passed by user report; see [notifications](Phase_9_Release_Notifications.md) and [recovery](Phase_9_Release_Session_Recovery.md). The [API recovery/install review](Phase_9_API_Recovery_Install_Review.md) distinguishes those functional results and the existing Debug-to-Release update from unverified clean-device, fresh-checkout signing and Release-version migration cases. Historical build results above were not rerun for that test/documentation checkpoint.

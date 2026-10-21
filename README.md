@@ -150,7 +150,7 @@ npm run dev         # Start API server with tsx watch (hot reload)
 | `npm run build` | `tsc` | Compile to `dist/` |
 | `npm start` | `node dist/server.js` | Run compiled build |
 | `npm run typecheck` | `tsc --noEmit` | TypeScript type check |
-| `npm test` | Build + native Node test runner | All backend non-integration tests (163); excludes guarded database suites |
+| `npm test` | Build + native Node test runner | All backend non-integration tests (166); excludes guarded database suites |
 | `npm run lint` | `eslint src --max-warnings 0` | TypeScript lint with zero warnings |
 | `npm run test:watch` | Build + native Node watch | Watch tests/compiled imports; rerun build after TypeScript edits or use `npx tsc --watch` |
 | `npm run db:migrate` | Guarded Prisma deploy | Apply reviewed development migrations; requires explicit opt-in |
@@ -201,6 +201,8 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 ---
 
 ## Project Status
+
+**Phase 9 API recovery/install coverage reviewed (21 October).** Added three local loopback checks using the actual mobile Pantry client and Express:503→explicit recovery,401 excluded from cached fallback, unchanged write fields/keys and lost-success-response uncertainty. New3/3, relevant mobile57/57, backend166/166 including build/health, both lint/TypeScript and diff checks pass. Service spies do not prove database exactly-once writes or native rendering; no live fixture test or phone outage was induced. Reviewed existing Debug→Release update/user-reported data preservation; clean-device/fresh-checkout signing and Release-version migration remain unverified. See [API recovery/install matrix](docs/Phase_9_API_Recovery_Install_Review.md). No runtime/native/dependency/provider/deployment/environment/grocery changes; no rebuild or new phone checklist. Next: final personal-use acceptance summary with explicit remaining security/platform/reliability limits. Phase9 remains incomplete; no store publishing.
 
 **Phase 9 Release offline/recovery checks passed by user report (21 October).** User answered “All checks passed” to nine steps covering offline resume/retry blocking, genuine offline cold start with Metro stopped, online restoration without new credentials, same-account/unchanged-Pantry review and final online restart. This is reported functional evidence, not agent observation, storage forensics or full offline functionality. Prior36/36 focused auth/session tests, mobile lint and both TypeScript results at `aebeb75` were not rerun for this documentation-only update. See [Release recovery report](docs/Phase_9_Release_Session_Recovery.md). Next: review API-failure and installation/update coverage while preserving existing app data. Upstream advisories, Android/clean-device/other failure paths and earlier unattributed read-only database failure remain open; Phase9 is incomplete. Profile expires23October10:08AM IST; no store publishing.
 
