@@ -24,6 +24,9 @@ const virginia = { source: 'Virginia Cooperative Extension', sourceUrl: 'https:/
  * No category-wide fallback, verified package-date claim or frozen-quality expiry inference.
  */
 export const RECEIPT_STORAGE_RULES: readonly ReceiptStorageRule[] = [
+  { id: 'watermelon-whole', foodIds: ['watermelon'], condition: 'Whole uncut watermelon, intact rind, cool ventilated storage around 13°C; not cut or prepared', rangeDays: [14, 14],
+    source: 'University of Minnesota Extension', sourceUrl: 'https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/harvesting-and-storing-home-garden-vegetables',
+    guidance: 'Two-week reference for cool storage. Shorten this tracking estimate for warmer storage or older fruit; it does not apply after cutting.' },
   { id: 'apples', foodIds: ['apple'], condition: 'Firm whole apples, uncut, refrigerated at 4°C or below in a sealed bag', rangeDays: [21, 21],
     source: 'Iowa State University Extension', sourceUrl: 'https://spendsmart.extension.iastate.edu/produce-item/apples/',
     guidance: 'Whole refrigerated apples: up to three weeks. App tracking duration: 21 days; shorten it for older fruit.' },

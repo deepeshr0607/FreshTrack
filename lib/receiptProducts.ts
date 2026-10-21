@@ -1,7 +1,7 @@
 import type { LocalReceiptCandidate } from './receiptCandidates';
 import type { ReceiptTextBox } from './receiptTextBoxes';
 // @ts-expect-error Explicit extensions support Node strip-types tests and Metro.
-import { parseReceiptCandidates, suggestReceiptNameOnlyItems, saveReceiptCandidate } from './receiptCandidates.ts';
+import { parseReceiptCandidates, suggestReceiptNameOnlyItems, saveReceiptCandidate, receiptCandidateExpiry, receiptCandidateIssue } from './receiptCandidates.ts';
 // @ts-expect-error Explicit extensions support Node strip-types tests and Metro.
 import { receiptColumnProposals } from './receiptColumnReview.ts';
 // @ts-expect-error Explicit extensions support Node strip-types tests and Metro.
@@ -16,6 +16,31 @@ import { receiptStorageRules } from './receiptShelfLife.ts';
 import { resolveExpiry } from './pantryExpiry.ts';
 // @ts-expect-error Explicit extensions support Node strip-types tests and Metro.
 import { RECEIPT_MAX_ITEMS } from './receiptLimits.ts';
+
+/** Product form and estimate availability are separate: unsupported fresh food isn't packaged. */
+export function receiptProductKind(row: Pick<LocalReceiptCandidate, 'draft' | 'productKind'>): 'fresh' | 'packaged' | 'unknown' {
+  if (row.productKind) return row.productKind;
+  const food = recognizeReceiptFood(row.draft.name);
+  if (food.status !== 'matched') return 'unknown';
+  if (/\b(?:frozen|dried|dehydrated|canned|tinned|pickled|preserved|cooked|roasted|fried|boiled|smoked|paste|puree|instant)\b/i.test(row.draft.name)) return 'packaged';
+  return food.category === 'Produce' || food.category === 'Meat' || food.foodId === 'egg' ? 'fresh' : 'packaged';
+}
+
+export function receiptProductReviewState(rows: LocalReceiptCandidate[]) {
+  const included = rows.filter(row => row.selected);
+  const pending = included.flatMap(row => {
+    const kind = receiptProductKind(row);
+    let issue = receiptCandidateIssue(row.draft);
+    try { receiptCandidateExpiry(row); } catch (problem) { issue = (problem as Error).message; }
+    if (!row.reviewed || issue) return [{ row, kind, issue: !row.draft.expiresOn
+      ? kind === 'fresh' ? automaticFreshRule(row.draft.name) ? 'Check the product details to apply its fresh-food estimate.' : 'Enter a tracking date for this fresh item; no supported estimate is available.'
+        : kind === 'packaged' ? 'Scan the printed expiry or enter a date manually.' : 'Choose Fresh or Packaged and check the expiry date.'
+      : issue ?? 'Save this product’s details before continuing.' }];
+    return [];
+  });
+  return { included, pending, packaged: pending.filter(item => item.kind === 'packaged' && !item.row.draft.expiresOn),
+    fresh: pending.filter(item => item.kind === 'fresh'), other: pending.filter(item => item.kind !== 'fresh' && (item.kind !== 'packaged' || !!item.row.draft.expiresOn)) };
+}
 
 /** A tracking assumption, never a claim about production date, cold chain or food safety. */
 export function automaticFreshRule(name: string) {

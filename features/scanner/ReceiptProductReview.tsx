@@ -9,7 +9,7 @@ import type { ReceiptTextBox } from '@/lib/receiptTextBoxes';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import { expiryDraft, kolkataToday, resolveExpiry } from '@/lib/pantryExpiry';
 import { manualReceiptCandidate, receiptExpiryDraft, receiptExpiryLabel, saveReceiptCandidate, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
-import { receiptProducts, automaticFreshRule } from '@/lib/receiptProducts';
+import { receiptProducts, automaticFreshRule, receiptProductKind, receiptProductReviewState } from '@/lib/receiptProducts';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
 import { confirmPrintedReceiptDate } from '@/lib/receiptPackageDates';
 import { RECEIPT_MAX_ITEMS } from '@/lib/receiptLimits';
@@ -28,7 +28,9 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
   const [expiry, setExpiry] = useState(expiryDraft());
   const [labelItem, setLabelItem] = useState<LocalReceiptCandidate | null>(null);
   const [error, setError] = useState(''), [page, setPage] = useState(0);
-  const included = rows.filter(row => row.selected), pending = included.filter(row => !row.reviewed);
+  const [packagePage, setPackagePage] = useState(0);
+  const { included, pending, packaged, fresh, other } = receiptProductReviewState(rows);
+  const packagePages = Math.max(1, Math.ceil(packaged.length / 10)), currentPackagePage = Math.min(packagePage, packagePages - 1);
   const pages = Math.max(1, Math.ceil(rows.length / 10)), currentPage = Math.min(page, pages - 1);
   const update = (row: LocalReceiptCandidate) => {
     modified.current.add(row.id);
@@ -39,7 +41,7 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     setEditor({ ...row, draft: { ...row.draft } }); setExpiry(receiptExpiryDraft(row)); setError('');
   };
   const change = <K extends keyof PantryDraft>(key: K, value: PantryDraft[K]) => {
-    setEditor(previous => previous ? { ...previous, draft: { ...previous.draft, [key]: value } } : null);
+    setEditor(previous => previous ? { ...previous, ...(key === 'name' ? { productKind: undefined } : {}), draft: { ...previous.draft, [key]: value } } : null);
     // A new product name cannot inherit a confirmed printed label or another food's estimate.
     if (key === 'name') setExpiry(expiryDraft());
     setError('');
@@ -54,6 +56,12 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
   if (editor) return <View style={ui.card}>
     <Text accessibilityRole="header" style={ui.heading}>Edit product</Text>
     <FormInput label="Product name" value={editor.draft.name} maxLength={120} onChangeText={value => change('name', value)} />
+    <Text style={ui.heading}>Product type</Text>
+    <View style={ui.row}>{(['fresh', 'packaged'] as const).map(kind => <Pressable key={kind} accessibilityRole="radio"
+      accessibilityLabel={kind === 'fresh' ? 'Fresh or loose product' : 'Packaged product'} accessibilityState={{ checked: receiptProductKind(editor) === kind }}
+      style={[ui.pill, receiptProductKind(editor) === kind && { backgroundColor: Colors.primary }]}
+      onPress={() => { setEditor(previous => previous ? { ...previous, productKind: kind } : null); if (kind === 'packaged' && expiry.days) setExpiry(expiryDraft()); setError(''); }}>
+      <Text style={[ui.label, receiptProductKind(editor) === kind && { color: Colors.white }]}>{kind === 'fresh' ? 'Fresh / loose' : 'Packaged'}</Text></Pressable>)}</View>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{PANTRY_CATEGORIES.map(category => <Pressable key={category.name}
       accessibilityRole="radio" accessibilityLabel={category.name} accessibilityState={{ checked: editor.draft.category === category.name }}
       style={[ui.pill, editor.draft.category === category.name && { backgroundColor: Colors.primary }]}
@@ -66,21 +74,26 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     {!!expiry.days && <Text style={ui.label}>Estimated from {expiry.baseDate} · {expiry.days} days</Text>}
     <FormInput label="Change expiry / enter manually (YYYY-MM-DD)" value={expiry.userDate} maxLength={10}
       onChangeText={value => { setExpiry({ packageDate: '', userDate: value, baseDate: '', days: '' }); setError(''); }} />
-    {automaticFreshRule(editor.draft.name) && <PrimaryButton label="Use Fresh-Food Estimate" variant="ghost" onPress={() => {
+    {receiptProductKind(editor) === 'fresh' && automaticFreshRule(editor.draft.name) && <PrimaryButton label="Use Fresh-Food Estimate" variant="ghost" onPress={() => {
       const rule = automaticFreshRule(editor.draft.name)!;
       setExpiry({ packageDate: '', userDate: '', baseDate: purchaseDate, days: String(rule.rangeDays[0]) }); setError('');
     }} />}
-    <Text style={ui.text}>A manually entered date is your tracking choice. For a printed package date, save these details and use Scan Expiry Tag on its product card.</Text>
+    <Text style={ui.text}>{receiptProductKind(editor) === 'fresh'
+      ? 'Fresh products do not need an expiry-tag scan. Use the supported estimate or enter your own tracking date.'
+      : 'A manually entered date is your tracking choice. For a printed package date, save these details and use Scan Expiry Tag on its product card.'}</Text>
     {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
     <PrimaryButton label="Save Product" onPress={() => {
       try {
+        const kind = receiptProductKind(editor), rule = kind === 'fresh' ? automaticFreshRule(editor.draft.name) : null;
+        const chosen = !expiry.packageDate && !expiry.userDate && !expiry.days && rule
+          ? { packageDate: '', userDate: '', baseDate: purchaseDate, days: String(rule.rangeDays[0]) } : expiry;
         // Save an incomplete product too, so scanning its label can complete it next.
-        if (!expiry.packageDate && !expiry.userDate && !expiry.days) {
+        if (!chosen.packageDate && !chosen.userDate && !chosen.days) {
           if (editor.draft.name.trim().length < 2) throw Error('Enter a product name.');
           update({ ...editor, reviewed: false, draft: { ...editor.draft, expiresOn: '' }, expirySelection: undefined, packageDateReview: { kind: 'unchecked' } });
         } else {
-          const review = expiry.packageDate ? confirmPrintedReceiptDate(editor.draft.name, expiry.packageDate) : { kind: 'unavailable' as const };
-          const saved = saveReceiptCandidate({ ...editor, packageDateReview: review }, expiry);
+          const review = chosen.packageDate ? confirmPrintedReceiptDate(editor.draft.name, chosen.packageDate) : { kind: kind === 'fresh' ? 'not-applicable' as const : 'unavailable' as const };
+          const saved = saveReceiptCandidate({ ...editor, packageDateReview: review }, chosen);
           update({ ...saved, selected: editor.selected });
         }
         setEditor(null);
@@ -115,10 +128,24 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
       <Text style={ui.text}>No price conversion is performed. Foreign-currency values stay unknown; other displayed values are in ₹ and need checking.</Text>
       <Text style={ui.text}>If quantity is unclear, 1 piece is prefilled. Change the quantity and unit where needed.</Text>
     </View>
-    {!!pending.length && <View style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
+    {!!packaged.length && <View style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
       <Text style={ui.heading}>Check packaged expiry dates</Text>
       <Text style={ui.text}>Photograph the expiry stamp on each packaged product. If it cannot be read, edit the product to enter a date yourself, or exclude it for now.</Text>
-      <PrimaryButton label={`Scan Next Expiry · ${pending[0]!.draft.name}`} onPress={() => setLabelItem(pending[0]!)} />
+      <Text style={ui.text}>Choose any packaged item below; you do not have to scan them in order.</Text>
+      {packaged.slice(currentPackagePage * 10, (currentPackagePage + 1) * 10).map(({ row }) => <PrimaryButton key={row.id} label={`Scan Expiry · ${row.draft.name}`} onPress={() => setLabelItem(row)} />)}
+      {packagePages > 1 && <>
+        <Text style={ui.text}>Packaged items · page {currentPackagePage + 1} of {packagePages}</Text>
+        <PrimaryButton label="Previous Packaged Items" variant="ghost" disabled={currentPackagePage === 0} onPress={() => setPackagePage(currentPackagePage - 1)} />
+        <PrimaryButton label="Next Packaged Items" variant="ghost" disabled={currentPackagePage === packagePages - 1} onPress={() => setPackagePage(currentPackagePage + 1)} />
+      </>}
+    </View>}
+    {!!fresh.length && <View style={ui.card}>
+      <Text style={ui.heading}>Fresh items needing a tracking date or correction</Text>
+      <Text style={ui.text}>These are fresh products, so no package scan is required. Open Edit Product to enter a date or correct the details, or exclude the item.</Text>
+    </View>}
+    {!!other.length && <View style={ui.card}>
+      <Text style={ui.heading}>Product details need checking</Text>
+      <Text style={ui.text}>Choose Fresh / loose or Packaged in Edit Product if the type was not recognized. Correct missing or invalid details before saving.</Text>
     </View>}
     {pages > 1 && <View style={ui.card}>
       <Text style={ui.label}>Products {currentPage * 10 + 1}–{Math.min((currentPage + 1) * 10, rows.length)} of {rows.length}</Text>
@@ -130,20 +157,23 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     {!rows.length && <Text accessibilityRole="alert" style={ui.text}>No products recognized. Retake a clearer receipt photo, upload another image, or add missing products below.</Text>}
     {rows.slice(currentPage * 10, (currentPage + 1) * 10).map(row => {
       const rule = row.expirySelection?.preset ? automaticFreshRule(row.draft.name) : null;
+      const kind = receiptProductKind(row), problem = pending.find(item => item.row.id === row.id);
       return <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow, opacity: row.selected ? 1 : 0.65 }]}>
         <View style={ui.row}><Text style={[ui.heading, { flex: 1 }]}>{row.draft.name}</Text>
           <Pressable accessibilityRole="checkbox" accessibilityLabel={`Include ${row.draft.name}`} accessibilityState={{ checked: row.selected }}
             style={ui.pill} onPress={() => setRows(previous => previous.map(item => item.id === row.id ? { ...item, selected: !item.selected } : item))}>
             <Text style={ui.label}>{row.selected ? '✓ Include' : 'Excluded'}</Text></Pressable></View>
         <Text style={ui.text}>{row.draft.category} · {row.draft.quantity} {row.draft.unit} · {row.draft.price ? `₹${row.draft.price}` : 'Unknown value'}</Text>
+        <Text style={ui.label}>{kind === 'fresh' ? 'Fresh / loose · no package scan needed' : kind === 'packaged' ? 'Packaged product' : 'Product type needs checking'}</Text>
         {(row.sourceLineIds?.length ?? 0) > 1 && <Text style={ui.text}>Matched receipt columns · check the product and amount.</Text>}
         <Text style={ui.label}>{row.reviewed ? receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection }) : 'Needs an expiry date / details'}</Text>
+        {problem && <Text style={ui.text}>{problem.issue}</Text>}
         {rule && <>
           <Text style={ui.text}>{rule.condition}. Shorten the date if the food is older or stored differently.</Text>
           <Pressable accessibilityRole="link" style={ui.pill} onPress={() => void Linking.openURL(rule.sourceUrl).catch(() => {})}><Text style={ui.label}>Storage guidance · {rule.source}</Text></Pressable>
         </>}
         <PrimaryButton label="Edit Product" accessibilityLabel={`Edit ${row.draft.name}`} variant="ghost" onPress={() => edit(row)} />
-        <PrimaryButton label={row.expirySelection?.packageDate ? 'Rescan Expiry Tag' : 'Scan Expiry Tag'} accessibilityLabel={`Scan expiry for ${row.draft.name}`} variant="ghost" onPress={() => setLabelItem(row)} />
+        {kind === 'packaged' && <PrimaryButton label={row.expirySelection?.packageDate ? 'Rescan Expiry Tag' : 'Scan Expiry Tag'} accessibilityLabel={`Scan expiry for ${row.draft.name}`} variant="ghost" onPress={() => setLabelItem(row)} />}
         <PrimaryButton label="Remove Product" accessibilityLabel={`Remove ${row.draft.name}`} variant="ghost" onPress={() => setRows(previous => previous.filter(item => item.id !== row.id))} />
       </View>;
     })}
@@ -151,7 +181,14 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     <Text style={ui.text}>Compare the list with your receipt: unclear products or split columns may be missed. Nothing is saved until the final confirmation.</Text>
     {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
     {readOnly && <Text accessibilityRole="alert" style={ui.text}>Pantry is read-only. Refresh it online before adding groceries.</Text>}
-    <PrimaryButton label={`Review & Add ${included.length} Products to Pantry`} disabled={readOnly || !included.length || !!pending.length || changingDate} onPress={() => {
+    {!included.length && !!rows.length && <Text style={ui.text}>Include at least one product to add it to Pantry.</Text>}
+    <PrimaryButton label={`Review & Add ${included.length} Products to Pantry`} disabled={readOnly || !included.length || changingDate} onPress={() => {
+      if (pending.length) {
+        const first = pending[0]!;
+        setPage(Math.floor(rows.findIndex(row => row.id === first.row.id) / 10));
+        setError(`${pending.length} product${pending.length === 1 ? '' : 's'} still need attention. ${first.row.draft.name}: ${first.issue} Edit, scan packaged items, or exclude them before continuing.`);
+        return;
+      }
       try { onPrepare(reviewedReceiptInput(rows)); }
       catch (problem) { setError((problem as Error).message); }
     }} />

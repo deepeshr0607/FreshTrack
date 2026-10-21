@@ -17,7 +17,7 @@ test('specific confirmed storage conditions use the lower end of sourced ranges,
   assert.equal(new Set(RECEIPT_STORAGE_RULES.map(row => row.id)).size, RECEIPT_STORAGE_RULES.length);
   for (const rule of RECEIPT_STORAGE_RULES) {
     assert.ok(rule.rangeDays[0] > 0 && rule.rangeDays[0] <= rule.rangeDays[1]);
-    assert.match(rule.sourceUrl, /^https:\/\/(?:www.foodsafety.gov|extension.umd.edu|ask.fsis.usda.gov|www.pubs.ext.vt.edu|extension.usu.edu|spendsmart.extension.iastate.edu)\//);
+    assert.match(rule.sourceUrl, /^https:\/\/(?:www.foodsafety.gov|extension.umd.edu|extension.umn.edu|ask.fsis.usda.gov|www.pubs.ext.vt.edu|extension.usu.edu|spendsmart.extension.iastate.edu)\//);
   }
 });
 test('package dates, food preparations, ambiguous foods and unsupported storage never get a guessed rule', () => {
@@ -144,7 +144,7 @@ test('milk and rice accepted dates survive durable retry without recomputing a y
   await store.clear(); assert.equal(values.size, 0);
 });
 
-test('showcase covers exactly twenty supported foods with one explicit condition per named entry', () => {
+test('original twenty-food showcase stays intact alongside the targeted whole-watermelon correction', () => {
   const fixture = RECEIPT_LAYOUT_FIXTURES.find(row => row.name === 'Project showcase (20 foods)');
   const rows = parseReceiptCandidates(fixture.lines).candidates;
   const names = ['Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries', 'Pears', 'Spinach', 'Lettuce', 'Carrots', 'Broccoli',
@@ -157,8 +157,8 @@ test('showcase covers exactly twenty supported foods with one explicit condition
     assert.equal(choices[0].rangeDays[0], days[index], row.draft.name); ruleIds.add(choices[0].id);
     assert.equal(row.reviewed, false); assert.equal(row.selected, false); assert.equal(row.draft.expiresOn, '');
   });
-  assert.equal(ruleIds.size, RECEIPT_STORAGE_RULES.length); // No hidden extra estimate foods outside the documented showcase.
-  assert.equal(RECEIPT_STORAGE_RULES.reduce((total, rule) => total + rule.foodIds.length, 0), 20);
+  assert.deepEqual(RECEIPT_STORAGE_RULES.filter(rule => !ruleIds.has(rule.id)).map(rule => rule.id), ['watermelon-whole']);
+  assert.equal(RECEIPT_STORAGE_RULES.reduce((total, rule) => total + rule.foodIds.length, 0), 21); // Original twenty plus the specifically reported watermelon.
   for (const name of ['Mangoes', 'Guava', 'Mushrooms', 'Prawns', 'Mutton', 'Pork', 'Bread', 'Yogurt']) assert.deepEqual(receiptStorageRules(name), []);
 });
 test('six additional foods use strict purchase dates and exact calendar arithmetic without mutating drafts', () => {

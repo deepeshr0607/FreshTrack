@@ -43,3 +43,24 @@ Build artifact: `/private/tmp/freshtrack-phase9-personal-build/Build/Products/Re
 Next: await any further requested app corrections. The earlier decoder task remains paused; it has not been resumed by this phone-test result.
 
 Existing Phase 9 security/reliability/platform/signing limitations remain open. This does not mark the phase complete or publish to an app store.
+
+## Follow-up: fresh-only scanning and actionable Add — 21 October
+
+The user subsequently reported that Watermelon was offered an expiry scan, blocking access to later products, and Add to Pantry was disabled. This exposes a gap in the earlier eight-check acceptance; the report above remains historical evidence for those checks, not coverage of this case.
+
+Root causes: every card rendered a Scan Expiry Tag control; the queue treated every unreviewed product as packaged; Watermelon was recognized as produce but lacked a duration; and any pending product disabled Add without allowing the user to request actionable validation.
+
+Changes:
+
+- Fresh/packaged classification is now independent of estimate availability. Recognized fresh produce/raw meat/shell eggs have no package-scan control. Unsupported fresh foods require a manually entered tracking date, not a package photograph. Unknown items ask for a type/details review. Edit Product allows an explicit Fresh / loose or Packaged correction; that local-only choice is excluded from API/retry payloads.
+- The packaged queue contains only included packaged products missing a date. Each is directly selectable, with its own paging if necessary; the user need not complete the first item before selecting another. Invalid quantities/values are separate detail errors, not reasons to scan a label.
+- Whole uncut Watermelon receives a targeted storage rule: 14 days from the purchase date under cool ventilated storage around 13°C. This uses [University of Minnesota Extension's watermelon guidance](https://extension.umn.edu/garden-and-home/yard-and-garden/gardening-in-minnesota/harvesting-and-storing-home-garden-vegetables), which describes cool storage and a two-week estimated shelf life; its general guidance says nonideal storage shortens life. The UI displays the conditions/source and allows an earlier date. No assumption that a warm Kolkata kitchen meets those conditions or that the date guarantees safety is made. Cut/sliced/processed watermelon gets no whole-fruit estimate. This one specifically reported food is an exception to the earlier 20-food scope, bringing supported food/type entries to21 while preserving all original20. No broad catalogue expansion.
+- Review & Add is enabled when at least one product is selected and Pantry is writable, except while changing the purchase date. With incomplete products it names the first problem, reveals its page and asks for edit/packaged scan/exclusion. It does not send invalid data or silently drop selected products. Ready fresh-only hauls proceed directly to the unchanged duplicate/final-confirmation stage. Read-only and empty selections remain guarded and explained.
+
+Verification so far: mobile/shared408/408, backend build/tests166/166, both lint/TypeScript and all-platform41-route exports pass. Thirteen product-logic tests include Watermelon, unsupported fresh food, invalid fields, local type overrides and API stripping. Four additional tests render the actual TSX using React with native host/button substitutes: fresh-only hides all scan controls and prepares an import; mixed hauls offer each packaged item and don't send incomplete data; unsupported fresh food gets manual-date guidance; and cached/empty imports remain guarded. These are conditional UI/handler checks, not physical camera/native rendering acceptance. Existing source tests now preserve the original20 while explicitly covering the single Watermelon addition.
+
+The signed Release build passed and strict/deep codesign verification passed. Embedded Hermes checks confirm the new whole-watermelon rule, fresh-only control message and actionable Add guidance, plus the unchanged hosted API destination. Bundle SHA-256: `5baf0807d56203fa671c695c255ef959b88c0fd799a1760c549bf8a31f6348ac`. The existing app identifier/profile are retained; profile expiry remains23October10:08:49IST.
+
+The first iPhone installation attempt failed with CoreDevice transport timeout (`Network.NWError60`); installation of this follow-up is not yet confirmed. User asked to reconnect/unlock the iPhone. Targeted phone acceptance remains pending; the earlier eight-check pass does not cover this correction. Local build/check/install logs use `/private/tmp/freshtrack-fresh-queue-*`.
+
+No backend source, schema, API, environment, provider or dependency changes are introduced by this follow-up. No uninstall or existing-household write was performed. Earlier paused decoder work remains separate and paused.

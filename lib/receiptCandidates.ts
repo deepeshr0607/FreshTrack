@@ -22,6 +22,8 @@ export interface LocalReceiptCandidate {
   id: string;
   original: string;
   draft: PantryDraft;
+  /** Local fresh/packaged choice only; never sent in an import or persisted retry. */
+  productKind?: 'fresh' | 'packaged';
   expirySelection?: ExpirySelection;
   /** Local package-label declaration; excluded from API/durable retry payloads. */
   packageDateReview?: ReceiptPackageDateReview;

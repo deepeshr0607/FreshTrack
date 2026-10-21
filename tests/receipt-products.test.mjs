@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { receiptProducts, automaticFreshRule, packageExpiryDates } from '../lib/receiptProducts.ts';
+import { receiptProducts, automaticFreshRule, packageExpiryDates, receiptProductKind, receiptProductReviewState } from '../lib/receiptProducts.ts';
 import { createReceiptOcrProbe, ReceiptOcrError } from '../lib/receiptOcrProbe.ts';
 import { reviewedReceiptInput } from '../lib/receiptImport.ts';
 import { saveReceiptCandidate, receiptExpiryDraft } from '../lib/receiptCandidates.ts';
@@ -138,4 +138,44 @@ test('code/amount rows with a single description below also populate automatical
   assert.ok(rows.every(row => !row.reviewed && row.selected && row.sourceLineIds.length === 3));
   assert.equal(new Set(rows.flatMap(row => row.sourceLineIds)).size, 6);
   assert.deepEqual(layout, before);
+});
+
+test('whole watermelon gets a dated fresh estimate and never blocks packaged items behind it', () => {
+  const rows = receiptProducts(['Watermelon Rs. 70.00', 'Biscuits Rs. 20.00', 'Milk Rs. 60.00'], null, today);
+  assert.equal(receiptProductKind(rows[0]), 'fresh'); assert.equal(rows[0].reviewed, true);
+  assert.equal(rows[0].draft.expiresOn, '2026-11-04');
+  assert.deepEqual(rows[0].expirySelection.preset, { baseDate: today, days: 14 });
+  assert.equal(rows[0].packageDateReview.kind, 'not-applicable');
+  const plan = receiptProductReviewState(rows);
+  assert.deepEqual(plan.packaged.map(item => item.row.draft.name), ['Biscuits', 'Milk']);
+  assert.equal(plan.fresh.length, 0); assert.equal(plan.pending.length, 2);
+  assert.equal(reviewedReceiptInput([rows[0]]).items[0].item.expirySelection.preset.days, 14);
+});
+
+test('unsupported or cut fresh food needs a manual date, never a compulsory expiry-tag scan', () => {
+  const rows = receiptProducts(['Mango Rs. 40.00', 'Cut watermelon Rs. 30.00', 'Canned carrots Rs. 50.00', 'Unknown XYZ Rs. 10.00'], null, today);
+  assert.deepEqual(rows.map(receiptProductKind), ['fresh', 'fresh', 'packaged', 'unknown']);
+  assert.equal(automaticFreshRule('Cut watermelon'), null);
+  const plan = receiptProductReviewState(rows);
+  assert.deepEqual(plan.fresh.map(item => item.row.draft.name), ['Mango', 'Cut watermelon']);
+  assert.deepEqual(plan.packaged.map(item => item.row.draft.name), ['Canned carrots']);
+  assert.deepEqual(plan.other.map(item => item.row.draft.name), ['Unknown XYZ']);
+  assert.ok(plan.fresh.every(item => /tracking date/.test(item.issue)));
+  assert.throws(() => reviewedReceiptInput(rows)); // Button guidance must not bypass import validation.
+  const selected = rows.map(row => ({ ...row, selected: row.draft.name === 'Canned carrots' }));
+  assert.equal(receiptProductReviewState(selected).pending.length, 1);
+});
+
+test('explicit local type corrections and invalid fields are separate from label scanning and stay out of API payloads', () => {
+  const [watermelon] = receiptProducts(['Watermelon Rs. 70.00'], null, today);
+  assert.equal(receiptProductKind({ ...watermelon, productKind: 'packaged' }), 'packaged');
+  const invalid = { ...watermelon, draft: { ...watermelon.draft, quantity: '0' } };
+  assert.equal(receiptProductReviewState([invalid]).pending.length, 1);
+  assert.equal(receiptProductReviewState([invalid]).packaged.length, 0);
+  const [biscuits] = receiptProducts(['Biscuits Rs. 20.00'], null, today);
+  const corrected = saveReceiptCandidate({ ...biscuits, productKind: 'fresh', packageDateReview: { kind: 'not-applicable' } },
+    { packageDate: '', userDate: '2026-10-23', baseDate: '', days: '' });
+  assert.equal(receiptProductKind(corrected), 'fresh');
+  assert.equal(receiptProductReviewState([corrected]).pending.length, 0);
+  assert.doesNotMatch(JSON.stringify(reviewedReceiptInput([corrected])), /productKind|packageDateReview/);
 });
