@@ -44,9 +44,10 @@ const FILTER_CHIPS: { key: FilterChip; label: string; color: string }[] = [
 export default function PantryScreen() {
   const demo = useMockPantry();
   const real = useRealPantry();
+  const { enabled: realEnabled, reload: reloadPantry, setFilters: setRealFilters } = real;
   const { dispatch } = demo;
   const items: PantryItem[] = real.enabled ? real.items.map(pantryCardItem) : demo.items;
-  useEffect(() => { if (real.enabled) void real.reload(); }, [real.enabled, real.reload]);
+  useEffect(() => { if (realEnabled) void reloadPantry(); }, [realEnabled, reloadPantry]);
   const [confirmation, setConfirmation] = useState<{ item: PantryItem; action: 'CONSUMED' | 'WASTED'; persisted?: PantryItemDto; key?: string } | null>(null);
   const [outcomeError, setOutcomeError] = useState('');
   const outcomeRequest = useAuthRequest(setOutcomeError);
@@ -72,10 +73,10 @@ export default function PantryScreen() {
   const criteriaKey = pantryFilterKey(criteria);
   const pendingCriteria = real.enabled && criteriaKey !== pantryFilterKey(real.filters);
   useEffect(() => {
-    if (!real.enabled) return;
-    const timer = setTimeout(() => real.setFilters(criteria), 250);
+    if (!realEnabled) return;
+    const timer = setTimeout(() => setRealFilters(criteria), 250);
     return () => clearTimeout(timer);
-  }, [criteria, real.enabled, real.setFilters]);
+  }, [criteria, realEnabled, setRealFilters]);
   const listBusy = real.enabled && (pendingCriteria || real.loading);
   const filtered = real.enabled ? (pendingCriteria ? [] : items) : items
     .filter((i) => i.status === 'ACTIVE')

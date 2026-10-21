@@ -1,5 +1,5 @@
 /** Phase 2 proof of concept using the existing account/OTP design language. */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -25,7 +25,7 @@ export default function NativeAuthCheck() {
   const busy = useRef(false);
   const mounted = useRef(true);
   const inputs = useRef<(TextInput | null)[]>([]);
-  const run = async (action: () => Promise<void>) => {
+  const run = useCallback(async (action: () => Promise<void>) => {
     if (busy.current) return;
     busy.current = true; setLoading(true); setNotice('');
     try { await action(); }
@@ -34,18 +34,18 @@ export default function NativeAuthCheck() {
         ? `${error.message}${/^[A-Z_0-9]{1,40}$/.test(error.code) ? ` (${error.code})` : ''}`
         : 'Unable to access secure authentication. Please retry.');
     } finally { busy.current = false; if (mounted.current) setLoading(false); }
-  };
-  const restore = () => run(async () => {
+  }, []);
+  const restore = useCallback(() => run(async () => {
     if (!auth) return;
     const restored = await session.refresh();
     if (mounted.current) { setNotice(restored ? 'Session verified with Neon.' : 'No active session. Sign in with your email.'); }
-  });
+  }), [run, session]);
   useEffect(() => {
     mounted.current = true;
     void restore();
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => { mounted.current = false; clearInterval(timer); };
-  }, []);
+  }, [restore]);
   const cooldown = Math.max(0, Math.ceil((readyAt - now) / 1000));
   const send = () => {
     if (cooldown || !auth) return;

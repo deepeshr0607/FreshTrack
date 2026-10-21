@@ -21,7 +21,6 @@ import useDemoRequest from '@/features/auth/useDemoRequest';
 import useAuthRequest from '@/features/auth/useAuthRequest';
 import { nativeAuthProbe as auth } from '@/features/auth/nativeProbe';
 import { NeonAuthError } from '@/lib/neonAuth';
-import { useAuth } from '@/context/AuthContext';
 import FormInput from '@/components/FormInput';
 import PrimaryButton from '@/components/PrimaryButton';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme';
@@ -29,7 +28,6 @@ import { Colors, FontSize, FontWeight, Radius, Spacing } from '@/constants/Theme
 type Tab = 'sign-up' | 'sign-in';
 
 export default function SignUpScreen() {
-  const { session } = useAuth();
   const preferences = useMockPreferences();
   const [activeTab, setActiveTab] = useState<Tab>('sign-up');
   const [name, setName] = useState('');

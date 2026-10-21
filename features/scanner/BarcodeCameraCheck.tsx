@@ -26,15 +26,14 @@ export default function BarcodeCameraCheck({ lookupMode = false }: { lookupMode?
   const generation = useRef(0);
   const permitted = useRef(allowed);
   permitted.current = allowed;
-  function stop() { generation.current++; latch.stop(); setScanning(false); setTorch(false); }
+  const stop = React.useCallback(() => { generation.current++; latch.stop(); setScanning(false); setTorch(false); }, [latch]);
   useFocusEffect(React.useCallback(() => () => { generation.current++; latch.stop(); setScanning(false); setTorch(false); }, [latch]));
   useEffect(() => {
     const sub = AppState.addEventListener('change', state => { if (state !== 'active') stop(); });
     return () => sub.remove();
     // The latch and setters are stable for the lifetime of this screen.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [latch]);
-  useEffect(() => { stop(); setCode(null); setMessage(''); }, [identity, allowed]);
+  }, [stop]);
+  useEffect(() => { stop(); setCode(null); setMessage(''); }, [identity, allowed, stop]);
 
   async function start() {
     const request = ++generation.current;
@@ -52,7 +51,7 @@ export default function BarcodeCameraCheck({ lookupMode = false }: { lookupMode?
   return <SafeAreaView style={styles.safe}>
     <ScreenHeader title="FreshTrack" subtitle={lookupMode ? 'Barcode Scanner' : 'Barcode camera check'} showNotification={false} showAvatar={false} />
     <ScrollView contentContainerStyle={styles.content}>
-      <PrimaryButton label="Back to Scanner" variant="ghost" onPress={() => { stop(); router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/scanner'); }} />
+      <PrimaryButton label="Back to Scanner" variant="ghost" onPress={() => { stop(); if (router.canGoBack()) router.back(); else router.dismissTo('/(tabs)/scanner'); }} />
       <Text style={styles.title}>Scan a packaged grocery</Text>
       <Text style={styles.body}>{lookupMode ? 'Scan one package, look up its product details, then review quantity, purchase value and expiry before saving.' : 'Development camera check · Reads the barcode number only. This diagnostic does not save groceries.'}</Text>
       {!allowed ? <Text style={styles.body}>Use a verified real account in the development app for this check.</Text> : <>

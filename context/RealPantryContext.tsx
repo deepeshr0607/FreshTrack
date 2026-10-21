@@ -112,7 +112,8 @@ export function RealPantryProvider({ children }: { children: React.ReactNode }) 
       notice: message => scheduler.notice(scope, message),
     });
   }, [api, enabled, scope, session, state.user?.id]);
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; generation.current++; cache.clear(); automatic?.invalidate(); overdueReview?.invalidate(); }; }, [cache, automatic, overdueReview]);
+  const invalidateRequests = useCallback(() => { generation.current++; }, []);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; invalidateRequests(); cache.clear(); automatic?.invalidate(); overdueReview?.invalidate(); }; }, [cache, automatic, overdueReview, invalidateRequests]);
   useEffect(() => {
     const stop = onReminderPreferenceSaved(() => { void automatic?.request(); });
     // Observe every session publication, even if React batches checking/verified renders on resume.

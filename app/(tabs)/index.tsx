@@ -38,7 +38,6 @@ export default function HomeScreen() {
   const [mode, setMode] = useState<Mode>('at-home');
   const expiringItems = activeItems.filter((i) => i.daysLeft <= 7 && i.status === 'ACTIVE').slice(0, 5);
   const recentItems = [...activeItems].slice(0, 3);
-  const featuredRecipe = MOCK_RECIPES[0]!;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -88,7 +87,7 @@ export default function HomeScreen() {
               3 items need attention today (
               <Text style={styles.digestValue}>$8.40 value</Text> to rescue)
             </Text>
-            <Pressable onPress={() => router.push('/(tabs)/recipes' as any)} accessibilityRole="link">
+            <Pressable onPress={() => router.push('/(tabs)/recipes')} accessibilityRole="link">
               <Text style={styles.digestCta}>Tap to view recovery meal plan →</Text>
             </Pressable>
           </View>
@@ -129,7 +128,7 @@ export default function HomeScreen() {
             <View style={styles.redDot} />
             <Text style={styles.sectionTitle}>Expiring This Week</Text>
           </View>
-          <Pressable onPress={() => router.push('/(tabs)/pantry' as any)} accessibilityRole="link">
+          <Pressable onPress={() => router.push('/(tabs)/pantry')} accessibilityRole="link">
             <Text style={styles.seeAll}>See All ({expiringItems.length})</Text>
           </Pressable>
         </View>
@@ -156,7 +155,7 @@ export default function HomeScreen() {
               </Pressable>
               <Pressable
                 style={styles.pairBtn}
-                onPress={() => router.push('/(tabs)/recipes' as any)}
+                onPress={() => router.push('/(tabs)/recipes')}
                 accessibilityRole="button"
                 accessibilityLabel="Pair recipe"
               >
@@ -177,7 +176,7 @@ export default function HomeScreen() {
           {MOCK_RECIPES.slice(0, 2).map((recipe) => (
             <View key={recipe.id} style={styles.recipeHeroCard}>
               <Pressable
-                onPress={() => router.push(`/recipe/${recipe.id}` as any)}
+                onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
                 accessibilityRole="button"
                 accessibilityLabel={recipe.title}
               >
@@ -194,7 +193,7 @@ export default function HomeScreen() {
                 </View>
               </Pressable>
               <View style={styles.recipeHeroContent}>
-                <Pressable onPress={() => router.push(`/recipe/${recipe.id}` as any)}
+                <Pressable onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
                   accessibilityRole="button" accessibilityLabel={`${recipe.title} details`}>
                   <Text style={styles.recipeHeroTitle} numberOfLines={1}>{recipe.title}</Text>
                   <Text style={styles.recipeHeroDesc} numberOfLines={2}>{recipe.instructions}</Text>

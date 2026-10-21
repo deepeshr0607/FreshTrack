@@ -1,4 +1,4 @@
-import type { BarcodeLookup, PantryCreateInput } from '../types/api';
+import type { PantryCreateInput } from '../types/api';
 import type { CacheStorage } from './pantryDiskCache';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { packageBarcode } from './packageBarcode.ts';

@@ -10,7 +10,7 @@ import { recipeInventory } from '@/lib/recipes';
 import { recipeImages } from '@/lib/designAssets';
 import { useMockRecipes } from '@/context/MockRecipeContext';
 import { useMockPantry } from '@/context/MockPantryContext';
-import { Colors, Radius } from '@/constants/Theme';
+import { Radius } from '@/constants/Theme';
 
 function DemoRecipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -138,6 +138,7 @@ npm run dev         # Start API server with tsx watch (hot reload)
 | `npm run android` | `expo start --android` | Android emulator |
 | `npm run web` | `expo start --web` | Web |
 | `npx tsc --noEmit` | — | TypeScript type check |
+| `npm run lint` | ESLint + TypeScript/Hooks | Mobile source checks, zero warnings |
 | `npx expo-doctor` | — | Diagnose dependency issues |
 | `npx expo install --fix` | — | Fix incompatible package versions |
 
@@ -195,11 +196,13 @@ All secrets live in `backend/.env`. See [`backend/.env.example`](backend/.env.ex
 | 6 | Barcode scan + receipt OCR | 🟡 On-device OCR checked on iPhone; receipt import checked on iPhone; normal entry checked on iPhone; receipt estimates checked on iPhone; package/manual expiry checked on iPhone; barcode review/save connected; phone and broader QA remain |
 | 7 | AI Chef (Spoonacular integration) | ✅ Development acceptance complete; broader native QA recorded |
 | 8 | Waste analytics and data integrity | ✅ Development review complete; category/individual phone checks skipped, QA gaps recorded |
-| 9 | Settings, privacy, release preparation | 🔄 In progress; cleanup/deletion/receipt retention accepted; API/backend tooling checked; mobile compatibility/reliability/build remain |
+| 9 | Settings, privacy, release preparation | 🔄 In progress; cleanup/deletion/receipt retention accepted; API/tooling checked; patched iPhone/advisory/reliability/build review remain |
 
 ---
 
 ## Project Status
+
+**Phase 9 SDK57 patch/mobile lint checkpoint implemented (21 October); patched iPhone acceptance pending.** Applied the five Expo-compatible patches within SDK57; React/React Native versions and designs preserved. Mobile lint0warnings (documented decoder/asset exceptions), clean `npm ci`, TypeScript and384/384 tests pass; backend lint/TypeScript/build/tests160/160 pass. Expo install check and Doctor21/21 plus all-platform41-route export pass. Existing iOS pods refreshed; unsigned/signed Debug builds, strict signature and iPhone app update pass. Mobile audit remains29 (18high/11moderate); incompatible downgrade/major suggestions were not applied. No backend/schema/provider/deployment/public-env/household changes. See [mobile compatibility report](docs/Phase_9_Mobile_Compatibility.md). Next: patched iPhone smoke checks, unresolved mobile advisory review, then database reliability and personal-use build. Phase9 remains incomplete; no store publishing.
 
 **Phase 9 backend tooling checkpoint complete (20 October); mobile compatibility/reliability remain open.** Removed the vulnerable Jest/ts-node-dev development chains, preserved the health assertions in Node tests, added supported TypeScript ESLint and verified tsx/test watcher restarts. Backend clean `npm ci`, lint0warnings, TypeScript/build and unified tests160/160 pass; full backend audit0 advisories (previously36). Root TypeScript/tests384/384 pass. Runtime package versions/mobile configuration unchanged; no deployment/database/native-build/environment changes. Expo Doctor still20/21 with five existing patch mismatches; root lint and intermittent live database failures remain. See [backend tooling report](docs/Phase_9_Backend_Tooling.md). Next: Expo patch compatibility/mobile lint, then database reliability and personal-use build. No phone checklist for development tooling; no store publishing.
 

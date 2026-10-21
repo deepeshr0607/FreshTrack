@@ -8,6 +8,7 @@ import { createNotificationIntentInbox } from '@/lib/notificationIntents';
 
 export default function NotificationResponseBridge() {
   const { state } = useAuth();
+  const subject = state.user?.id;
   const navigation = useRootNavigationState();
   const inbox = useRef(createNotificationIntentInbox());
   const [revision, update] = useState(0);
@@ -28,10 +29,10 @@ export default function NotificationResponseBridge() {
   }, []);
   useEffect(() => {
     if (!navigation?.key || Platform.OS === 'web') return;
-    const intent = inbox.current.take(state.status === 'authenticated' && state.user ? notificationScope(state.user.id) : null, state.checking, state.demo);
+    const intent = inbox.current.take(state.status === 'authenticated' && subject ? notificationScope(subject) : null, state.checking, state.demo);
     if (!intent) return;
     router.push({ pathname: '/pantry/[id]', params: { id: intent.itemId,
       ...(intent.action !== 'view' ? { notificationAction: intent.action, notificationKey: String(revision) } : {}) } });
-  }, [navigation?.key, revision, state.user?.id, state.status, state.checking, state.demo]);
+  }, [navigation?.key, revision, subject, state.status, state.checking, state.demo]);
   return null;
 }

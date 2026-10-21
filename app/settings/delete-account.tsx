@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import PrototypeScreen, { ui } from '@/components/PrototypeScreen';
@@ -20,17 +20,18 @@ export default function DeleteAccount() {
   const [email, setEmail] = useState(''), [confirmation, setConfirmation] = useState(''), [password, setPassword] = useState('');
   const [notice, setNotice] = useState('');
   const request = useAuthRequest(setNotice);
+  const runRequest = request.run;
   const api = useMemo(() => {
     if (Platform.OS === 'web' || !nativeAuthProbe) return null;
     try { return createAccountDeletionApi(process.env.EXPO_PUBLIC_API_URL, () => nativeAuthProbe!.getApiToken(), __DEV__); }
     catch { return null; }
   }, []);
-  const refresh = () => {
+  const refresh = useCallback(() => {
     if (!api) return;
     setNotice('');
-    void request.run(async mounted => { const result = await api.review(); if (mounted()) setReview(result); });
-  };
-  useEffect(() => { refresh(); }, [api]); // Account-scoped route unmounts on sign-out.
+    void runRequest(async mounted => { const result = await api.review(); if (mounted()) setReview(result); });
+  }, [api, runRequest]);
+  useEffect(() => { refresh(); }, [refresh]); // Account-scoped route unmounts on sign-out.
   const back = () => router.canGoBack() ? router.back() : router.replace('/settings/profile');
   const disabled = request.loading || !review || review.state === 'SHARED_HOUSEHOLD' || state.checking;
   const submit = () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
@@ -22,7 +22,8 @@ export default function BarcodeEntryGate({ code, render }: { code?: string; rend
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const generation = useRef(0);
-  const lookup = async () => {
+  const invalidateRequests = useCallback(() => { generation.current++; }, []);
+  const lookup = useCallback(async () => {
     if (!subject || state.demo || session.getSnapshot().checking) return;
     const version = ++generation.current;
     const active = () => version === generation.current && session.getSnapshot().user?.id === subject && !session.getSnapshot().checking;
@@ -37,8 +38,8 @@ export default function BarcodeEntryGate({ code, render }: { code?: string; rend
       if (active()) setResult(row);
     } catch (error) { if (active()) setError(error instanceof NeonAuthError ? error.message : 'Saved barcode retry could not be checked. Retry before entering another purchase.'); }
     finally { if (version === generation.current) setBusy(false); }
-  };
-  useEffect(() => { setEntry(null); void lookup(); return () => { generation.current++; }; }, [subject, code]);
+  }, [subject, code, state.demo, session]);
+  useEffect(() => { setEntry(null); void lookup(); return invalidateRequests; }, [lookup, invalidateRequests]);
   if (entry && entry.subject === subject && !state.demo) return render(entry);
   return <PrototypeScreen back={() => router.canGoBack() ? router.back() : router.dismissTo('/(tabs)/scanner')}>
     <Text style={ui.title}>Review Barcode Product</Text>

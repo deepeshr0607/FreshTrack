@@ -67,7 +67,7 @@ function daysFromNow(n: number): string {
   d.setDate(d.getDate() + n);
   return d.toISOString().split('T')[0]!;
 }
-function daysAgo(n: number): string {
+function _daysAgo(n: number): string {
   return daysFromNow(-n);
 }
 
