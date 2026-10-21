@@ -21,7 +21,7 @@ test('Permission/read failures retain targeted settings or retry without forcing
  v.ocr.errorCode='PERMISSION';v.render();assert.equal(button(v,'Retry Receipt Recognition'),undefined);button(v,'Open Device Settings').onPress();assert.deepEqual(v.calls,['read','settings']);
 });
 test('Read results keep product review/raw-text disclosure/clear and import read-only guard wired',()=>{
- const v=scannerHarness({page:'receipt',readOnly:true,ocr:{image:'file:///synthetic-receipt.jpg',read:true,lines:['SYNTHETIC APPLES 20.00']}});assert.match(v.markup,/Product review: 1 lines/);assert.doesNotMatch(v.markup,/SYNTHETIC APPLES/);assert.equal(v.importProps.readOnly,true);
+ const v=scannerHarness({page:'receipt',readOnly:true,ocr:{image:'file:///synthetic-receipt.jpg',read:true,lines:['SYNTHETIC APPLES 20.00']}});assert.match(v.markup,/Product review: 1 lines/);assert.doesNotMatch(v.markup,/SYNTHETIC APPLES/);assert.equal(v.importProps.readOnly,true);assert.equal(button(v,'Retake Receipt'),undefined);button(v,'Show receipt photo and capture controls').onPress();v.render();assert.ok(button(v,'Retake Receipt'));button(v,'Show receipt photo and capture controls').onPress();v.render();assert.equal(button(v,'Retake Receipt'),undefined);
  button(v,'View Receipt Text').onPress();v.render();assert.match(v.markup,/SYNTHETIC APPLES/);button(v,'Clear Photo & Text').onPress();v.render();assert.equal(v.ocr.image,null);assert.doesNotMatch(v.markup,/Product review:/);
 });
 test('Demo entry stays a prototype and explicit diagnostics keep their previous entry points',()=>{

@@ -49,8 +49,11 @@ export function ReceiptProgress({ step }: { step: 1 | 2 | 3 }) {
   return <View style={s.progress}>{['Capture', 'Review', 'Add'].map((label, index) => <View key={label} style={s.progressStep}><View style={[s.progressDot, index + 1 <= step && { backgroundColor: Colors.primary }]}><Text style={[s.progressNumber, index + 1 <= step && { color: Colors.white }]}>{index + 1}</Text></View><Text style={[s.stepText, index + 1 === step && { color: Colors.primary }]}>{label}</Text></View>)}</View>;
 }
 export function ReceiptCapturePanel({ image, busy, supported, read, onCamera, onLibrary }: { image: string | null; busy: boolean; supported: boolean; read: boolean; onCamera(): void; onLibrary(): void }) {
+  const [expanded, setExpanded] = useState(false);
   return <View style={s.capturePanel}>
     {!read && <View style={{ gap: 6 }}><Text accessibilityRole="header" style={s.captureTitle}>Let’s read your receipt.</Text><Text style={s.body}>Lay it flat, keep every item in view, and use good light.</Text></View>}
+    {read && <Pressable accessibilityRole="button" accessibilityLabel="Show receipt photo and capture controls" accessibilityState={{ expanded }} onPress={() => setExpanded(value => !value)} style={s.receiptToggle}><Icon name="image-outline" /><Text style={[s.greenLabel, { flex: 1 }]}>Receipt photo</Text><Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={19} /></Pressable>}
+    {(!read || expanded) && <>
     <View style={s.viewfinder}>
       {image ? <Image source={{ uri: image }} accessibilityLabel="Selected receipt preview" resizeMode="contain" style={s.preview} /> : <View style={s.placeholder}><Icon name="receipt" size={76} color={Colors.inversePrimary} /><Text style={s.viewfinderText}>Your next pantry update starts here</Text></View>}
       {!image && <><View style={[s.corner, s.topLeft]} /><View style={[s.corner, s.topRight]} /><View style={[s.corner, s.bottomLeft]} /><View style={[s.corner, s.bottomRight]} /></>}
@@ -61,6 +64,7 @@ export function ReceiptCapturePanel({ image, busy, supported, read, onCamera, on
       <Tap label="Upload Receipt Photo" onPress={onLibrary} disabled={!supported || busy} style={s.uploadButton}><Icon name="image-outline" size={21} /><Text style={s.greenLabel}>Upload photo</Text></Tap>
     </View>
     {!read && <View style={s.privacy}><Icon name="shield-check-outline" size={15} /><Text style={s.privacyText}>Only reviewed products are sent when you confirm.</Text></View>}
+    </>}
   </View>;
 }
 const s = StyleSheet.create({
@@ -99,4 +103,6 @@ const s = StyleSheet.create({
   busy: { position: 'absolute', inset: 0, backgroundColor: '#163C30DD', alignItems: 'center', justifyContent: 'center', gap: 14 }, busyText: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13, color: Colors.white },
   captureActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, cameraButton: { flex: 1, minWidth: 110, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: Colors.primary, borderRadius: 999, padding: 14, minHeight: 52 }, uploadButton: { flex: 1, minWidth: 110, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, backgroundColor: Colors.surfaceContainerLow, borderRadius: 999, padding: 14, minHeight: 52 },
   whiteLabel: { color: Colors.white, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12 }, greenLabel: { color: Colors.primary, fontFamily: 'PlusJakartaSans_700Bold', fontSize: 12 },
+  receiptToggle: { flexDirection: 'row', alignItems: 'center', gap: 9, padding: 14, minHeight: 48, borderRadius: 16, backgroundColor: Colors.white },
+
 });

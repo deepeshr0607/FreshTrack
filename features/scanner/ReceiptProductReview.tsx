@@ -8,11 +8,12 @@ import type { ReceiptReviewInput } from '@/types/api';
 import type { ReceiptTextBox } from '@/lib/receiptTextBoxes';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
 import { expiryDraft, kolkataToday, resolveExpiry } from '@/lib/pantryExpiry';
-import { manualReceiptCandidate, receiptExpiryDraft, receiptExpiryLabel, saveReceiptCandidate, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
+import { manualReceiptCandidate, receiptExpiryDraft, saveReceiptCandidate, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
 import { receiptProducts, automaticFreshRule, receiptProductKind, receiptProductReviewState } from '@/lib/receiptProducts';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
 import { confirmPrintedReceiptDate } from '@/lib/receiptPackageDates';
 import { RECEIPT_MAX_ITEMS } from '@/lib/receiptLimits';
+import { ReceiptProductCard, ReviewAction, ReviewDisclosure, ReviewHeading, ReviewStats, r } from './ReceiptReviewPresentation';
 import PackageExpiryCapture from './PackageExpiryCapture';
 
 /** Normal receipt UX. The diagnostic/manual parser exercise remains a separate screen. */
@@ -29,6 +30,7 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
   const [labelItem, setLabelItem] = useState<LocalReceiptCandidate | null>(null);
   const [error, setError] = useState(''), [page, setPage] = useState(0);
   const [packagePage, setPackagePage] = useState(0);
+  const [showPackaged, setShowPackaged] = useState(false);
   const { included, pending, packaged, fresh, other } = receiptProductReviewState(rows);
   const packagePages = Math.max(1, Math.ceil(packaged.length / 10)), currentPackagePage = Math.min(packagePage, packagePages - 1);
   const pages = Math.max(1, Math.ceil(rows.length / 10)), currentPage = Math.min(page, pages - 1);
@@ -53,26 +55,32 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
       update({ ...saved, selected: labelItem.selected }); setLabelItem(null);
     } catch (problem) { setLabelItem(null); edit(labelItem); setError((problem as Error).message); }
   }} />;
-  if (editor) return <View style={ui.card}>
-    <Text accessibilityRole="header" style={ui.heading}>Edit product</Text>
-    <FormInput label="Product name" value={editor.draft.name} maxLength={120} onChangeText={value => change('name', value)} />
-    <Text style={ui.heading}>Product type</Text>
+  if (editor) return <View style={r.card}>
+    <ReviewHeading title="Edit product" subtitle="Make it right before it reaches your pantry." icon="pencil-outline" />
+    <Text style={r.sectionTitle}>Product details</Text>
+    <FormInput label="Product name" accessibilityLabel="Product name" value={editor.draft.name} maxLength={120} onChangeText={value => change('name', value)} />
+    <Text style={r.sectionTitle}>Product type</Text>
     <View style={ui.row}>{(['fresh', 'packaged'] as const).map(kind => <Pressable key={kind} accessibilityRole="radio"
       accessibilityLabel={kind === 'fresh' ? 'Fresh or loose product' : 'Packaged product'} accessibilityState={{ checked: receiptProductKind(editor) === kind }}
       style={[ui.pill, receiptProductKind(editor) === kind && { backgroundColor: Colors.primary }]}
       onPress={() => { setEditor(previous => previous ? { ...previous, productKind: kind } : null); if (kind === 'packaged' && expiry.days) setExpiry(expiryDraft()); setError(''); }}>
       <Text style={[ui.label, receiptProductKind(editor) === kind && { color: Colors.white }]}>{kind === 'fresh' ? 'Fresh / loose' : 'Packaged'}</Text></Pressable>)}</View>
+    <ReviewDisclosure title={`Category · ${editor.draft.category}`}>
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{PANTRY_CATEGORIES.map(category => <Pressable key={category.name}
       accessibilityRole="radio" accessibilityLabel={category.name} accessibilityState={{ checked: editor.draft.category === category.name }}
       style={[ui.pill, editor.draft.category === category.name && { backgroundColor: Colors.primary }]}
       onPress={() => change('category', category.name)}><Text style={[ui.label, editor.draft.category === category.name && { color: Colors.white }]}>{category.emoji} {category.name}</Text></Pressable>)}</View>
-    <FormInput label="Quantity" value={editor.draft.quantity} keyboardType="decimal-pad" onChangeText={value => change('quantity', value)} />
-    <FormInput label="Unit (piece, pack, kg, l…)" value={editor.draft.unit} maxLength={32} onChangeText={value => change('unit', value)} />
-    <FormInput label="Total product value (₹, optional)" value={editor.draft.price} keyboardType="decimal-pad" onChangeText={value => change('price', value)} />
-    <Text style={ui.text}>Blank value means unknown. Quantity defaults to 1 piece when it is not readable; correct it here.</Text>
+    </ReviewDisclosure>
+    <View style={r.fieldsRow}><View style={r.field}>
+    <FormInput label="Quantity" accessibilityLabel="Quantity" value={editor.draft.quantity} keyboardType="decimal-pad" onChangeText={value => change('quantity', value)} />
+    </View><View style={r.field}><FormInput label="Unit" accessibilityLabel="Unit" placeholder="piece, kg, l…" value={editor.draft.unit} maxLength={32} onChangeText={value => change('unit', value)} />
+    </View></View>
+    <FormInput label="Purchase value (₹, optional)" accessibilityLabel="Purchase value" value={editor.draft.price} keyboardType="decimal-pad" onChangeText={value => change('price', value)} />
+    <Text style={r.caption}>Value is for this whole entry. Leave blank if unknown.</Text>
+    <Text style={r.sectionTitle}>Expiry date</Text>
     {!!expiry.packageDate && <Text style={ui.label}>Confirmed printed expiry: {expiry.packageDate}</Text>}
     {!!expiry.days && <Text style={ui.label}>Estimated from {expiry.baseDate} · {expiry.days} days</Text>}
-    <FormInput label="Change expiry / enter manually (YYYY-MM-DD)" value={expiry.userDate} maxLength={10}
+    <FormInput label="Manual expiry (YYYY-MM-DD)" accessibilityLabel="Manual expiry" value={expiry.userDate} maxLength={10}
       onChangeText={value => { setExpiry({ packageDate: '', userDate: value, baseDate: '', days: '' }); setError(''); }} />
     {receiptProductKind(editor) === 'fresh' && automaticFreshRule(editor.draft.name) && <PrimaryButton label="Use Fresh-Food Estimate" variant="ghost" onPress={() => {
       const rule = automaticFreshRule(editor.draft.name)!;
@@ -102,14 +110,13 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     <PrimaryButton label="Cancel Edit" variant="ghost" onPress={() => { setEditor(null); setError(''); }} />
   </View>;
   return <View style={{ gap: 16 }}>
-    <View style={ui.card}>
-      <Text accessibilityRole="header" style={ui.title}>Haul Detected</Text>
-      <Text style={ui.text}>{rows.length} products · {included.length - pending.length} ready · {pending.length} need details or a date</Text>
-      <Text style={ui.text}>Check your products below. Edit only what needs changing, then add the reviewed haul together.</Text>
-      <Text style={ui.label}>Purchase date: {purchaseDate}</Text>
-      <PrimaryButton label={changingDate ? 'Cancel Date Change' : 'Change Purchase Date'} variant="ghost" onPress={() => { setDateInput(purchaseDate); setChangingDate(value => !value); setError(''); }} />
+    <View style={r.card}>
+      <ReviewHeading title="Your grocery haul" subtitle="Check the products. Edit only what needs changing." />
+      <ReviewStats stats={[{ label: 'Detected', value: rows.length }, { label: 'Ready', value: included.length - pending.length }, { label: 'Needs review', value: pending.length, warning: pending.length > 0 }]} />
+      <View style={r.compactRow}><Text style={r.caption}>Purchased {purchaseDate}</Text>
+      <ReviewAction label={changingDate ? 'Cancel Date Change' : 'Change Purchase Date'} text={changingDate ? 'Cancel' : 'Change'} icon="calendar-edit" onPress={() => { setDateInput(purchaseDate); setChangingDate(value => !value); setError(''); }} /></View>
       {changingDate && <>
-        <FormInput label="Purchase date (YYYY-MM-DD)" value={dateInput} maxLength={10} onChangeText={setDateInput} />
+        <FormInput label="Purchase date (YYYY-MM-DD)" accessibilityLabel="Purchase date" value={dateInput} maxLength={10} onChangeText={setDateInput} />
         <PrimaryButton label="Update Fresh-Food Estimates" onPress={() => {
           try {
             resolveExpiry({ packageDate: dateInput, userDate: null, preset: null });
@@ -124,11 +131,16 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
           } catch (problem) { setError((problem as Error).message); }
         }} />
       </>}
+      <ReviewDisclosure title="Review tips & estimate guidance">
       <Text style={ui.text}>Fresh-food dates are editable storage estimates starting on the purchase date, not production dates or safety guarantees. Their storage conditions are shown on each card. Printed dates take priority.</Text>
       <Text style={ui.text}>No price conversion is performed. Foreign-currency values stay unknown; other displayed values are in ₹ and need checking.</Text>
       <Text style={ui.text}>If quantity is unclear, 1 piece is prefilled. Change the quantity and unit where needed.</Text>
+      </ReviewDisclosure>
     </View>
-    {!!packaged.length && <View style={[ui.card, { backgroundColor: Colors.surfaceContainerLow }]}>
+    {!!packaged.length && <View style={r.info}>
+      <View style={r.compactRow}><View style={{ flex: 1 }}><Text style={r.sectionTitle}>{packaged.length} packaged {packaged.length === 1 ? 'date' : 'dates'} to check</Text><Text style={r.caption}>Scan any item’s expiry tag, or edit its date.</Text></View>
+      <ReviewAction label={showPackaged ? 'Hide packaged queue' : 'Choose packaged item'} text={showPackaged ? 'Hide queue' : 'Choose item'} icon="camera-outline" onPress={() => setShowPackaged(value => !value)} /></View>
+      {showPackaged && <>
       <Text style={ui.heading}>Check packaged expiry dates</Text>
       <Text style={ui.text}>Photograph the expiry stamp on each packaged product. If it cannot be read, edit the product to enter a date yourself, or exclude it for now.</Text>
       <Text style={ui.text}>Choose any packaged item below; you do not have to scan them in order.</Text>
@@ -138,15 +150,9 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
         <PrimaryButton label="Previous Packaged Items" variant="ghost" disabled={currentPackagePage === 0} onPress={() => setPackagePage(currentPackagePage - 1)} />
         <PrimaryButton label="Next Packaged Items" variant="ghost" disabled={currentPackagePage === packagePages - 1} onPress={() => setPackagePage(currentPackagePage + 1)} />
       </>}
+      </>}
     </View>}
-    {!!fresh.length && <View style={ui.card}>
-      <Text style={ui.heading}>Fresh items needing a tracking date or correction</Text>
-      <Text style={ui.text}>These are fresh products, so no package scan is required. Open Edit Product to enter a date or correct the details, or exclude the item.</Text>
-    </View>}
-    {!!other.length && <View style={ui.card}>
-      <Text style={ui.heading}>Product details need checking</Text>
-      <Text style={ui.text}>Choose Fresh / loose or Packaged in Edit Product if the type was not recognized. Correct missing or invalid details before saving.</Text>
-    </View>}
+    {(fresh.length > 0 || other.length > 0) && <View style={r.info}><Text style={r.warning}>{fresh.length + other.length} products need a date or correction</Text><Text style={r.caption}>Edit the highlighted cards or exclude them. Fresh products do not need a package scan.</Text></View>}
     {pages > 1 && <View style={ui.card}>
       <Text style={ui.label}>Products {currentPage * 10 + 1}–{Math.min((currentPage + 1) * 10, rows.length)} of {rows.length}</Text>
       <View style={ui.row}>
@@ -158,24 +164,10 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     {rows.slice(currentPage * 10, (currentPage + 1) * 10).map(row => {
       const rule = row.expirySelection?.preset ? automaticFreshRule(row.draft.name) : null;
       const kind = receiptProductKind(row), problem = pending.find(item => item.row.id === row.id);
-      return <View key={row.id} style={[ui.card, { backgroundColor: Colors.surfaceContainerLow, opacity: row.selected ? 1 : 0.65 }]}>
-        <View style={ui.row}><Text style={[ui.heading, { flex: 1 }]}>{row.draft.name}</Text>
-          <Pressable accessibilityRole="checkbox" accessibilityLabel={`Include ${row.draft.name}`} accessibilityState={{ checked: row.selected }}
-            style={ui.pill} onPress={() => setRows(previous => previous.map(item => item.id === row.id ? { ...item, selected: !item.selected } : item))}>
-            <Text style={ui.label}>{row.selected ? '✓ Include' : 'Excluded'}</Text></Pressable></View>
-        <Text style={ui.text}>{row.draft.category} · {row.draft.quantity} {row.draft.unit} · {row.draft.price ? `₹${row.draft.price}` : 'Unknown value'}</Text>
-        <Text style={ui.label}>{kind === 'fresh' ? 'Fresh / loose · no package scan needed' : kind === 'packaged' ? 'Packaged product' : 'Product type needs checking'}</Text>
-        {(row.sourceLineIds?.length ?? 0) > 1 && <Text style={ui.text}>Matched receipt columns · check the product and amount.</Text>}
-        <Text style={ui.label}>{row.reviewed ? receiptExpiryLabel({ expiresOn: row.draft.expiresOn, expirySelection: row.expirySelection }) : 'Needs an expiry date / details'}</Text>
-        {problem && <Text style={ui.text}>{problem.issue}</Text>}
-        {rule && <>
-          <Text style={ui.text}>{rule.condition}. Shorten the date if the food is older or stored differently.</Text>
-          <Pressable accessibilityRole="link" style={ui.pill} onPress={() => void Linking.openURL(rule.sourceUrl).catch(() => {})}><Text style={ui.label}>Storage guidance · {rule.source}</Text></Pressable>
-        </>}
-        <PrimaryButton label="Edit Product" accessibilityLabel={`Edit ${row.draft.name}`} variant="ghost" onPress={() => edit(row)} />
-        {kind === 'packaged' && <PrimaryButton label={row.expirySelection?.packageDate ? 'Rescan Expiry Tag' : 'Scan Expiry Tag'} accessibilityLabel={`Scan expiry for ${row.draft.name}`} variant="ghost" onPress={() => setLabelItem(row)} />}
-        <PrimaryButton label="Remove Product" accessibilityLabel={`Remove ${row.draft.name}`} variant="ghost" onPress={() => setRows(previous => previous.filter(item => item.id !== row.id))} />
-      </View>;
+      return <ReceiptProductCard key={row.id} row={row} kind={kind} rule={rule} issue={problem?.issue}
+        onToggle={() => setRows(previous => previous.map(item => item.id === row.id ? { ...item, selected: !item.selected } : item))}
+        onEdit={() => edit(row)} onRemove={() => setRows(previous => previous.filter(item => item.id !== row.id))}
+        onScan={() => setLabelItem(row)} onGuidance={() => { if (rule) void Linking.openURL(rule.sourceUrl).catch(() => {}); }} />;
     })}
     <PrimaryButton label="＋ Add Missing Product" variant="ghost" disabled={rows.length >= RECEIPT_MAX_ITEMS} onPress={() => edit({ ...manualReceiptCandidate(`manual-${++next.current}`), selected: true, draft: { name: '', category: 'Other', quantity: '1', unit: 'piece', price: '', expiresOn: '' } })} />
     <Text style={ui.text}>Compare the list with your receipt: unclear products or split columns may be missed. Nothing is saved until the final confirmation.</Text>
@@ -192,6 +184,6 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
       try { onPrepare(reviewedReceiptInput(rows)); }
       catch (problem) { setError((problem as Error).message); }
     }} />
-    {!!pending.length && <Text style={ui.text}>Finish the {pending.length} included products that need a date or details, or exclude them to continue.</Text>}
+    {!!pending.length && <Text style={ui.text}>Finish {pending.length} {pending.length === 1 ? 'product that needs' : 'products that need'} a date or details, or exclude {pending.length === 1 ? 'it' : 'them'} to continue.</Text>}
   </View>;
 }
