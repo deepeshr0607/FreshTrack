@@ -36,8 +36,10 @@ No backend source/API/schema changes, dependencies, cloud services, environment 
 - Version-sensitive references: [React Native RefreshControl](https://reactnative.dev/docs/0.86/refreshcontrol), [Expo57 safe areas](https://docs.expo.dev/versions/v57.0.0/sdk/safe-area-context/).
 - Existing Xcode Release build: BUILD SUCCEEDED. Strict/deep codesign verification and embedded Dashboard/API destination checks pass. Same-identifier update and direct iPhone launch pass, without uninstalling. Toolchain/third-party Hermes warnings remain; not a zero-warning build.
 - Bundle SHA-256: `1cd7bfd8b71b66c10831f85d284c229268abe1ae39feeaf669dd25e399536d80`. Personal Team profile expires23October2026 at10:08:49IST, unchanged by this rebuild.
-- iPhone visual/functional acceptance: pending. Local build/test/export/installation logs use `/private/tmp/freshtrack-dashboard-*`. Temporary synthetic-preview server/tab were stopped/closed after inspection.
+- iPhone visual/functional acceptance: user selected “Looks good — all checks passed” for the six-step Dashboard checklist. The report covers appearance/readability, real count/value comparison, Scan/Add/Shopping navigation without saving, expiry filtering/details, Shopping mode, Recipes/Insights/profile shortcuts and return/pull-to-refresh. This is user-reported acceptance, not agent observation, confirmed grocery mutations, Android runtime or full accessibility acceptance. The Shopping check allowed an empty list, so it does not independently prove populated-list checkbox manipulation. Local build/test/export/installation logs use `/private/tmp/freshtrack-dashboard-*`. Temporary synthetic-preview server/tab were stopped/closed after inspection.
 
 Earlier Expo Doctor21/21 and unresolved Phase9 audit/signing/platform/reliability limits are retained as historical results, not rerun or waived by this UI change. Tests/builds include the pre-existing paused decoder working tree; this slice does not commit those dependency changes.
 
-Next: check Dashboard appearance, real counts, quick actions, filtering, Shopping mode and return/refresh on the updated iPhone app. Do not proceed to redesign another page before this Dashboard pass is reviewed.
+Acceptance recording changes documentation only; prior automated checks were not rerun. `git diff --check` passes.
+
+Dashboard review is complete. Next UI slice: Pantry, preserving the approved visual style and working Scanner/authentication/backend behavior. Other Phase9 gaps remain open.
