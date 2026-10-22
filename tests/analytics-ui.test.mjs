@@ -13,7 +13,7 @@ test('compact month picker preserves previous next manual and current requests',
  const h=analyticsHarness();assert.equal(h.inputs.length,0);press(h,'Previous analytics month');press(h,'Next analytics month');press(h,'Choose analytics month');
  h.inputs[0].onChangeText('2026-08');h.render();const view=h.controls.find(row=>JSON.stringify(row.children).includes('View Month'));view.onPress();
  const current=h.controls.find(row=>row.accessibilityLabel==='Current Household Month');assert.ok(current);current.onPress();
- assert.deepEqual(h.calls,[['load','2026-09'],['load','2026-11'],['load','2026-08'],'current',['load',undefined]]);
+ assert.deepEqual(h.calls,[['load','2026-09'],['load','2026-08'],'current',['load',undefined]]);
 });
 test('chart exposes exact values and marks selected month',()=>{
  const h=analyticsHarness();const label='2026-10: consumed ₹72.00, wasted ₹60.50';press(h,label);assert.equal(h.controls.find(row=>row.accessibilityLabel===label).accessibilityState.selected,true);assert.match(h.markup,/2026-10: consumed ₹72.00, wasted ₹60.50/);

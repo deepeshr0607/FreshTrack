@@ -1,7 +1,9 @@
 import type { AnalyticsSeries } from '../types/api';
 // @ts-expect-error Explicit extension supports strip-types tests and Metro.
 import { NeonAuthError } from './neonAuth.ts';
-export function createAnalyticsSession(api: { series(month?: string): Promise<AnalyticsSeries> }, active: () => boolean) {
+// @ts-expect-error Explicit extension supports strip-types tests and Metro.
+import { analyticsCurrentMonth, validMonth } from './analyticsPresentation.ts';
+export function createAnalyticsSession(api: { series(month?: string): Promise<AnalyticsSeries> }, active: () => boolean, now: () => Date = () => new Date()) {
   let state: { month: string | undefined; data: AnalyticsSeries | null; status: 'idle' | 'loading' | 'ready' | 'error'; error: string } = { month: undefined, data: null, status: 'idle', error: '' };
   let generation = 0;
   const listeners = new Set<() => void>();
@@ -13,6 +15,9 @@ export function createAnalyticsSession(api: { series(month?: string): Promise<An
     invalidate,
     async load(month = state.month) {
       if (!active() || state.status === 'loading' && state.month === month) return;
+      if (month && validMonth(month) && month > analyticsCurrentMonth(now())) {
+        generation++; publish({ data: null, status: 'error', error: `Choose ${analyticsCurrentMonth(now())} or an earlier analytics month.` }); return;
+      }
       const revision = ++generation; publish({ month, data: null, status: 'loading', error: '' });
       try { const data = await api.series(month); if (active() && revision === generation) publish({ data, status: 'ready' }); }
       catch (error) { if (active() && revision === generation) publish({ status: 'error', error: error instanceof NeonAuthError ? `${error.message} (${error.code})` : 'Analytics are unavailable. Please retry.' }); }

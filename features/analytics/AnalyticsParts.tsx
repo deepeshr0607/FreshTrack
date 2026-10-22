@@ -6,21 +6,31 @@ import { useRealAnalytics } from '@/context/RealAnalyticsContext';
 import { a, AnalyticsDisclosure, AnalyticsIcon } from './AnalyticsPresentation';
 import { Colors } from '@/constants/Theme';
 import type { AnalyticsAmount, AnalyticsSeries } from '@/types/api';
-import { analyticsBarPercent, consumedAmount, formatAnalyticsMoney, shiftAnalyticsMonth } from '@/lib/analyticsPresentation';
+import { analyticsBarPercent, consumedAmount, formatAnalyticsMoney, shiftAnalyticsMonth, analyticsCurrentMonth, analyticsMonthAllowed } from '@/lib/analyticsPresentation';
 export function MonthControls() {
   const { state, store } = useRealAnalytics();
   const month = state.data?.month ?? state.month ?? '';
   const [draft, setDraft] = useState(month);
   const [choosing, setChoosing] = useState(false);
+  const [monthError, setMonthError] = useState('');
+  const latest = analyticsCurrentMonth(new Date(), state.data?.timezone ?? 'Asia/Kolkata');
+  const previous = shiftAnalyticsMonth(month, -1), next = shiftAnalyticsMonth(month, 1);
+  const canPrevious = !!previous && analyticsMonthAllowed(previous, latest), canNext = !!next && analyticsMonthAllowed(next, latest);
   useEffect(() => { setDraft(month); }, [month]);
-  const move = (offset: number) => { const next = shiftAnalyticsMonth(month, offset); if (next) void store.load(next); };
+  const select = (value: string) => {
+    if (!analyticsMonthAllowed(value, latest)) { setMonthError(`Choose ${latest} or an earlier month in YYYY-MM format.`); return; }
+    setMonthError(''); void store.load(value);
+  };
+  const move = (offset: number) => { const target = shiftAnalyticsMonth(month, offset); if (target && analyticsMonthAllowed(target, latest)) select(target); };
   return <View style={a.card}>
-    <View style={ui.row}><Pressable accessibilityRole="button" accessibilityLabel="Previous analytics month" disabled={!month} style={a.round} onPress={() => move(-1)}><AnalyticsIcon name="chevron-left" /></Pressable>
+    <View style={ui.row}><Pressable accessibilityRole="button" accessibilityLabel="Previous analytics month" accessibilityState={{ disabled: !canPrevious }} disabled={!canPrevious} style={[a.round, !canPrevious && { opacity: .35 }]} onPress={() => move(-1)}><AnalyticsIcon name="chevron-left" /></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Choose analytics month" accessibilityState={{ expanded: choosing }} style={[a.row, { flex: 1, justifyContent: 'center', minHeight: 44 }]} onPress={() => setChoosing(value => !value)}><AnalyticsIcon name="calendar-month-outline" size={19} /><Text style={a.heading}>{month || 'Household month'}</Text><AnalyticsIcon name={choosing ? 'chevron-up' : 'chevron-down'} size={18} /></Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="Next analytics month" disabled={!month} style={a.round} onPress={() => move(1)}><AnalyticsIcon name="chevron-right" /></Pressable></View>
-    {choosing && <View style={{ gap: 8 }}><View style={[ui.row, { flexWrap: 'wrap' }]}><TextInput value={draft} onChangeText={setDraft} placeholder="YYYY-MM" maxLength={7} autoCorrect={false} autoCapitalize="none" accessibilityLabel="Analytics month YYYY-MM" style={[ui.pill, ui.text, { flex: 1, minWidth: 100 }]} />
-      <Pressable accessibilityRole="button" style={ui.pill} onPress={() => void store.load(draft)}><Text style={ui.label}>View Month</Text></Pressable></View>
-      <PrimaryButton label="Current Household Month" variant="ghost" onPress={() => { store.current(); void store.load(); }} /></View>}
+      <Pressable accessibilityRole="button" accessibilityLabel="Next analytics month" accessibilityState={{ disabled: !canNext }} disabled={!canNext} style={[a.round, !canNext && { opacity: .35 }]} onPress={() => move(1)}><AnalyticsIcon name="chevron-right" /></Pressable></View>
+    {choosing && <View style={{ gap: 8 }}><View style={[ui.row, { flexWrap: 'wrap' }]}><TextInput value={draft} onChangeText={value => { setDraft(value); setMonthError(''); }} placeholder="YYYY-MM" maxLength={7} autoCorrect={false} autoCapitalize="none" accessibilityLabel="Analytics month YYYY-MM" style={[ui.pill, ui.text, { flex: 1, minWidth: 100 }]} />
+      <Pressable accessibilityRole="button" style={ui.pill} accessibilityLabel="View Month" onPress={() => select(draft)}><Text style={ui.label}>View Month</Text></Pressable></View>
+      <PrimaryButton label="Current Household Month" variant="ghost" onPress={() => { setMonthError(''); store.current(); void store.load(); }} /></View>}
+    <Text style={a.caption}>Current household month ({latest}) and earlier only</Text>
+    {!!monthError && <Text style={[a.caption, { color: Colors.error }]} accessibilityRole="alert">{monthError}</Text>}
   </View>;
 }
 export function PriceCoverage({ title, value }: { title: string; value: AnalyticsAmount }) {

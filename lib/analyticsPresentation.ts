@@ -10,6 +10,13 @@ export function analyticsCalendarDate(instant: string, timezone: string): string
   const part = (type: string) => parts.find(row => row.type === type)!.value;
   return `${part('year').padStart(4, '0')}-${part('month')}-${part('day')}`;
 }
+/** Latest selectable analytics period in the household calendar, not the device timezone. */
+export function analyticsCurrentMonth(now = new Date(), timezone = 'Asia/Kolkata'): string {
+  return analyticsCalendarDate(now.toISOString(), timezone).slice(0, 7);
+}
+export function analyticsMonthAllowed(month: string, latest: string): boolean {
+  return validMonth(month) && validMonth(latest) && month <= latest;
+}
 export function analyticsUsedPrice(item: { costSource: string; totalCostMinor: number | null }): string {
   return item.costSource === 'UNKNOWN' ? 'Unknown price' : `${item.costSource === 'ESTIMATE' ? 'Estimated ' : 'Recorded '}${formatAnalyticsMoney(String(item.totalCostMinor))}`;
 }
