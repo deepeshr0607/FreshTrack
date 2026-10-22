@@ -27,10 +27,16 @@ No native recognizer, permissions, backend/schema/dependency/provider/environmen
 
 ## Device update
 
-Same-identifier iPhone installation returned success. Device process launch also returned success; in-app acceptance is pending. The existing Personal Team profile expires23October at10:08:49AM IST. No Metro startup needed.
+Same-identifier iPhone installation returned success. Device process launch also returned success; subsequent user-reported acceptance is recorded below. The existing Personal Team profile expires23October at10:08:49AM IST. No Metro startup needed.
 
 `git diff --check` passed.
 
+## iPhone acceptance — 22 October 2026
+
+User answered “All 10 products and prices appear — all checks passed” to the five-step re-upload checklist. This records all ten cards/detected receipt amounts, editor amount visibility, temporary value-edit cancellation and unchanged Pantry after leaving without import.
+
+This is user-reported functional evidence for this public image, not direct agent observation, broad receipt accuracy, Android acceptance, quantity/category/expiry correctness or new persisted-import/foreign-currency acceptance. The sample was not intended to be saved as INR purchases. Documentation-only acceptance update: previous automated results above were not rerun. No runtime/build/deployment/environment or household-data changes in this update.
+
 ## Remaining
 
-Re-upload the same image in the updated FreshTrack Dev app and verify all ten product cards and their detected amounts, Edit Cancel and unchanged Pantry. Do not confirm import of the foreign-price sample. Headerless layouts without adequate positional evidence remain manual; recognition/quantities/categories/storage assumptions still require review. Phase9 and paused decoder/advisory/signing/platform limitations remain open; no store publishing.
+The reported missing-item/price defect is closed for this sample. Headerless layouts without adequate positional evidence remain manual; recognition/quantities/categories/storage assumptions still require review. Phase9 and paused decoder/advisory/signing/platform limitations remain open; no store publishing.
