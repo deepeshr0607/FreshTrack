@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useSyncExternalStore } from 'react
 import { Image, Linking, Text, View } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import PrimaryButton from '@/components/PrimaryButton';
-import FormInput from '@/components/FormInput';
+import CalendarDateField from '@/components/CalendarDateField';
 import { ui } from '@/components/PrototypeScreen';
 import { createReceiptOcrProbe } from '@/lib/receiptOcrProbe';
 import { packageExpiryDates } from '@/lib/receiptProducts';
@@ -30,11 +30,11 @@ export default function PackageExpiryCapture({ name, onConfirm, onCancel }: {
     <PrimaryButton label="Retake Expiry Photo" variant="ghost" disabled={state.busy} onPress={() => void store.choose('camera', true)} />
     <PrimaryButton label="Upload Expiry Photo" variant="ghost" disabled={state.busy} onPress={() => void store.choose('library', true)} />
     {state.read && <>
-      <Text style={ui.text}>{dates.length ? 'Choose the printed expiry below, then confirm it against your package.' : 'No full expiry date recognized. Retake a closer photo or type the printed date below.'}</Text>
+      <Text style={ui.text}>{dates.length ? 'Choose the printed expiry below, then confirm it against your package.' : 'No full expiry date recognized. Retake a closer photo or choose the printed date below.'}</Text>
       {dates.map(value => <PrimaryButton key={value} label={`Use ${value}`} variant={date === value ? 'primary' : 'ghost'} onPress={() => { setDate(value); setError(''); }} />)}
     </>}
     <Text style={ui.text}>Numeric labels are read as day/month/year. Manufacture dates and “best before X months” need manual checking. Correct the result before confirming.</Text>
-    <FormInput label="Printed expiry (YYYY-MM-DD)" value={date} onChangeText={value => { setDate(value); setError(''); }} maxLength={10} />
+    <CalendarDateField label="Expiry date" value={date} onChange={value => { setDate(value); setError(''); }} disabled={state.busy} />
     {!!error && <Text accessibilityRole="alert" style={ui.text}>{error}</Text>}
     <PrimaryButton label="Confirm Printed Expiry" disabled={state.busy} onPress={() => {
       try { confirmPrintedReceiptDate(name, date); onConfirm(date); }

@@ -1,4 +1,5 @@
 import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
+import CalendarDateField from '@/components/CalendarDateField';
 import PantryExpiryFields from '@/components/PantryExpiryFields';
 import { expiryDraft, expirySelection, resolveExpiry } from '@/lib/pantryExpiry';
 import React, { useEffect, useRef, useState } from 'react';
@@ -128,7 +129,7 @@ function PersistedEditor({ item, onSaved, onReload, requestedAction }: { item: P
       </View>
       <FormInput label="Quantity" value={draft.quantity} keyboardType="decimal-pad" editable={active && !busy} onChangeText={value => change('quantity', value)} />
       <FormInput label="Unit" value={draft.unit} maxLength={32} editable={active && !busy} onChangeText={value => change('unit', value)} />
-      <PantryExpiryFields name={draft.name} category={draft.category.toUpperCase() as PantryItemDto['category']} value={expiry} disabled={!active || busy}
+      <PantryExpiryFields simple name={draft.name} category={draft.category.toUpperCase() as PantryItemDto['category']} value={expiry} disabled={!active || busy}
         onChange={value => { if (busy || !active) return; setExpiry(value); setError(''); setMessage(''); editKey.current = pantryRetryKey(); }} />
       <FormInput label="Purchase value (₹, optional)" value={draft.price} keyboardType="decimal-pad" editable={active && !busy} onChangeText={value => change('price', value)} />
       <Text style={styles.body}>Value of this whole entry. Blank is unknown; zero means free.</Text>
@@ -213,8 +214,7 @@ function ItemEditor({ item }: { item: PantryItem }) {
           onChangeText={(value) => change('quantity', value)} keyboardType="decimal-pad" editable={active} />
         <FormInput label="Unit" accessibilityLabel="Unit" value={edit.unit}
           onChangeText={(value) => change('unit', value)} editable={active} />
-        <FormInput label="Expiry date (YYYY-MM-DD)" accessibilityLabel="Expiry date" value={edit.expiresOn}
-          onChangeText={(value) => change('expiresOn', value)} autoCapitalize="none" editable={active} />
+        <CalendarDateField value={edit.expiresOn} onChange={(value) => change('expiresOn', value)} disabled={!active} />
         <Text style={styles.body}>Changing the expiry date marks it as user entered.</Text>
         {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
         {!!message && <Text accessibilityLiveRegion="polite" style={styles.link}>{message}</Text>}

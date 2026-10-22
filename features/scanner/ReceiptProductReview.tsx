@@ -1,13 +1,14 @@
 import React, { useRef, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import PrimaryButton from '@/components/PrimaryButton';
+import CalendarDateField from '@/components/CalendarDateField';
 import FormInput from '@/components/FormInput';
 import { ui } from '@/components/PrototypeScreen';
 import { Colors } from '@/constants/Theme';
 import type { ReceiptReviewInput } from '@/types/api';
 import type { ReceiptTextBox } from '@/lib/receiptTextBoxes';
 import { PANTRY_CATEGORIES, type PantryDraft } from '@/lib/pantry';
-import { expiryDraft, kolkataToday, resolveExpiry } from '@/lib/pantryExpiry';
+import { expiryDraft, kolkataToday, resolveExpiry, expiryDateValue, chooseExpiryDate } from '@/lib/pantryExpiry';
 import { manualReceiptCandidate, receiptExpiryDraft, saveReceiptCandidate, type LocalReceiptCandidate } from '@/lib/receiptCandidates';
 import { receiptProducts, automaticFreshRule, receiptProductKind, receiptProductReviewState } from '@/lib/receiptProducts';
 import { reviewedReceiptInput } from '@/lib/receiptImport';
@@ -78,11 +79,9 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     {editor.detectedPrice !== null && <Text style={r.caption}>Receipt amount: {editor.detectedPrice} · {editor.currency === 'INR' ? 'INR' : editor.currency === 'unsupported' ? 'foreign currency; enter an INR value only if known' : 'currency not stated — confirm before saving'}</Text>}
     <FormInput label="Purchase value (₹, optional)" accessibilityLabel="Purchase value" value={editor.draft.price} keyboardType="decimal-pad" onChangeText={value => change('price', value)} />
     <Text style={r.caption}>Value is for this whole entry. Leave blank if unknown.</Text>
-    <Text style={r.sectionTitle}>Expiry date</Text>
     {!!expiry.packageDate && <Text style={ui.label}>Confirmed printed expiry: {expiry.packageDate}</Text>}
     {!!expiry.days && <Text style={ui.label}>Estimated from {expiry.baseDate} · {expiry.days} days</Text>}
-    <FormInput label="Manual expiry (YYYY-MM-DD)" accessibilityLabel="Manual expiry" value={expiry.userDate} maxLength={10}
-      onChangeText={value => { setExpiry({ packageDate: '', userDate: value, baseDate: '', days: '' }); setError(''); }} />
+    <CalendarDateField value={expiryDateValue(expiry)} onChange={value => { setExpiry(chooseExpiryDate(expiry, value)); setError(''); }} />
     {receiptProductKind(editor) === 'fresh' && automaticFreshRule(editor.draft.name) && <PrimaryButton label="Use Fresh-Food Estimate" variant="ghost" onPress={() => {
       const rule = automaticFreshRule(editor.draft.name)!;
       setExpiry({ packageDate: '', userDate: '', baseDate: purchaseDate, days: String(rule.rangeDays[0]) }); setError('');
@@ -93,9 +92,7 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     {!!error && <Text accessibilityRole="alert" style={[ui.text, { color: Colors.error }]}>{error}</Text>}
     <PrimaryButton label="Save Product" onPress={() => {
       try {
-        const kind = receiptProductKind(editor), rule = kind === 'fresh' ? automaticFreshRule(editor.draft.name) : null;
-        const chosen = !expiry.packageDate && !expiry.userDate && !expiry.days && rule
-          ? { packageDate: '', userDate: '', baseDate: purchaseDate, days: String(rule.rangeDays[0]) } : expiry;
+        const kind = receiptProductKind(editor), chosen = expiry;
         // Save an incomplete product too, so scanning its label can complete it next.
         if (!chosen.packageDate && !chosen.userDate && !chosen.days) {
           if (editor.draft.name.trim().length < 2) throw Error('Enter a product name.');
@@ -117,7 +114,7 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
       <View style={r.compactRow}><Text style={r.caption}>Purchased {purchaseDate}</Text>
       <ReviewAction label={changingDate ? 'Cancel Date Change' : 'Change Purchase Date'} text={changingDate ? 'Cancel' : 'Change'} icon="calendar-edit" onPress={() => { setDateInput(purchaseDate); setChangingDate(value => !value); setError(''); }} /></View>
       {changingDate && <>
-        <FormInput label="Purchase date (YYYY-MM-DD)" accessibilityLabel="Purchase date" value={dateInput} maxLength={10} onChangeText={setDateInput} />
+        <CalendarDateField label="Purchase date" value={dateInput} onChange={setDateInput} clearable={false} />
         <PrimaryButton label="Update Fresh-Food Estimates" onPress={() => {
           try {
             resolveExpiry({ packageDate: dateInput, userDate: null, preset: null });

@@ -1,5 +1,7 @@
 // @ts-expect-error Explicit extension supports Node strip-types tests and Metro.
 export { expiryPreset, resolveExpiry } from '../backend/src/contracts/expiry.ts';
+// @ts-expect-error Explicit extension supports Node strip-types tests and Metro.
+import { resolveExpiry } from '../backend/src/contracts/expiry.ts';
 import type { ExpirySelection, PantryItemDto } from '../types/api';
 export interface ExpiryDraft { packageDate: string; userDate: string; baseDate: string; days: string }
 export function expiryDraft(item?: PantryItemDto): ExpiryDraft {
@@ -17,4 +19,12 @@ export function kolkataToday(now = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
   const part = (type: string) => parts.find(value => value.type === type)!.value;
   return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+/** One visible date, retaining the source selection until the user changes it. */
+export function expiryDateValue(draft: ExpiryDraft): string {
+  try { return resolveExpiry(expirySelection(draft)).expiresOn; } catch { return ''; }
+}
+export function chooseExpiryDate(draft: ExpiryDraft, date: string): ExpiryDraft {
+  return date && date === expiryDateValue(draft) ? draft : { packageDate: '', userDate: date, baseDate: '', days: '' };
 }

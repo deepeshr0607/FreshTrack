@@ -1,4 +1,5 @@
 import { DIAGNOSTICS_ENABLED } from '@/lib/runtimeFeatures';
+import CalendarDateField from '@/components/CalendarDateField';
 import PantryExpiryFields from '@/components/PantryExpiryFields';
 import { expiryDraft, expirySelection, resolveExpiry } from '@/lib/pantryExpiry';
 import { NeonAuthError } from '@/lib/neonAuth';
@@ -136,12 +137,11 @@ function PantryAddForm({ barcodeEntry }: { barcodeEntry?: BarcodeEntryProps }) {
       </View>
       <FormInput label="Quantity" accessibilityLabel="Quantity" keyboardType="decimal-pad" value={draft.quantity} onChangeText={(value) => change('quantity', value)} />
       <FormInput label="Unit (e.g. bag, kg, bottle)" accessibilityLabel="Unit" value={draft.unit} onChangeText={(value) => change('unit', value)} maxLength={real.enabled ? 32 : 40} />
-      {real.enabled ? <PantryExpiryFields name={draft.name} category={draft.category.toUpperCase() as Parameters<typeof PantryExpiryFields>[0]['category']}
+      {real.enabled ? <PantryExpiryFields simple name={draft.name} category={draft.category.toUpperCase() as Parameters<typeof PantryExpiryFields>[0]['category']}
         value={expiry} disabled={request.loading} onChange={value => {
           if (request.loading) return;
           attempt.current = null; setExpiry(value); setError(null); retryKey.current = `entry-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        }} /> : <><FormInput label="Expiry date (YYYY-MM-DD)" accessibilityLabel="Expiry date" placeholder="YYYY-MM-DD"
-        autoCapitalize="none" maxLength={10} value={draft.expiresOn} onChangeText={(value) => change('expiresOn', value)} />
+        }} /> : <><CalendarDateField value={draft.expiresOn} onChange={(value) => change('expiresOn', value)} />
       <Text style={ui.text}>Enter the date you want to track. Past dates are allowed for items needing reconciliation.</Text></>}
       <FormInput label={`Purchase value (${real.enabled ? '₹' : MOCK_CURRENCY.symbol}, optional)`} accessibilityLabel="Purchase value" keyboardType="decimal-pad"
         value={draft.price} onChangeText={(value) => change('price', value)} placeholder="Unknown" />

@@ -10,7 +10,7 @@ test('Receipt cards show fresh estimates without package scans and packaged acti
 });
 test('Product editor Cancel preserves data and Save keeps quantity/value/manual-expiry fields in the reviewed payload',()=>{
  const v=receiptReviewHarness({lines:['Spinach Rs. 30.00']});button(v,'Edit Spinach').onPress();v.render();field(v,'Spinach','Changed name');button(v,'Cancel Edit').onPress();v.render();assert.match(v.markup,/Spinach/);assert.doesNotMatch(v.markup,/Changed name/);
- button(v,'Edit Spinach').onPress();v.render();field(v,'1','2');v.render();field(v,'30.00','0');v.render();v.fields.at(-1).onChangeText('2026-11-01');v.render();button(v,'Save Product').onPress();v.render();button(v,'Review & Add 1 Products to Pantry').onPress();
+ button(v,'Edit Spinach').onPress();v.render();field(v,'1','2');v.render();field(v,'30.00','0');v.render();button(v,'Choose expiry date').onPress();v.render();button(v,'Choose year').onPress();v.render();button(v,'Year 2026').onPress();v.render();button(v,'Month November').onPress();v.render();button(v,'Select 2026-11-01').onPress();v.render();button(v,'Use Date').onPress();v.render();button(v,'Save Product').onPress();v.render();button(v,'Review & Add 1 Products to Pantry').onPress();
  assert.equal(v.calls[0][0],'prepare');const item=v.calls[0][1].items[0].item;assert.equal(item.quantity,'2');assert.equal(item.totalCostMinor,0);assert.equal(item.expiresOn,'2026-11-01');
 });
 test('Selection/removal and incomplete details still gate final review, without a silent import',()=>{
