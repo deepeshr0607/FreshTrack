@@ -2,6 +2,8 @@
 import { receiptTextBoxes, suggestReceiptGeometryPairs, suggestReceiptBlockPairs } from './receiptGeometry.ts';
 // @ts-expect-error Explicit extensions support strip-types tests and Metro.
 import { RECEIPT_MAX_ITEMS } from './receiptLimits.ts';
+// @ts-expect-error Explicit extensions support strip-types tests and Metro.
+import { suggestUnlabelledReceiptPairs } from './receiptUnlabelledRows.ts';
 import type { LocalReceiptCandidate } from './receiptCandidates';
 export type ReceiptColumnMode = 'same-row' | 'below-code';
 /** Proposals only: never modify, select or replace a grocery until its editor is explicitly saved. */
@@ -10,7 +12,7 @@ export function receiptColumnProposals(lines: string[], value: unknown, rows: Lo
   try {
     const boxes = receiptTextBoxes(value);
     if (boxes.length !== lines.length || boxes.some((box, i) => box.text !== lines[i])) return [];
-    const proposals = mode === 'same-row' ? suggestReceiptGeometryPairs(boxes) : suggestReceiptBlockPairs(boxes);
+    const proposals = mode === 'same-row' ? [...suggestReceiptGeometryPairs(boxes), ...suggestUnlabelledReceiptPairs(boxes)] : suggestReceiptBlockPairs(boxes);
     return proposals.flatMap(proposal => {
       const conflicts = rows.filter(row => row.sourceLineIds?.some(id => proposal.sourceLineIds?.includes(id)));
       if (!conflicts.length) return rows.length < RECEIPT_MAX_ITEMS ? [proposal] : [];

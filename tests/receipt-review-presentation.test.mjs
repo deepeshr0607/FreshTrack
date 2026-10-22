@@ -32,3 +32,14 @@ test('Pending and success views retain unchanged retry flags and Pantry/new-rece
  const v=receiptReviewHarness({page:'import'});v.state.stage='pending';v.state.pending={paused:true,input:v.input};v.render();assert.match(v.markup,/Editing and new imports are locked/);button(v,'Continue Saved Import').onPress();assert.deepEqual(v.calls,[['retry',true]]);
  v.state.stage='saved';v.state.result={items:v.input.items,replayed:true};v.render();assert.match(v.markup,/original save was recovered/);assert.match(v.markup,/does not restore it/);button(v,'View Pantry').onPress();button(v,'Scan Another Receipt').onPress();assert.deepEqual(v.calls.slice(1),[['route','/(tabs)/pantry'],'new']);
 });
+
+test('product cards and editor show detected foreign amounts without inventing INR values',()=>{
+ const v=receiptReviewHarness({lines:['Milk USD 4.29']});assert.match(v.markup,/Receipt amount: 4.29/);assert.match(v.markup,/foreign currency; not converted to ₹/);assert.match(v.markup,/Unknown value/);assert.doesNotMatch(v.markup,/₹4.29/);
+ button(v,'Edit Milk').onPress();v.render();assert.match(v.markup,/Receipt amount: 4.29/);assert.equal(v.fields.find(row=>row.accessibilityLabel==='Purchase value').value,'');
+});
+test('automatic product review presents headerless extracted prices and preserves Edit Cancel',()=>{
+ const values=[['Milk',.1,.2,.2],['Bread',.1,.3,.2],['Tuna',.1,.4,.2],['10.10',.8,.2,.1],['20.20',.8,.3,.1],['30.30',.8,.4,.1],['Total',.1,.8,.2]];
+ const layout=values.map(([text,x,y,width],i)=>({id:`line-${i}`,text,box:{x,y,width,height:.02}}));const v=receiptReviewHarness({lines:layout.map(row=>row.text),layout});
+ for(const amount of ['10.10','20.20','30.30'])assert.ok(v.markup.includes(`Receipt amount: ${amount}`));assert.match(v.markup,/currency not stated/);
+ button(v,'Edit Milk').onPress();v.render();field(v,'Purchase value','99.99');button(v,'Cancel Edit').onPress();v.render();assert.match(v.markup,/₹10.10/);assert.doesNotMatch(v.markup,/₹99.99/);assert.equal(v.prepared.length,0);
+});

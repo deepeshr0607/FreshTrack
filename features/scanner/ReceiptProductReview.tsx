@@ -75,6 +75,7 @@ export default function ReceiptProductReview({ lines, layout, onPrepare, readOnl
     <FormInput label="Quantity" accessibilityLabel="Quantity" value={editor.draft.quantity} keyboardType="decimal-pad" onChangeText={value => change('quantity', value)} />
     </View><View style={r.field}><FormInput label="Unit" accessibilityLabel="Unit" placeholder="piece, kg, l…" value={editor.draft.unit} maxLength={32} onChangeText={value => change('unit', value)} />
     </View></View>
+    {editor.detectedPrice !== null && <Text style={r.caption}>Receipt amount: {editor.detectedPrice} · {editor.currency === 'INR' ? 'INR' : editor.currency === 'unsupported' ? 'foreign currency; enter an INR value only if known' : 'currency not stated — confirm before saving'}</Text>}
     <FormInput label="Purchase value (₹, optional)" accessibilityLabel="Purchase value" value={editor.draft.price} keyboardType="decimal-pad" onChangeText={value => change('price', value)} />
     <Text style={r.caption}>Value is for this whole entry. Leave blank if unknown.</Text>
     <Text style={r.sectionTitle}>Expiry date</Text>
