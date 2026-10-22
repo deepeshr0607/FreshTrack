@@ -20,8 +20,14 @@ No backend/schema/provider/auth/dependency/environment/deployment or notificatio
 - `CI=1 npx expo export --platform all --max-workers 2 --output-dir /private/tmp/freshtrack-expiry-calendar-export`: pass, iOS/Android/web,41 routes.
 - Signed Xcode Release build: BUILD SUCCEEDED. Strict/deep `codesign` verification, same identifier and embedded calendar strings passed. Bundle SHA256 `4b4cdfa947b479c81d8d382f42031d5c627fd1dc45ae6d9c392c96928c096438`. Same-identifier iPhone installation returned success; device process launch also returned success. This verifies install/launch, not phone interaction or saved-data acceptance. No uninstall or Metro dependency.
 - `git diff --check`: pass. Existing Node module-type/Expo color/native build warnings remain. Doctor was not rerun for this dependency-free change.
-- Browser preview is unavailable in the current session; no agent visual acceptance is claimed. Device appearance/interaction review remains pending.
+- Browser preview is unavailable in the current session; no agent visual acceptance is claimed. Subsequent user-reported phone acceptance is recorded below.
+
+## iPhone acceptance — 22 October 2026
+
+User answered “All checks passed” to the six numbered checks: estimated fresh expiry prefill; picker Cancel and month/year/day selection; selected-date local Save and Clear without implicit estimate reapplication; explicit estimate restoration; blank packaged expiry with calendar Save; leaving the foreign receipt without import; and adding Calendar Test Item with D1, then editing to D2, with both dates persisting after restart. Only that named development sample was authorized for persistence checks.
+
+This records user-reported functional/persistence evidence, not direct agent observation, a database audit, new confirmed receipt import, printed-label OCR, Android runtime or full accessibility acceptance. Documentation-only acceptance update: the prior automated results above were not rerun. No runtime/build/deployment/environment or agent household-data changes. `git diff --check` passed.
 
 ## Remaining
 
-Phone checks: supported estimate prefill, blank unsupported/packaged entry, calendar month/year/Cancel/Clear/Use Date, local receipt Save, real Pantry add/edit/restart for one named development sample and no unrelated grocery changes. Package-label OCR/date correction is unchanged apart from its input control and is not newly accepted from synthetic UI tests. Android runtime/full accessibility/native profiling remain open. Existing Personal Team signing expires23October10:08:49AM IST. Phase9/security/reliability and paused decoder gaps remain; no store publishing.
+The requested unified expiry/calendar behavior is accepted on iPhone by user report. Package-label OCR/date correction is unchanged apart from its input control and is not newly accepted from synthetic UI tests. Android runtime/full accessibility/native profiling remain open. Existing Personal Team signing expires23October10:08:49AM IST. Phase9/security/reliability and paused decoder gaps remain; no store publishing.
