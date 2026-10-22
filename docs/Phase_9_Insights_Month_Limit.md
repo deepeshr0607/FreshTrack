@@ -22,8 +22,12 @@ No backend/schema/auth/provider/dependency/environment/deployment or account/gro
 
 ## Device update
 
-Same-identifier iPhone install returned success, with no uninstall/Metro dependency. Device process launch also returned success; in-app month-control acceptance remains pending. `git diff --check` passed.
+Same-identifier iPhone install returned success, with no uninstall/Metro dependency. Device process launch also returned success; in-app acceptance is recorded below. `git diff --check` passed.
+
+## iPhone acceptance — 22 October
+
+The user reported “All checks passed” for the four numbered checks: current-month Next disabled, historical navigation/return to current, typed future month/year rejection without navigation, current reset and shared Financial Analytics behavior. No grocery changes were requested. This is user-reported evidence, not direct observation or native month-rollover verification. Prior automated checks were not rerun for this documentation-only update.
 
 ## Remaining
 
-Numbered iPhone verification pending: current-month Next disabled, historical navigation/return to current, typed future month/year rejection without navigation, current reset and shared Financial Analytics behavior. Android runtime and existing Phase9 security/reliability/signing limits remain open. No store publishing.
+This correction has user-reported iPhone acceptance. Android runtime and existing Phase9 security/reliability/signing limits remain open. No store publishing.
